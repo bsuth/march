@@ -1,0 +1,25 @@
+services:
+  server:
+    image: ghcr.io/gleam-lang/gleam:nightly-erlang
+    command: gleam run
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/march
+      - server_build:/march/server/build
+    working_dir: /march/server
+
+  web:
+    image: ghcr.io/gleam-lang/gleam:nightly-erlang
+    command: gleam run -m lustre/dev start
+    ports:
+      - "1234:1234"
+    volumes:
+      - .:/march
+      - web_build:/march/web/build
+    working_dir: /march/web
+
+volumes:
+  postgres_data:
+  server_build:
+  web_build:
