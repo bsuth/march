@@ -1,6 +1,6 @@
 import wisp
 
-pub fn handler(req: wisp.Request) -> wisp.Response {
+pub fn handler(req: wisp.Request) {
   use <- wisp.log_request(req)
   use <- wisp.rescue_crashes()
   use req <- wisp.handle_head(req)

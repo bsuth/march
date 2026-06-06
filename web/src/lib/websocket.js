@@ -1,4 +1,4 @@
-export function create(url) {
+export function new_(url) {
   return new WebSocket(url);
 }
 

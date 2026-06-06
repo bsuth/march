@@ -11,6 +11,9 @@ import components/single_upload
 import components/text_area
 import components/text_input
 import components/toggle
+import gleam/io
+import gleam/json
+import lib/websocket
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -18,8 +21,8 @@ import lustre/element.{type Element}
 import lustre/element/html
 import navbar
 import router
+import routes/cheatsheet
 import routes/learn
-import websocket
 import x.{type Model, type Msg}
 
 pub fn main() {
@@ -40,6 +43,7 @@ pub fn main() {
   let assert Ok(_) = toggle.register()
 
   let assert Ok(_) = learn.register()
+  let assert Ok(_) = cheatsheet.register()
 
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 
@@ -49,7 +53,7 @@ pub fn main() {
 fn init(_) -> #(Model, Effect(Msg)) {
   let #(route, router_effect) = router.init()
 
-  let model = x.Model(route:, ws: websocket.create("ws://localhost:8000/ws"))
+  let model = x.Model(route:, ws: websocket.new("ws://localhost:8000/ws"))
 
   let effect =
     effect.batch([
@@ -60,8 +64,12 @@ fn init(_) -> #(Model, Effect(Msg)) {
   #(model, effect)
 }
 
-fn ws_update(_message: String) -> Msg {
-  todo
+fn ws_update(message: String) -> Msg {
+  case message {
+    "pong" -> x.Pong
+    "matched" -> x.Matched
+    _ -> x.WebsocketError(message)
+  }
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -69,7 +77,28 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     x.OnRouteChange(route) -> #(x.Model(..model, route:), effect.none())
 
     x.UserClickedTest -> {
-      websocket.send(model.ws, "hello world")
+      [
+        #("method", json.string("enter_matchmaking")),
+        #("payload", json.null()),
+      ]
+      |> json.object()
+      |> json.to_string()
+      |> websocket.send(model.ws, _)
+      #(model, effect.none())
+    }
+
+    x.Pong -> {
+      io.print("ponged")
+      #(model, effect.none())
+    }
+
+    x.Matched -> {
+      io.print("matched")
+      #(model, effect.none())
+    }
+
+    x.WebsocketError(message) -> {
+      io.print("error: " <> message)
       #(model, effect.none())
     }
   }

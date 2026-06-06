@@ -33,7 +33,7 @@ pub fn view(model: Model, attrs: List(Attribute(Msg))) -> Element(Msg) {
   case model.route {
     routes.Home -> home.view(model, attrs)
     routes.Learn -> learn.element(attrs)
-    routes.CheatSheet -> cheatsheet.view(model, attrs)
+    routes.CheatSheet -> cheatsheet.element(attrs)
     routes.Versus -> versus.view(model, attrs)
     _ -> not_found.view(model, attrs)
   }

@@ -9,8 +9,8 @@ pub type WebSocketState {
   WebSocketClosed
 }
 
-@external(javascript, "./websocket.js", "create")
-pub fn create(url: String) -> WebSocket
+@external(javascript, "./websocket.js", "new_")
+pub fn new(url: String) -> WebSocket
 
 @external(javascript, "./websocket.js", "state")
 pub fn raw_state(ws: WebSocket) -> Int

@@ -1,3 +1,4 @@
+import actors/matchmaker
 import envoy
 import gleam/erlang/process
 import gleam/int
@@ -13,13 +14,15 @@ pub fn main() {
   // that this means that all previous cookies / sessions will be invalidated.
   let secret_key_base = wisp.random_string(64)
 
+  let assert Ok(matchmaker_actor) = matchmaker.start()
+
   let port =
     envoy.get("PORT")
     |> result.try(int.parse)
     |> result.unwrap(8000)
 
   let assert Ok(_) =
-    router.handler(secret_key_base)
+    router.handler(secret_key_base, matchmaker_actor.data)
     |> mist.new()
     |> mist.port(port)
     |> mist.start()

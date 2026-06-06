@@ -1,9 +1,12 @@
+import lib/websocket.{type WebSocket}
 import routes.{type Route}
-import websocket.{type WebSocket}
 
 pub type Msg {
   OnRouteChange(Route)
   UserClickedTest
+  Pong
+  Matched
+  WebsocketError(String)
 }
 
 pub type Model {
