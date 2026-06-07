@@ -10,10 +10,6 @@ export function send(ws, msg) {
   ws.send(msg);
 }
 
-export function close(ws) {
-  ws.close();
-}
-
 export function on_open(ws, callback) {
   ws.addEventListener("open", callback);
 }

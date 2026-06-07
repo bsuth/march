@@ -2,8 +2,8 @@ import gleam/int
 import gleam/list
 import lustre
 import lustre/attribute.{type Attribute}
-import lustre/effect.{type Effect}
-import lustre/element.{type Element}
+import lustre/effect
+import lustre/element
 import lustre/element/html
 import routes/learn/chapter
 import routes/learn/navbar
@@ -14,30 +14,18 @@ import routes/learn/x.{type Model, type Msg}
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "routes-learn"
+const element_name = "march-learn"
 
-pub fn register() -> Result(Nil, lustre.Error) {
-  let component = lustre.component(init, update, view, [])
-  lustre.register(component, element_name)
-}
-
-pub fn element(attrs: List(Attribute(msg))) -> Element(msg) {
+pub fn element(attrs: List(Attribute(msg))) {
   element.element(element_name, attrs, [])
 }
 
-// -----------------------------------------------------------------------------
-// Properties
-// -----------------------------------------------------------------------------
+pub fn register() {
+  lustre.component(init, update, view, [])
+  |> lustre.register(element_name)
+}
 
-// -----------------------------------------------------------------------------
-// Events
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Lifecycle
-// -----------------------------------------------------------------------------
-
-fn init(_) -> #(Model, Effect(Msg)) {
+fn init(_) {
   let num_chapters = list.length(chapter.chapters)
 
   #(
@@ -50,7 +38,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
   )
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(model: Model, msg: Msg) {
   case msg {
     x.PrevChapter -> #(
       x.Model(
@@ -86,11 +74,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
+fn view(model: Model) {
   html.div(
     [
       attribute.class(
-        "flex h-full flex-col gap-4 m-auto max-w-4xl bg-gray-900 overflow-auto p-4",
+        "flex h-full flex-col gap-4 m-auto max-w-4xl overflow-auto p-4",
       ),
     ],
     [

@@ -3,24 +3,18 @@ import gleam/json
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
-import lustre/effect.{type Effect}
-import lustre/element.{type Element}
+import lustre/effect
+import lustre/element
 import lustre/element/html
 import lustre/event
 
-const element_name = "components-text-input"
-
 // -----------------------------------------------------------------------------
-// Model
+// Model / Message
 // -----------------------------------------------------------------------------
 
 type Model {
   Model(value: String, type_: String)
 }
-
-// -----------------------------------------------------------------------------
-// Message
-// -----------------------------------------------------------------------------
 
 type Msg {
   PropsChangedValue(String)
@@ -30,51 +24,25 @@ type Msg {
 }
 
 // -----------------------------------------------------------------------------
-// Component
+// Properties / Events
 // -----------------------------------------------------------------------------
 
-pub fn register() -> Result(Nil, lustre.Error) {
-  let component =
-    lustre.component(init, update, view, [
-      component.on_property_change("value", {
-        decode.string |> decode.map(PropsChangedValue)
-      }),
-      component.on_property_change("type_", {
-        decode.string |> decode.map(PropsChangedType)
-      }),
-    ])
-
-  lustre.register(component, element_name)
-}
-
-pub fn element(attrs: List(Attribute(msg))) -> Element(msg) {
-  element.element(element_name, attrs, [])
-}
-
-// -----------------------------------------------------------------------------
-// Properties
-// -----------------------------------------------------------------------------
-
-pub fn value(value: String) -> Attribute(msg) {
+pub fn value(value: String) {
   attribute.property("value", json.string(value))
 }
 
-pub fn type_(type_: String) -> Attribute(msg) {
+pub fn type_(type_: String) {
   attribute.property("type_", json.string(type_))
 }
 
-// -----------------------------------------------------------------------------
-// Events
-// -----------------------------------------------------------------------------
-
-pub fn on_input(handler: fn(String) -> msg) -> Attribute(msg) {
+pub fn on_input(handler: fn(String) -> msg) {
   event.on(
     "input",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
   )
 }
 
-pub fn on_change(handler: fn(String) -> msg) -> Attribute(msg) {
+pub fn on_change(handler: fn(String) -> msg) {
   event.on(
     "change",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
@@ -82,14 +50,32 @@ pub fn on_change(handler: fn(String) -> msg) -> Attribute(msg) {
 }
 
 // -----------------------------------------------------------------------------
-// Lifecycle
+// Component
 // -----------------------------------------------------------------------------
 
-fn init(_) -> #(Model, Effect(Msg)) {
+const element_name = "components-text-input"
+
+pub fn element(attrs: List(Attribute(msg))) {
+  element.element(element_name, attrs, [])
+}
+
+pub fn register() {
+  lustre.component(init, update, view, [
+    component.on_property_change("value", {
+      decode.string |> decode.map(PropsChangedValue)
+    }),
+    component.on_property_change("type_", {
+      decode.string |> decode.map(PropsChangedType)
+    }),
+  ])
+  |> lustre.register(element_name)
+}
+
+fn init(_) {
   #(Model(value: "", type_: "text"), effect.none())
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(model: Model, msg: Msg) {
   case msg {
     PropsChangedValue(new_value) -> {
       #(Model(..model, value: new_value), effect.none())
@@ -109,7 +95,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
+fn view(model: Model) {
   html.input([
     attribute.class("px-2 py-1"),
     attribute.class("border rounded"),

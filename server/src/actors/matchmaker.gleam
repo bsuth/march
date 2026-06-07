@@ -1,39 +1,42 @@
-import gleam/erlang/process.{type Subject}
+import core/yuzu
+import gleam/erlang/process
 import gleam/list
 import gleam/otp/actor
-import ws_custom.{type WebsocketCustom}
+import gleam/otp/supervision
+import ipc
+import names.{type Names}
 
 type State =
-  List(Subject(WebsocketCustom))
+  List(process.Subject(ipc.Websocket))
 
-pub fn start() {
-  []
-  |> actor.new()
-  |> actor.on_message(handle_message)
-  |> actor.start()
+pub fn supervised(names: Names) {
+  supervision.supervisor(fn() {
+    []
+    |> actor.new()
+    |> actor.named(names.matchmaker)
+    |> actor.on_message(handler)
+    |> actor.start()
+  })
 }
 
 // -----------------------------------------------------------------------------
-// Messages
+// Handler
 // -----------------------------------------------------------------------------
 
-pub type Message {
-  Enter(Subject(WebsocketCustom))
-  Exit(Subject(WebsocketCustom))
-}
-
-fn handle_message(state: State, message: Message) {
+fn handler(state: State, message: ipc.Matchmaker) {
   case message {
-    Enter(player) -> handle_enter(state, player)
-    Exit(player) -> handle_exit(state, player)
+    ipc.MatchmakerEnter(player) -> enter_handler(state, player)
+    ipc.MatchmakerExit(player) -> exit_handler(state, player)
   }
 }
 
-fn handle_enter(state: State, player: Subject(WebsocketCustom)) {
+fn enter_handler(state: State, player: process.Subject(ipc.Websocket)) {
+  use <- yuzu.false(list.contains(state, player), actor.continue(state))
+
   case list.find(state, check_match(_, player)) {
     Ok(opponent) -> {
-      process.send(player, ws_custom.Matched)
-      process.send(opponent, ws_custom.Matched)
+      process.send(player, ipc.WebsocketMatched)
+      process.send(opponent, ipc.WebsocketMatched)
 
       state
       |> list.filter(fn(element) { element != opponent })
@@ -48,7 +51,7 @@ fn handle_enter(state: State, player: Subject(WebsocketCustom)) {
   }
 }
 
-fn handle_exit(state: State, player: Subject(WebsocketCustom)) {
+fn exit_handler(state: State, player: process.Subject(ipc.Websocket)) {
   state
   |> list.filter(fn(element) { element != player })
   |> actor.continue()
@@ -58,7 +61,10 @@ fn handle_exit(state: State, player: Subject(WebsocketCustom)) {
 // Matchmaking
 // -----------------------------------------------------------------------------
 
-fn check_match(a: Subject(WebsocketCustom), b: Subject(WebsocketCustom)) {
+fn check_match(
+  a: process.Subject(ipc.Websocket),
+  b: process.Subject(ipc.Websocket),
+) {
   // TODO: implement real matchmaker function
   a != b
 }

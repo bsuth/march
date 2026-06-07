@@ -1,101 +1,61 @@
-import gleam/list
+import components/button
 import lustre/attribute.{type Attribute}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/event
+import main/message.{type Message}
 import phosphor
-import x.{type Model, type Msg}
 
-type LinkCard {
-  LinkCard(title: String, link: String, body: String)
+pub fn view(attrs: List(Attribute(Message))) {
+  html.div(
+    [attribute.class("max-w-xl m-auto"), attribute.class("flex gap-4"), ..attrs],
+    [
+      button.element([event.on_click(message.UserCreatedLobby)], [
+        html.text("CREATE LOBBY"),
+      ]),
+      card_link_view(
+        "Modern",
+        "Cards have unique moves.",
+        "./learn",
+        phosphor.building_fill,
+      ),
+      card_link_view(
+        "Classic",
+        "Every card moves the same.",
+        "./versus",
+        phosphor.castle_turret_fill,
+      ),
+    ],
+  )
 }
 
-const link_cards = [
-  LinkCard(title: "Learn", link: "./learn", body: "Learn how to play March."),
-  LinkCard(
-    title: "Versus",
-    link: "./versus",
-    body: "Play against someone online.",
-  ),
-  LinkCard(
-    title: "Cheatsheet",
-    link: "./cheatsheet",
-    body: "A quick reference of the basic rules and interactions. Recommended for those who have played before.",
-  ),
-]
-
-pub fn view(_model: Model, attrs: List(Attribute(Msg))) -> Element(Msg) {
-  html.div(
+fn card_link_view(
+  title: String,
+  description: String,
+  href: String,
+  icon: fn(List(Attribute(a))) -> Element(a),
+) {
+  html.a(
     [
-      attribute.class(
-        "max-w-4xl m-auto flex flex-col items-center gap-12 px-4 py-8",
-      ),
-      ..attrs
+      attribute.class("flex-1 p-4 flex flex-col gap-2"),
+      attribute.class("rounded bg-(--bg-1)"),
+      attribute.class("border-4 border-(--fg)"),
+      attribute.class("hover:bg-(--bg-2)"),
+      attribute.class("cursor-pointer"),
+      attribute.href(href),
     ],
     [
-      html.p([], [
-        html.img([attribute.src("/logo.svg"), attribute.width(128)]),
-      ]),
-      html.div([attribute.class("flex flex-col gap-4 items-center")], [
-        html.h1([], [
-          html.text("March"),
-        ]),
-        html.p([attribute.class("text-center")], [
-          html.text(
-            "March is a simple, modern, tactical card game that utilizes standard decks of playing cards.",
-          ),
-        ]),
-      ]),
-      html.div(
-        [attribute.class("flex gap-4")],
-        list.map(link_cards, fn(link_card) {
-          html.a(
-            [
-              attribute.class(
-                "bg-gray-700 rounded p-4 flex-1 flex flex-col gap-2 text-white hover:text-blue-400",
-              ),
-              attribute.href(link_card.link),
-            ],
-            [
-              html.div(
-                [attribute.class("flex gap-2 justify-between items-center")],
-                [
-                  html.h3([], [html.text(link_card.title)]),
-                  phosphor.arrow_right_bold([
-                    attribute.class("w-6 h-6"),
-                  ]),
-                ],
-              ),
-              html.div([], [html.text(link_card.body)]),
-            ],
-          )
-        }),
-      ),
-      html.div([attribute.class("flex flex-col gap-4 items-center")], [
-        html.h2([], [
-          html.text("About"),
-        ]),
-        html.p([], [
-          html.text(
-            "March was created by a software engineer who likes to play card games and board games with coworkers after work. It was particular inspired after playing the wonderful ",
-          ),
-          html.a([attribute.href("https://www.regicidegame.com/")], [
-            html.text("Regicide"),
+      html.div([attribute.class("flex flex-col justify-between items-center")], [
+        html.div([attribute.class("w-16 h-16 mb-2 relative")], [
+          icon([
+            attribute.class("w-16 h-16"),
+            attribute.class("absolute top-1/2 left-1/2 -translate-1/2"),
           ]),
-          html.text(
-            " and having a coworker express their desire for more modern card games that utilize the standard deck of playing cards.",
-          ),
         ]),
-      ]),
-      html.div([attribute.class("flex flex-col gap-4 items-center")], [
-        html.h2([], [
-          html.text("Attributions"),
+        html.h3([attribute.class("flex items-center gap-2")], [
+          html.text(title),
         ]),
-        html.p([], [
-          html.text("TODO"),
-          html.text("Gleam"),
-          html.text("Lustre"),
-          html.text("Phosphor Icons"),
-        ]),
+        html.p([attribute.class("text-center")], [html.text(description)]),
       ]),
     ],
   )

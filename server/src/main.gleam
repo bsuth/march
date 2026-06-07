@@ -1,33 +1,29 @@
+import actors/lobby_registry
 import actors/matchmaker
-import envoy
 import gleam/erlang/process
-import gleam/int
-import gleam/result
-import mist
-import router/router
+import gleam/otp/static_supervisor
+import names.{Names}
+import server
 import wisp
 
 pub fn main() {
+  // TODO: better logger?
   wisp.configure_logger()
 
-  // For now, we generate a new `` whenever our application is restarted. Note
-  // that this means that all previous cookies / sessions will be invalidated.
-  let secret_key_base = wisp.random_string(64)
-
-  let assert Ok(matchmaker_actor) = matchmaker.start()
-
-  let port =
-    envoy.get("PORT")
-    |> result.try(int.parse)
-    |> result.unwrap(8000)
+  let names =
+    Names(
+      lobby_registry: process.new_name("lobby_registry"),
+      matchmaker: process.new_name("matchmaker"),
+    )
 
   let assert Ok(_) =
-    router.handler(secret_key_base, matchmaker_actor.data)
-    |> mist.new()
-    |> mist.port(port)
-    |> mist.start()
+    static_supervisor.new(static_supervisor.OneForOne)
+    |> static_supervisor.add(lobby_registry.supervised(names))
+    |> static_supervisor.add(matchmaker.supervised(names))
+    |> static_supervisor.add(server.supervised(names))
+    |> static_supervisor.start()
 
-  // The web server runs in a new Erlang process, so we can just put this one to
+  // Supervisors run in new Erlang processes, so we can just put this one to
   // sleep forever.
   process.sleep_forever()
 }

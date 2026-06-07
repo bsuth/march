@@ -1,8 +1,13 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+
+/* https://tailwindcss.com/docs/dark-mode */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @layer base {
-  a {
-    @apply text-blue-400;
+  * {
+    font-family: "Quicksand", sans-serif;
+    font-weight: 600;
   }
 
   h1 {
@@ -33,10 +38,26 @@
   h6 {
     @apply font-bold;
   }
+}
 
-  section {
-    @apply flex;
-    @apply flex-col;
-    @apply gap-4;
-  }
+body {
+  --fg: var(--color-black);
+  --bg-0: var(--color-gray-100);
+  --bg-1: var(--color-gray-200);
+  --bg-2: var(--color-gray-300);
+  --bg-3: var(--color-gray-400);
+
+  --text-link-color: var(--color-blue-700);
+  --text-link-hover-color: var(--color-blue-500);
+}
+
+body[data-theme=dark] {
+  --fg: var(--color-white);
+  --bg-0: var(--color-neutral-900);
+  --bg-1: var(--color-neutral-800);
+  --bg-2: var(--color-neutral-700);
+  --bg-3: var(--color-neutral-600);
+
+  --text-link-color: var(--color-blue-400);
+  --text-link-hover-color: var(--color-blue-600);
 }

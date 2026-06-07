@@ -1,74 +1,62 @@
 import gleam/dynamic/decode
+import gleam/json
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
-import lustre/effect.{type Effect}
+import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
 
-const element_name = "components-field"
-
 // -----------------------------------------------------------------------------
-// Model
+// Model / Message
 // -----------------------------------------------------------------------------
 
 type Model {
   Model(label: String)
 }
 
-// -----------------------------------------------------------------------------
-// Message
-// -----------------------------------------------------------------------------
-
 type Msg {
   PropsChangedLabel(String)
+}
+
+// -----------------------------------------------------------------------------
+// Properties / Events
+// -----------------------------------------------------------------------------
+
+pub fn label(label: String) {
+  attribute.property("label", json.string(label))
 }
 
 // -----------------------------------------------------------------------------
 // Component
 // -----------------------------------------------------------------------------
 
-pub fn register() -> Result(Nil, lustre.Error) {
-  let component =
-    lustre.component(init, update, view, [
-      component.on_property_change("label", {
-        decode.string |> decode.map(PropsChangedLabel)
-      }),
-    ])
+const element_name = "components-field"
 
-  lustre.register(component, element_name)
-}
-
-pub fn element(
-  attrs: List(Attribute(msg)),
-  children: List(Element(msg)),
-) -> Element(msg) {
+pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
   element.element(element_name, attrs, children)
 }
 
-// -----------------------------------------------------------------------------
-// Properties
-// -----------------------------------------------------------------------------
+pub fn register() {
+  lustre.component(init, update, view, [
+    component.on_property_change("label", {
+      decode.string |> decode.map(PropsChangedLabel)
+    }),
+  ])
+  |> lustre.register(element_name)
+}
 
-// -----------------------------------------------------------------------------
-// Events
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Lifecycle
-// -----------------------------------------------------------------------------
-
-fn init(_) -> #(Model, Effect(Msg)) {
+fn init(_) {
   #(Model(label: ""), effect.none())
 }
 
-fn update(_model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(_model: Model, msg: Msg) {
   case msg {
     PropsChangedLabel(new_label) -> #(Model(new_label), effect.none())
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
+fn view(model: Model) {
   html.div([attribute.class("flex flex-col gap-1")], [
     html.label([], [html.text(model.label)]),
     component.default_slot([], []),
