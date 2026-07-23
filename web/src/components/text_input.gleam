@@ -53,7 +53,7 @@ pub fn on_change(handler: fn(String) -> msg) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-text-input"
+const element_name = "march-text-input"
 
 pub fn element(attrs: List(Attribute(msg))) {
   element.element(element_name, attrs, [])
@@ -86,20 +86,24 @@ fn update(model: Model, msg: Msg) {
       effect.none(),
     )
 
-    OnInput(new_value) -> #(model, event.emit("input", json.string(new_value)))
+    OnInput(value) -> #(
+      Model(..model, value:),
+      event.emit("input", json.string(value)),
+    )
 
-    OnChange(new_value) -> #(
-      model,
-      event.emit("change", json.string(new_value)),
+    OnChange(value) -> #(
+      Model(..model, value:),
+      event.emit("change", json.string(value)),
     )
   }
 }
 
 fn view(model: Model) {
   html.input([
-    attribute.class("px-2 py-1"),
-    attribute.class("border rounded"),
-    attribute.class("text-black"),
+    attribute.class("w-full px-2 py-1"),
+    attribute.class("ring rounded"),
+    attribute.class("outline-none"),
+    attribute.class("focus:ring-2"),
     attribute.value(model.value),
     attribute.type_(model.type_),
     event.on_input(OnInput),

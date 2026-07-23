@@ -10,17 +10,22 @@ import names.{type Names}
 // for X seconds.
 
 pub type State {
-  State(id: String, clients: List(Subject(ipc.Websocket)))
+  State(id: String, settings: Settings, clients: List(Subject(ipc.Websocket)))
 }
 
-pub fn start(names: Names) {
+pub type Settings {
+  // TODO: owner
+  Settings(name: String, public: Bool)
+}
+
+pub fn start(names: Names, settings: Settings) {
   actor.new_with_initialiser(100, fn(_) {
     use #(id, subject) <- yuzu.ok(
       lobby_registry.register_self(names),
       Error(""),
     )
 
-    let state = State(id:, clients: [])
+    let state = State(id:, settings:, clients: [])
 
     state
     |> actor.initialised()

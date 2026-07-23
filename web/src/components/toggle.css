@@ -1,0 +1,11 @@
+body march-toggle {
+  --fg: var(--color-white);
+  --bg-on: var(--color-zinc-800);
+  --bg-off: var(--color-zinc-400);
+}
+
+body[data-theme=dark] march-toggle {
+  --fg: var(--color-black);
+  --bg-on: var(--color-zinc-200);
+  --bg-off: var(--color-zinc-600);
+}

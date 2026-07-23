@@ -2,10 +2,6 @@ export function new_(url) {
   return new WebSocket(url);
 }
 
-export function state(ws) {
-  return ws.readyState;
-}
-
 export function send(ws, msg) {
   ws.send(msg);
 }
@@ -28,5 +24,9 @@ export function on_message(ws, callback) {
 }
 
 export function on_close(ws, callback) {
-  ws.addEventListener("close", ({ code }) => callback(code));
+  ws.addEventListener("close", callback);
+}
+
+export function on_error(ws, callback) {
+  ws.addEventListener("error", callback);
 }

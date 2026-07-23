@@ -3,7 +3,6 @@ import gleam/erlang/process.{type Subject}
 pub type Websocket {
   WebsocketBroadcast(String)
   WebsocketMatched
-  WebsocketCreateLobby
 }
 
 pub type Matchmaker {

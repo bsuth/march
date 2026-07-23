@@ -60,6 +60,7 @@ fn view(model: Model) {
       attribute.class("w-10 h-10"),
       attribute.class("flex justify-center items-center"),
       attribute.class("rounded-full"),
+      // TODO: fix hover color
       attribute.class("hover:bg-(--bg-1)"),
       attribute.class("cursor-pointer"),
       event.on_click(ToggleTheme),

@@ -1,20 +1,27 @@
+import api
+import gleam/option
 import gleam/result
 import gleam/uri
-import lib/websocket
 import lustre/effect
+import main/app.{App}
 import main/message
 import main/model.{Model}
 import modem
+import routes
+import rsvp
 
 pub fn init(_) {
-  // TODO: get websocket url from env
-  let ws = websocket.new("ws://localhost:8000/ws")
+  let uri = modem.initial_uri() |> result.unwrap(uri.empty)
+  let #(model, routes_effect) = routes.init(Model(App(ws: option.None)), uri)
 
   #(
-    Model(uri: modem.initial_uri() |> result.unwrap(uri.empty), ws:),
+    model,
     effect.batch([
       modem.init(message.RouterChangedUri),
-      websocket.on_message(ws, message.WebsocketMessage),
+      routes_effect,
+      api.get_init_response_decoder()
+        |> rsvp.expect_json(message.ApiReturnedInit)
+        |> rsvp.get("/api/init", _),
     ]),
   )
 }

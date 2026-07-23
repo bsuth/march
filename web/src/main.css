@@ -1,13 +1,27 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import "./components.css";
 
 /* https://tailwindcss.com/docs/dark-mode */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+@font-face {
+  font-family: "Roboto Mono";
+  src: url("/fonts/RobotoMono.ttf");
+  font-weight: 100 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Roboto Mono";
+  src: url("/fonts/RobotoMono-Italic.ttf");
+  font-weight: 100 700;
+  font-style: italic;
+}
+
 @layer base {
   * {
-    font-family: "Quicksand", sans-serif;
-    font-weight: 600;
+    font-family: "Roboto Mono", monospace;
+    font-weight: 400;
   }
 
   h1 {
@@ -38,26 +52,4 @@
   h6 {
     @apply font-bold;
   }
-}
-
-body {
-  --fg: var(--color-black);
-  --bg-0: var(--color-gray-100);
-  --bg-1: var(--color-gray-200);
-  --bg-2: var(--color-gray-300);
-  --bg-3: var(--color-gray-400);
-
-  --text-link-color: var(--color-blue-700);
-  --text-link-hover-color: var(--color-blue-500);
-}
-
-body[data-theme=dark] {
-  --fg: var(--color-white);
-  --bg-0: var(--color-neutral-900);
-  --bg-1: var(--color-neutral-800);
-  --bg-2: var(--color-neutral-700);
-  --bg-3: var(--color-neutral-600);
-
-  --text-link-color: var(--color-blue-400);
-  --text-link-hover-color: var(--color-blue-600);
 }

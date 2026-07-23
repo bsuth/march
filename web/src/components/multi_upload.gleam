@@ -40,7 +40,7 @@ pub fn on_update(handler: fn(String) -> msg) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-multi-upload"
+const element_name = "march-multi-upload"
 
 pub fn element(attrs: List(Attribute(msg))) {
   element.element(element_name, attrs, [])

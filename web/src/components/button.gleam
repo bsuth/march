@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/json
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -24,6 +25,10 @@ type Msg {
 // Properties / Events
 // -----------------------------------------------------------------------------
 
+pub fn loading(value: Bool) {
+  attribute.property("loading", json.bool(value))
+}
+
 pub fn on_click(msg: msg) -> Attribute(msg) {
   event.on_click(msg)
 }
@@ -32,7 +37,8 @@ pub fn on_click(msg: msg) -> Attribute(msg) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-button"
+// NOTE: If this is changed, it must be synced with `button.css`.
+const element_name = "march-button"
 
 pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
   element.element(element_name, attrs, children)
@@ -65,11 +71,10 @@ fn view(model: Model) {
     [
       attribute.class("px-4 py-2"),
       attribute.class("flex gap-2 items-center"),
-      attribute.class("bg-blue-600 rounded"),
-      attribute.class("text-white font-semibold"),
+      attribute.class("rounded"),
+      attribute.class("text-(--text) font-bold"),
+      attribute.class("bg-(--bg) hover:bg-(--bg-hover) active:bg-(--bg-active)"),
       attribute.class("cursor-pointer"),
-      attribute.class("hover:bg-blue-700"),
-      attribute.class("active:bg-blue-800"),
       attribute.type_("button"),
     ],
     [

@@ -31,7 +31,7 @@ pub fn href(value: String) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-text-link"
+const element_name = "march-text-link"
 
 pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
   element.element(element_name, attrs, children)
@@ -59,8 +59,8 @@ fn update(_model: Model, msg: Msg) {
 fn view(model: Model) {
   html.a(
     [
-      attribute.class("text-(--text-link-color)"),
-      attribute.class("hover:text-(--text-link-hover-color)"),
+      attribute.class("text-(--text)"),
+      attribute.class("hover:text-(--text-hover)"),
       attribute.href(model.href),
     ],
     [

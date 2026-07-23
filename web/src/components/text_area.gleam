@@ -53,7 +53,7 @@ pub fn on_change(handler: fn(String) -> msg) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-text-area"
+const element_name = "march-text-area"
 
 pub fn element(attrs: List(Attribute(msg))) {
   element.element(element_name, attrs, [])

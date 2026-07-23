@@ -22,7 +22,7 @@ pub fn view(attrs: List(Attribute(Message))) {
           html.text(
             string.concat([
               "March was created by a software engineer who likes to play ",
-              "game with coworkers after work. It was particular inspired ",
+              "games with coworkers after work. It was particular inspired ",
               "after playing the wonderful ",
             ]),
           ),
@@ -67,9 +67,9 @@ pub fn view(attrs: List(Attribute(Message))) {
             "https://lustre.hexdocs.pm/",
             html.img([attribute.class("w-8 h-8"), attribute.src("/lustre.png")]),
             string.concat([
-              "A simple, powerful, and elegant frontend framework inspired by ",
-              "Elm and written in Gleam. This page you are reading right now ",
-              "is written using Lustre!",
+              "A simple and elegant frontend framework inspired by Elm and ",
+              "written in Gleam. This page you are reading right now is ",
+              "written using Lustre!",
             ]),
           ),
           attribution_view(
@@ -77,9 +77,18 @@ pub fn view(attrs: List(Attribute(Message))) {
             "https://phosphoricons.com/",
             phosphor.phosphor_logo_fill([attribute.class("w-8 h-8")]),
             string.concat([
-              "A beautifully designed, open-source icon family distributed ",
-              "under the permissive MIT license. This is the icon family ",
-              "March uses for all of its icons.",
+              "A beautiful, open-source icon family distributed under the ",
+              "permissive MIT license. This is the icon family March uses for ",
+              "all of its icons.",
+            ]),
+          ),
+        ]),
+        html.p([attribute.class("text-sm")], [
+          html.text(
+            string.concat([
+              "* None of the projects above require attribution, but since ",
+              "March relies so heavily on them, I personally feel that it is ",
+              "the least I can do (and they deserve it!).",
             ]),
           ),
         ]),
@@ -98,9 +107,10 @@ fn attribution_view(
     [
       attribute.class("p-4 flex flex-col gap-2"),
       attribute.class("rounded"),
-      attribute.class("bg-(--bg-1)"),
-      attribute.class("hover:bg-(--bg-2)"),
+      attribute.class("bg-zinc-200 dark:bg-zinc-800"),
+      attribute.class("hover:bg-zinc-300 dark:hover:bg-zinc-700"),
       attribute.class("cursor-pointer"),
+      attribute.target("_blank"),
       attribute.href(href),
     ],
     [

@@ -1,0 +1,13 @@
+body march-button {
+  --text: var(--color-white);
+  --bg: var(--color-zinc-800);
+  --bg-hover: var(--color-zinc-700);
+  --bg-active: var(--color-zinc-600);
+}
+
+body[data-theme=dark] march-button {
+  --text: var(--color-black);
+  --bg: var(--color-zinc-100);
+  --bg-hover: var(--color-zinc-200);
+  --bg-active: var(--color-zinc-300);
+}

@@ -1,0 +1,9 @@
+body march-text-link {
+  --text: var(--color-blue-700);
+  --text-hover: var(--color-blue-500);
+}
+
+body[data-theme=dark] march-text-link {
+  --text: var(--color-blue-400);
+  --text-hover: var(--color-blue-600);
+}

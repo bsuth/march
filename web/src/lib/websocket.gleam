@@ -1,53 +1,73 @@
-import lustre/effect.{type Effect}
+import gleam/json
+import gleam/option.{type Option}
+import lustre/effect
 
 pub type Websocket
 
-pub type WebsocketState {
-  WebsocketConnecting
-  WebsocketOpen
-  WebsocketClosing
-  WebsocketClosed
+pub type Events(message) {
+  Events(
+    on_open: Option(fn(Websocket) -> message),
+    on_message: Option(fn(Websocket, String) -> message),
+    on_close: Option(fn(Websocket) -> message),
+    on_error: Option(fn(Websocket) -> message),
+  )
 }
 
-@external(javascript, "./websocket.js", "new_")
-pub fn new(url: String) -> Websocket
+pub fn connect(url: String, events: Events(message)) {
+  let ws = new(url)
 
-pub fn state(ws: Websocket) -> WebsocketState {
-  case state_(ws) {
-    0 -> WebsocketConnecting
-    1 -> WebsocketOpen
-    2 -> WebsocketClosing
-    _ -> WebsocketClosed
-  }
+  effect.batch([
+    case events.on_open {
+      option.None -> effect.none()
+      option.Some(callback) ->
+        effect.from(fn(dispatch) {
+          on_open(ws, fn() { callback(ws) |> dispatch() })
+        })
+    },
+    case events.on_message {
+      option.None -> effect.none()
+      option.Some(callback) ->
+        effect.from(fn(dispatch) {
+          on_message(ws, fn(msg) { callback(ws, msg) |> dispatch() })
+        })
+    },
+    case events.on_close {
+      option.None -> effect.none()
+      option.Some(callback) ->
+        effect.from(fn(dispatch) {
+          on_close(ws, fn() { callback(ws) |> dispatch() })
+        })
+    },
+    case events.on_error {
+      option.None -> effect.none()
+      option.Some(callback) ->
+        effect.from(fn(dispatch) {
+          on_error(ws, fn() { callback(ws) |> dispatch() })
+        })
+    },
+  ])
 }
-
-@external(javascript, "./websocket.js", "state")
-pub fn state_(ws: Websocket) -> Int
 
 @external(javascript, "./websocket.js", "send")
 pub fn send(ws: Websocket, data: String) -> Nil
 
-pub fn on_open(ws: Websocket, callback: fn() -> msg) -> Effect(msg) {
-  effect.from(fn(dispatch) { on_open_(ws, fn() { callback() |> dispatch() }) })
+pub fn json(ws: Websocket, data: json.Json) {
+  data
+  |> json.to_string()
+  |> send(ws, _)
 }
+
+@external(javascript, "./websocket.js", "new_")
+fn new(url: String) -> Websocket
 
 @external(javascript, "./websocket.js", "on_open")
-fn on_open_(ws: Websocket, callback: fn() -> Nil) -> Nil
-
-pub fn on_message(ws: Websocket, callback: fn(String) -> msg) -> Effect(msg) {
-  effect.from(fn(dispatch) {
-    on_message_(ws, fn(message) { callback(message) |> dispatch() })
-  })
-}
+fn on_open(ws: Websocket, callback: fn() -> Nil) -> Nil
 
 @external(javascript, "./websocket.js", "on_message")
-fn on_message_(ws: Websocket, callback: fn(String) -> Nil) -> Nil
-
-pub fn on_close(ws: Websocket, callback: fn(Int) -> msg) -> Effect(msg) {
-  effect.from(fn(dispatch) {
-    on_close_(ws, fn(code) { code |> callback() |> dispatch() })
-  })
-}
+fn on_message(ws: Websocket, callback: fn(String) -> Nil) -> Nil
 
 @external(javascript, "./websocket.js", "on_close")
-fn on_close_(ws: Websocket, callback: fn(Int) -> Nil) -> Nil
+fn on_close(ws: Websocket, callback: fn() -> Nil) -> Nil
+
+@external(javascript, "./websocket.js", "on_error")
+fn on_error(ws: Websocket, callback: fn() -> Nil) -> Nil

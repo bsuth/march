@@ -31,7 +31,7 @@ pub fn label(label: String) {
 // Component
 // -----------------------------------------------------------------------------
 
-const element_name = "components-field"
+const element_name = "march-field"
 
 pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
   element.element(element_name, attrs, children)
@@ -58,7 +58,9 @@ fn update(_model: Model, msg: Msg) {
 
 fn view(model: Model) {
   html.div([attribute.class("flex flex-col gap-1")], [
-    html.label([], [html.text(model.label)]),
+    html.label([], [
+      component.named_slot("label", [], [html.text(model.label)]),
+    ]),
     component.default_slot([], []),
   ])
 }
