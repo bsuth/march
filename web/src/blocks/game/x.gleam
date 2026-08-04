@@ -1,6 +1,6 @@
-import core/game/card.{type Card}
-import core/game/classic.{type Classic}
-import core/game/unit.{type Unit}
+import engine/card.{type Card}
+import engine/classic.{type Classic}
+import engine/unit.{type Unit}
 import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 

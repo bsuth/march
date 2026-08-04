@@ -1,6 +1,7 @@
 import components/button
 import components/field
 import components/float_input
+import components/icon_button
 import components/int_input
 import components/location_input
 import components/multi_select
@@ -17,6 +18,7 @@ pub fn register() {
   let assert Ok(_) = button.register()
   let assert Ok(_) = field.register()
   let assert Ok(_) = float_input.register()
+  let assert Ok(_) = icon_button.register()
   let assert Ok(_) = int_input.register()
   let assert Ok(_) = location_input.register()
   let assert Ok(_) = multi_select.register()

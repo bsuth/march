@@ -2,11 +2,11 @@ import blocks/game/board_view.{board_view}
 import blocks/game/hand_view.{hand_view}
 import blocks/game/x
 import components/button
-import core/game/board
-import core/game/card
-import core/game/classic.{type Classic, Classic}
-import core/game/color
-import core/game/player
+import engine/board
+import engine/card
+import engine/classic.{type Classic, Classic}
+import engine/color
+import engine/player
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/option

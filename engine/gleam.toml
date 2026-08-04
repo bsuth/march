@@ -1,0 +1,11 @@
+name = "engine"
+version = "1.0.0"
+licences = ["AGPL-3.0-or-later"]
+
+[dependencies]
+gleam_json = ">= 3.1.0 and < 4.0.0"
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+yuzu = { path = "../yuzu" }
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

@@ -16,7 +16,7 @@ pub fn view(model: Model, attrs: List(Attribute(Message))) {
         event.on_click(message.UserNavigatedPreviousChapter),
       ],
       [
-        phosphor.arrow_circle_left_regular([attribute.class("w-6 h-6")]),
+        phosphor.arrow_circle_left_regular([attribute.class("size-6")]),
         html.text("Prev"),
       ],
     ),
@@ -26,7 +26,7 @@ pub fn view(model: Model, attrs: List(Attribute(Message))) {
       ],
       [
         phosphor.list_bullets_regular([
-          attribute.class("w-6 h-6"),
+          attribute.class("size-6"),
           case model.show_table_of_contents {
             True -> attribute.class("text-blue-400")
             False -> attribute.none()
@@ -41,7 +41,7 @@ pub fn view(model: Model, attrs: List(Attribute(Message))) {
       ],
       [
         html.text("Next"),
-        phosphor.arrow_circle_right_regular([attribute.class("w-6 h-6")]),
+        phosphor.arrow_circle_right_regular([attribute.class("size-6")]),
       ],
     ),
   ])

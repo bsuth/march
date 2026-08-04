@@ -4,10 +4,21 @@ import routes/learn/model as learn
 import routes/lobby/model as lobby
 
 pub type Model {
-  Model(app: App)
-  About(app: App)
-  Home(app: App, route: home.Model)
-  Learn(app: App, route: learn.Model)
-  Lobby(app: App, route: lobby.Model)
-  Versus(app: App)
+  Model(App)
+  About(App)
+  Home(home.Model)
+  Learn(learn.Model)
+  Lobby(lobby.Model)
+  Versus(App)
+}
+
+pub fn get_app(model: Model) {
+  case model {
+    Model(app) -> app
+    About(app) -> app
+    Home(route) -> route.app
+    Learn(route) -> route.app
+    Lobby(route) -> route.app
+    Versus(app) -> app
+  }
 }

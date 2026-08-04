@@ -1,38 +1,32 @@
-import actors/lobby
-import actors/lobby_registry
-import api/lobby as api_lobby
-import core/yuzu
-import gleam/dynamic.{type Dynamic}
-import gleam/dynamic/decode
-import gleam/erlang/process.{type Subject}
+import gleam/erlang/process
 import gleam/json
 import gleam/option
-import gleam/otp/actor
 import ipc
 import logging
 import mist
 import names.{type Names}
-
-pub type State {
-  WebsocketState(names: Names, subject: Subject(ipc.Websocket))
-}
+import router/ws_router/lobby_router
+import router/ws_router/matchmaking_router
+import router/ws_state.{type WebsocketState}
+import ws_api
+import ws_api/ws_lobby
 
 // -----------------------------------------------------------------------------
 // Hooks
 // -----------------------------------------------------------------------------
 
-pub fn on_init(_conn: mist.WebsocketConnection, names: Names) {
+pub fn on_init(_conn: mist.WebsocketConnection, user_id: String, names: Names) {
   let subject = process.new_subject()
 
   #(
-    WebsocketState(names:, subject:),
+    ws_state.WebsocketState(user_id:, names:, subject:),
     process.new_selector()
       |> process.select(subject)
       |> option.Some(),
   )
 }
 
-pub fn on_close(state: State) {
+pub fn on_close(state: WebsocketState) {
   state.names.matchmaker
   |> process.named_subject()
   |> process.send(ipc.MatchmakerExit(state.subject))
@@ -43,7 +37,7 @@ pub fn on_close(state: State) {
 // -----------------------------------------------------------------------------
 
 pub fn handler(
-  state: State,
+  state: WebsocketState,
   message: mist.WebsocketMessage(ipc.Websocket),
   conn: mist.WebsocketConnection,
 ) {
@@ -55,57 +49,17 @@ pub fn handler(
   }
 }
 
-fn text_handler(state: State, conn: mist.WebsocketConnection, text: String) {
-  let text_method_decoder = {
-    use method <- decode.field("method", decode.string)
-    use payload <- decode.field("payload", decode.dynamic)
-    decode.success(#(method, payload))
-  }
+fn text_handler(
+  state: WebsocketState,
+  conn: mist.WebsocketConnection,
+  text: String,
+) {
+  case json.parse(text, ws_api.decoder()) {
+    Ok(ws_api.Message("matchmaking." <> subpath, payload)) ->
+      matchmaking_router.handler(state, conn, subpath, payload)
 
-  case json.parse(text, text_method_decoder) {
-    Ok(#("enter_matchmaking", _)) -> {
-      state.names.matchmaker
-      |> process.named_subject()
-      |> process.send(ipc.MatchmakerEnter(state.subject))
-
-      mist.continue(state)
-    }
-
-    Ok(#("exit_matchmaking", _)) -> {
-      state.names.matchmaker
-      |> process.named_subject()
-      |> process.send(ipc.MatchmakerExit(state.subject))
-
-      mist.continue(state)
-    }
-
-    Ok(#("get_lobby", dynamic_lobby_id)) -> {
-      use lobby_id <- yuzu.ok(
-        decode.run(dynamic_lobby_id, decode.string),
-        mist.continue(state),
-      )
-
-      use lobby_subject <- yuzu.ok(
-        lobby_registry.get(state.names, lobby_id),
-        mist.continue(state),
-      )
-
-      let lobby_state = process.call_forever(lobby_subject, ipc.LobbyGetState)
-
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          json.object([
-            #("event", json.string("lobby_state")),
-            #("payload", json.string(lobby_state.id)),
-          ])
-            |> json.to_string(),
-        )
-
-      mist.continue(state)
-    }
-
-    Ok(#("lobby.create", payload)) -> create_lobby(state, conn, payload)
+    Ok(ws_api.Message("lobby." <> subpath, payload)) ->
+      lobby_router.handler(state, conn, subpath, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws text message: " <> text)
@@ -114,51 +68,68 @@ fn text_handler(state: State, conn: mist.WebsocketConnection, text: String) {
   }
 }
 
-fn create_lobby(
-  state: State,
-  conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use create_request <- yuzu.ok(
-    decode.run(payload, api_lobby.create_request_decoder()),
-    mist.continue(state),
-  )
-
-  let lobby_settings =
-    lobby.Settings(name: create_request.name, public: create_request.public)
-
-  use actor.Started(_, lobby_state) <- yuzu.ok(
-    lobby.start(state.names, lobby_settings),
-    mist.continue(state),
-  )
-
-  // TODO: api_lobby.create_response
-  let assert Ok(_) =
-    mist.send_text_frame(
-      conn,
-      json.object([
-        #("event", json.string("lobby_created")),
-        #("payload", json.string(lobby_state.id)),
-      ])
-        |> json.to_string(),
-    )
-
-  mist.continue(state)
-}
-
 fn custom_handler(
-  state: State,
+  state: WebsocketState,
   conn: mist.WebsocketConnection,
   custom: ipc.Websocket,
 ) {
   case custom {
-    ipc.WebsocketBroadcast(text) -> {
-      let assert Ok(_) = mist.send_text_frame(conn, text)
+    // TODO: REMOVE ME
+    ipc.WebsocketMatched -> mist.continue(state)
+
+    // TODO: move me to a proper router?
+    ipc.WebsocketLobbyUpdate(lobby) -> {
+      let assert Ok(_) =
+        mist.send_text_frame(
+          conn,
+          lobby
+            |> ws_lobby.update_json()
+            |> json.to_string(),
+        )
       mist.continue(state)
     }
 
-    ipc.WebsocketMatched -> {
-      let assert Ok(_) = mist.send_text_frame(conn, "matched")
+    ipc.WebsocketLobbyUpdateName(lobby_id, name) -> {
+      let assert Ok(_) =
+        mist.send_text_frame(
+          conn,
+          ws_lobby.UpdateNamePayload(lobby_id, name)
+            |> ws_lobby.update_name_json()
+            |> json.to_string(),
+        )
+      mist.continue(state)
+    }
+
+    ipc.WebsocketLobbyUpdateBoard(lobby_id, width, height) -> {
+      let assert Ok(_) =
+        mist.send_text_frame(
+          conn,
+          ws_lobby.UpdateBoardPayload(lobby_id, width, height)
+            |> ws_lobby.update_board_json()
+            |> json.to_string(),
+        )
+      mist.continue(state)
+    }
+
+    ipc.WebsocketLobbyUpdateVariant(lobby_id, variant) -> {
+      let assert Ok(_) =
+        mist.send_text_frame(
+          conn,
+          ws_lobby.UpdateVariantPayload(lobby_id, variant)
+            |> ws_lobby.update_variant_json()
+            |> json.to_string(),
+        )
+      mist.continue(state)
+    }
+
+    ipc.WebsocketLobbyUpdateVisibility(lobby_id, visible) -> {
+      let assert Ok(_) =
+        mist.send_text_frame(
+          conn,
+          ws_lobby.UpdateVisibilityPayload(lobby_id, visible)
+            |> ws_lobby.update_visibility_json()
+            |> json.to_string(),
+        )
       mist.continue(state)
     }
   }

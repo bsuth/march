@@ -1,7 +1,5 @@
 import blocks/theme_toggle
-import gleam/option
 import lustre/attribute
-import lustre/element
 import lustre/element/html
 import main/model.{type Model}
 import routes
@@ -14,14 +12,6 @@ pub fn view(model: Model) {
       attribute.class("dark:text-white dark:bg-zinc-900"),
     ],
     [
-      // TODO: only show after a certain timeout
-      case model.app.ws {
-        option.Some(_) -> element.none()
-        option.None ->
-          html.div([attribute.class("bg-red-600 p-4")], [
-            html.text("WEBSOCKET DISCONNECTED"),
-          ])
-      },
       html.nav(
         [
           attribute.class("px-16 py-2"),

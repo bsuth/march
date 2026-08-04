@@ -1,8 +1,14 @@
+import engine/variant.{type Variant}
+import entities/lobby_entity.{type LobbyEntity}
 import gleam/erlang/process.{type Subject}
 
 pub type Websocket {
-  WebsocketBroadcast(String)
   WebsocketMatched
+  WebsocketLobbyUpdate(LobbyEntity)
+  WebsocketLobbyUpdateBoard(lobby_id: String, width: Int, height: Int)
+  WebsocketLobbyUpdateName(lobby_id: String, lobby_name: String)
+  WebsocketLobbyUpdateVariant(lobby_id: String, variant: Variant)
+  WebsocketLobbyUpdateVisibility(lobby_id: String, visible: Bool)
 }
 
 pub type Matchmaker {
@@ -10,14 +16,13 @@ pub type Matchmaker {
   MatchmakerExit(Subject(Websocket))
 }
 
-pub type LobbyState {
-  LobbyState(id: String)
-}
-
 pub type Lobby {
-  LobbyGetId(Subject(String))
-  LobbyGetState(Subject(LobbyState))
-  LobbyEnter(Subject(Websocket))
-  LobbyExit(Subject(Websocket))
-  LobbyChat(Subject(Websocket), String)
+  LobbyGet(Subject(LobbyEntity))
+  LobbyEnter(String, Subject(Websocket))
+  LobbyExit(String)
+  LobbyUpdate(LobbyEntity)
+  LobbyUpdateBoard(width: Int, height: Int)
+  LobbyUpdateName(String)
+  LobbyUpdateVariant(Variant)
+  LobbyUpdateVisibility(Bool)
 }

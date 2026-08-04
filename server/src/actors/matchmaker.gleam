@@ -1,10 +1,10 @@
-import core/yuzu
 import gleam/erlang/process
 import gleam/list
 import gleam/otp/actor
 import gleam/otp/supervision
 import ipc
 import names.{type Names}
+import yuzu
 
 type State =
   List(process.Subject(ipc.Websocket))

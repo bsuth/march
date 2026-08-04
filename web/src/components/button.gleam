@@ -17,7 +17,7 @@ type Model {
   Model(loading: Bool)
 }
 
-type Msg {
+type Message {
   PropsChangedLoading(Bool)
 }
 
@@ -29,8 +29,8 @@ pub fn loading(value: Bool) {
   attribute.property("loading", json.bool(value))
 }
 
-pub fn on_click(msg: msg) -> Attribute(msg) {
-  event.on_click(msg)
+pub fn on_click(message: message) -> Attribute(message) {
+  event.on_click(message)
 }
 
 // -----------------------------------------------------------------------------
@@ -40,7 +40,10 @@ pub fn on_click(msg: msg) -> Attribute(msg) {
 // NOTE: If this is changed, it must be synced with `button.css`.
 const element_name = "march-button"
 
-pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
+pub fn element(
+  attrs: List(Attribute(message)),
+  children: List(Element(message)),
+) {
   element.element(element_name, attrs, children)
 }
 
@@ -57,8 +60,8 @@ fn init(_) {
   #(Model(loading: False), effect.none())
 }
 
-fn update(_model: Model, msg: Msg) {
-  case msg {
+fn update(_model: Model, message: Message) {
+  case message {
     PropsChangedLoading(new_loading) -> #(
       Model(loading: new_loading),
       effect.none(),

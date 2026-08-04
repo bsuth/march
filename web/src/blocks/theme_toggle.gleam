@@ -1,9 +1,9 @@
+import components/icon_button
 import lib/theme.{type Theme}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect
 import lustre/element
-import lustre/element/html
 import lustre/event
 import phosphor
 
@@ -55,21 +55,10 @@ fn update(model: Model, msg: Msg) {
 }
 
 fn view(model: Model) {
-  html.div(
-    [
-      attribute.class("w-10 h-10"),
-      attribute.class("flex justify-center items-center"),
-      attribute.class("rounded-full"),
-      // TODO: fix hover color
-      attribute.class("hover:bg-(--bg-1)"),
-      attribute.class("cursor-pointer"),
-      event.on_click(ToggleTheme),
-    ],
-    [
-      case model {
-        theme.Light -> phosphor.sun_fill([attribute.class("w-6 h-6")])
-        theme.Dark -> phosphor.moon_fill([attribute.class("w-6 h-6")])
-      },
-    ],
-  )
+  icon_button.element([event.on_click(ToggleTheme)], [
+    case model {
+      theme.Light -> phosphor.sun_fill([attribute.class("size-6")])
+      theme.Dark -> phosphor.moon_fill([attribute.class("size-6")])
+    },
+  ])
 }

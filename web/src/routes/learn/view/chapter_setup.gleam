@@ -15,25 +15,23 @@ pub fn view(_model: Model, attrs: List(Attribute(Message))) {
       which serves a central role during gameplay.",
     ),
     html.div([attribute.class("flex flex-col gap-4 items-center")], [
-      phosphor.person_regular([attribute.class("w-12 h-12")]),
+      phosphor.person_regular([attribute.class("size-12")]),
       html.div(
         [attribute.class("grid grid-cols-4 border")],
         list.index_map(list.repeat(0, 16), fn(_, index) {
           html.div(
             [
-              attribute.class(
-                "w-16 h-16 flex justify-center items-center border",
-              ),
+              attribute.class("size-16 flex justify-center items-center border"),
             ],
             case index {
-              0 -> [phosphor.star_regular([attribute.class("w-8 h-8")])]
-              15 -> [phosphor.star_fill([attribute.class("w-8 h-8")])]
+              0 -> [phosphor.star_regular([attribute.class("size-8")])]
+              15 -> [phosphor.star_fill([attribute.class("size-8")])]
               _ -> []
             },
           )
         }),
       ),
-      phosphor.person_fill([attribute.class("w-12 h-12")]),
+      phosphor.person_fill([attribute.class("size-12")]),
     ]),
     html.text(
       "Each player uses their own deck consisting of the Jacks, Queens, Kings,

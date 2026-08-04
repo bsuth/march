@@ -30,17 +30,17 @@ pub fn view(_model: Model, attrs: List(Attribute(Message))) {
             ],
             [
               case index % 4 {
-                3 -> phosphor.heart_fill([attribute.class("w-3 h-3")])
-                2 -> phosphor.club_fill([attribute.class("w-3 h-3")])
-                1 -> phosphor.diamond_fill([attribute.class("w-3 h-3")])
-                _ -> phosphor.spade_fill([attribute.class("w-3 h-3")])
+                3 -> phosphor.heart_fill([attribute.class("size-3")])
+                2 -> phosphor.club_fill([attribute.class("size-3")])
+                1 -> phosphor.diamond_fill([attribute.class("size-3")])
+                _ -> phosphor.spade_fill([attribute.class("size-3")])
               },
               html.text(chapter.get_title(chapter)),
               case index % 4 {
-                3 -> phosphor.heart_fill([attribute.class("w-3 h-3")])
-                2 -> phosphor.club_fill([attribute.class("w-3 h-3")])
-                1 -> phosphor.diamond_fill([attribute.class("w-3 h-3")])
-                _ -> phosphor.spade_fill([attribute.class("w-3 h-3")])
+                3 -> phosphor.heart_fill([attribute.class("size-3")])
+                2 -> phosphor.club_fill([attribute.class("size-3")])
+                1 -> phosphor.diamond_fill([attribute.class("size-3")])
+                _ -> phosphor.spade_fill([attribute.class("size-3")])
               },
             ],
           )

@@ -1,19 +1,18 @@
-import api
 import gleam/uri.{type Uri}
-import lib/websocket.{type Websocket}
+import http_api/http_init
 import routes/home/message as home
 import routes/learn/message as learn
 import routes/lobby/message as lobby
 import rsvp
 
 pub type Message {
-  ApiReturnedInit(Result(api.GetInitResponse, rsvp.Error(String)))
+  ApiInitGetResponse(Result(http_init.GetResponse, rsvp.Error(String)))
   Home(home.Message)
   Learn(learn.Message)
   Lobby(lobby.Message)
   RouterChangedUri(Uri)
   WebsocketClose
   WebsocketError
-  WebsocketOpen(Websocket)
+  WebsocketOpen
   WebsocketMessage(String)
 }

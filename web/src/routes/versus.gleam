@@ -1,9 +1,9 @@
 import blocks/game as game_ui
-import core/game/board
-import core/game/card
-import core/game/classic.{type Classic, Classic}
-import core/game/color
-import core/game/player
+import engine/board
+import engine/card
+import engine/classic.{type Classic, Classic}
+import engine/color
+import engine/player
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect

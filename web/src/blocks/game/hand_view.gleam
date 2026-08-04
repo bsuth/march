@@ -1,9 +1,9 @@
 import blocks/game/slot_view.{unit_slot_view, unknown_slot_view}
 import blocks/game/x
-import core/game/board
-import core/game/classic.{type Classic}
-import core/game/player.{type Player}
-import core/game/unit.{Unit}
+import engine/board
+import engine/classic.{type Classic}
+import engine/player.{type Player}
+import engine/unit.{Unit}
 import gleam/int
 import gleam/list
 import gleam/option

@@ -1,8 +1,8 @@
-import api
+import http_api/http_lobby
 import rsvp
 
 pub type Message {
-  ApiPostLobbyResponse(Result(api.PostLobbyResponse, rsvp.Error(String)))
-  SubmitPostLobbyRequest
-  UpdatePostLobbyRequest(api.PostLobbyRequest)
+  ApiLobbyPostResponse(Result(http_lobby.PostResponse, rsvp.Error(String)))
+  SubmitLobbyPostRequest
+  UpdateLobbyPostRequest(http_lobby.PostRequest)
 }

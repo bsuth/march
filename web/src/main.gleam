@@ -9,6 +9,8 @@ import routes
 pub fn main() {
   let assert Ok(_) = components.register()
   let assert Ok(_) = blocks.register()
+
+  // TODO: remove me
   let assert Ok(_) = routes.register()
 
   let assert Ok(_) =

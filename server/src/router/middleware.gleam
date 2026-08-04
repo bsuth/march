@@ -1,4 +1,3 @@
-import core/yuzu
 import envoy
 import exception
 import gleam/bit_array
@@ -14,6 +13,7 @@ import gleam/list
 import gleam/string
 import logging
 import mist
+import yuzu
 
 pub fn json_body(
   req: Request(mist.Connection),
@@ -40,25 +40,25 @@ pub fn ensure_user_id(
   req: Request(mist.Connection),
   handler: fn(String) -> Response(mist.ResponseData),
 ) {
-  let assert Ok(id_cookie_secret) = envoy.get("ID_COOKIE_SECRET")
+  let assert Ok(session_cookie_secret) = envoy.get("SESSION_COOKIE_SECRET")
 
   let bad_request =
     response.new(400)
     |> response.set_body(mist.Bytes(bytes_tree.new()))
 
-  use unverified_id_cookie <- yuzu.ok(
-    list.find(request.get_cookies(req), fn(cookie) { cookie.0 == "id" }),
+  use unverified_session_cookie <- yuzu.ok(
+    list.find(request.get_cookies(req), fn(cookie) { cookie.0 == "session" }),
     bad_request,
   )
 
-  use user_id_bit_array <- yuzu.ok(
-    crypto.verify_signed_message(unverified_id_cookie.1, <<
-      id_cookie_secret:utf8,
+  use session_bit_array <- yuzu.ok(
+    crypto.verify_signed_message(unverified_session_cookie.1, <<
+      session_cookie_secret:utf8,
     >>),
     bad_request,
   )
 
-  case bit_array.to_string(user_id_bit_array) {
+  case bit_array.to_string(session_bit_array) {
     Ok(user_id) -> handler(user_id)
     Error(_) -> bad_request
   }

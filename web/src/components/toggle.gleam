@@ -87,7 +87,7 @@ fn view(model: Model) {
     [
       html.div(
         [
-          attribute.class("w-4 h-4"),
+          attribute.class("size-4"),
           attribute.class("absolute top-1/2 -translate-y-1/2"),
           attribute.class("bg-(--fg) rounded-full"),
           attribute.class("transition-all"),

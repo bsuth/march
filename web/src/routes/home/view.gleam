@@ -1,10 +1,12 @@
-import api
 import components/button
 import components/field
 import components/single_select
 import components/text_input
 import components/toggle
+import engine/variant
 import gleam/int
+import http_api/http_lobby
+import lib/labels
 import lustre/attribute
 import lustre/element/html
 import lustre/event
@@ -34,20 +36,63 @@ pub fn view(model: Model) {
         text_input.element([
           text_input.value(model.post_lobby_request.name),
           text_input.on_change(fn(value) {
-            api.PostLobbyRequest(..model.post_lobby_request, name: value)
-            |> message.UpdatePostLobbyRequest()
+            http_lobby.PostRequest(..model.post_lobby_request, name: value)
+            |> message.UpdateLobbyPostRequest()
           }),
         ]),
       ]),
       field.element([field.label("Variant")], [
-        single_select.element([]),
+        single_select.element([
+          model.post_lobby_request.variant
+            |> variant.to_string()
+            |> single_select.value(),
+          single_select.options([
+            #("standard", labels.variant(variant.Standard)),
+            #("classic", labels.variant(variant.Classic)),
+          ]),
+          single_select.on_change(fn(variant_string) {
+            let assert Ok(variant) = variant.from_string(variant_string)
+            http_lobby.PostRequest(..model.post_lobby_request, variant:)
+            |> message.UpdateLobbyPostRequest()
+          }),
+        ]),
+      ]),
+      field.element([field.label("Board")], [
+        single_select.element([
+          single_select.value(
+            case
+              model.post_lobby_request.board_width,
+              model.post_lobby_request.board_height
+            {
+              3, 3 -> "3_by_3"
+              _, _ -> "4_by_4"
+            },
+          ),
+          single_select.options([
+            #("4_by_4", "4 x 4"),
+            #("3_by_3", "3 x 3"),
+          ]),
+          single_select.on_change(fn(board_string) {
+            let #(board_width, board_height) = case board_string {
+              "3_by_3" -> #(3, 3)
+              _ -> #(4, 4)
+            }
+
+            http_lobby.PostRequest(
+              ..model.post_lobby_request,
+              board_width:,
+              board_height:,
+            )
+            |> message.UpdateLobbyPostRequest()
+          }),
+        ]),
       ]),
       field.element([field.label("Public")], [
         toggle.element([
-          toggle.value(model.post_lobby_request.public),
+          toggle.value(model.post_lobby_request.is_public),
           toggle.on_update(fn(value) {
-            api.PostLobbyRequest(..model.post_lobby_request, public: value)
-            |> message.UpdatePostLobbyRequest()
+            http_lobby.PostRequest(..model.post_lobby_request, is_public: value)
+            |> message.UpdateLobbyPostRequest()
           }),
         ]),
       ]),
@@ -55,7 +100,7 @@ pub fn view(model: Model) {
         [
           attribute.class("mt-auto"),
           button.loading(model.post_lobby_request_loading),
-          event.on_click(message.SubmitPostLobbyRequest),
+          event.on_click(message.SubmitLobbyPostRequest),
         ],
         [html.text("Create Lobby")],
       ),
@@ -82,7 +127,7 @@ fn lobby_list_item(lobby_name: String, owner_name: String, population: Int) {
       ]),
       html.p([attribute.class("flex items-center gap-1")], [
         html.text(int.to_string(population)),
-        phosphor.user_fill([attribute.class("w-5 h-5")]),
+        phosphor.user_fill([attribute.class("size-5")]),
       ]),
     ],
   )

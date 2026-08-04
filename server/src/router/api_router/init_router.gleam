@@ -1,4 +1,3 @@
-import api
 import envoy
 import gleam/bytes_tree
 import gleam/crypto
@@ -10,6 +9,7 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import http_api/http_init
 import mist
 import youid/uuid
 
@@ -24,33 +24,34 @@ pub fn handler(req: Request(mist.Connection), path: List(String)) {
 }
 
 fn get(req: Request(mist.Connection)) {
-  let assert Ok(id_cookie_secret) = envoy.get("ID_COOKIE_SECRET")
+  let assert Ok(session_cookie_secret) = envoy.get("SESSION_COOKIE_SECRET")
 
-  let id =
+  let user_id =
     request.get_cookies(req)
-    |> list.find(fn(cookie) { cookie.0 == "id" })
+    |> list.find(fn(cookie) { cookie.0 == "session" })
     |> result.map(fn(cookie) {
-      crypto.verify_signed_message(cookie.1, <<id_cookie_secret:utf8>>)
+      crypto.verify_signed_message(cookie.1, <<session_cookie_secret:utf8>>)
     })
     |> result.flatten()
     |> result.map(fn(user_id) { uuid.from_bit_array(user_id) })
     |> result.flatten()
     |> result.unwrap(uuid.v7())
+    |> uuid.to_string()
 
   // TODO: add `type: User | Guest`
   let response_body =
-    api.GetInitResponse(id: uuid.to_string(id))
-    |> api.get_init_response_json()
+    http_init.GetResponse(id: user_id)
+    |> http_init.get_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()
     |> mist.Bytes()
 
   response.new(200)
   |> response.set_cookie(
-    "id",
+    "session",
     crypto.sign_message(
-      uuid.to_bit_array(id),
-      <<id_cookie_secret:utf8>>,
+      <<user_id:utf8>>,
+      <<session_cookie_secret:utf8>>,
       crypto.Sha512,
     ),
     cookie.Attributes(

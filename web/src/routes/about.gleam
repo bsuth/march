@@ -55,7 +55,7 @@ pub fn view(attrs: List(Attribute(Message))) {
           attribution_view(
             "Gleam",
             "https://gleam.run/",
-            html.img([attribute.class("w-8 h-8"), attribute.src("/gleam.svg")]),
+            html.img([attribute.class("size-8"), attribute.src("/gleam.svg")]),
             string.concat([
               "A wonderfully designed type-safe functional programming language ",
               "that can compile to either Erlang or JavaScript. The vast ",
@@ -65,7 +65,7 @@ pub fn view(attrs: List(Attribute(Message))) {
           attribution_view(
             "Lustre",
             "https://lustre.hexdocs.pm/",
-            html.img([attribute.class("w-8 h-8"), attribute.src("/lustre.png")]),
+            html.img([attribute.class("size-8"), attribute.src("/lustre.png")]),
             string.concat([
               "A simple and elegant frontend framework inspired by Elm and ",
               "written in Gleam. This page you are reading right now is ",
@@ -75,7 +75,7 @@ pub fn view(attrs: List(Attribute(Message))) {
           attribution_view(
             "Phosphor Icons",
             "https://phosphoricons.com/",
-            phosphor.phosphor_logo_fill([attribute.class("w-8 h-8")]),
+            phosphor.phosphor_logo_fill([attribute.class("size-8")]),
             string.concat([
               "A beautiful, open-source icon family distributed under the ",
               "permissive MIT license. This is the icon family March uses for ",
@@ -117,7 +117,7 @@ fn attribution_view(
       html.div([attribute.class("flex items-center gap-2")], [
         icon,
         html.h3([], [html.text(title)]),
-        phosphor.arrow_square_out_fill([attribute.class("w-6 h-6 ml-auto")]),
+        phosphor.arrow_square_out_fill([attribute.class("size-6 ml-auto")]),
       ]),
       html.p([], [html.text(description)]),
     ],

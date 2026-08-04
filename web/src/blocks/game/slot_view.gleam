@@ -1,7 +1,7 @@
 import blocks/game/x
-import core/game/card
-import core/game/color.{type Color}
-import core/game/unit.{type Unit}
+import engine/card
+import engine/color.{type Color}
+import engine/unit.{type Unit}
 import gleam/option.{type Option}
 import lustre/attribute.{type Attribute}
 import lustre/element.{type Element}
@@ -10,7 +10,7 @@ import lustre/event
 import phosphor
 
 pub fn unknown_slot_view(color: Color, attrs: List(Attribute(x.Msg))) {
-  let suit_class = attribute.class("w-6 h-6 -rotate-45")
+  let suit_class = attribute.class("size-6 -rotate-45")
 
   slot_view(
     [
@@ -63,10 +63,10 @@ pub fn unit_slot_view(
         card.Ace -> html.text("A")
       },
       case unit.card.suit {
-        card.Spades -> phosphor.spade_fill([attribute.class("w-8 h-8")])
-        card.Diamonds -> phosphor.diamond_fill([attribute.class("w-8 h-8")])
-        card.Clubs -> phosphor.club_fill([attribute.class("w-8 h-8")])
-        card.Hearts -> phosphor.heart_fill([attribute.class("w-8 h-8")])
+        card.Spades -> phosphor.spade_fill([attribute.class("size-8")])
+        card.Diamonds -> phosphor.diamond_fill([attribute.class("size-8")])
+        card.Clubs -> phosphor.club_fill([attribute.class("size-8")])
+        card.Hearts -> phosphor.heart_fill([attribute.class("size-8")])
       },
     ],
   )
@@ -113,7 +113,7 @@ pub fn slot_view(
 ) {
   html.div(
     [
-      attribute.class("w-24 h-24"),
+      attribute.class("size-24"),
       attribute.class("rounded overflow-hidden"),
       ..attrs
     ],

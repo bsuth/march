@@ -1,14 +1,14 @@
 import blocks/game/slot_view.{empty_slot_view, unit_slot_view}
 import blocks/game/x
-import core/game/classic
-import core/game/unit.{type Unit}
-import core/yuzu
+import engine/classic
+import engine/unit.{type Unit}
 import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
 import lustre/attribute
 import lustre/element/html
+import yuzu
 
 pub fn board_view(model: x.Model) {
   html.div(
