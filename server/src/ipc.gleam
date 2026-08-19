@@ -1,14 +1,11 @@
 import engine/variant.{type Variant}
 import entities/lobby_entity.{type LobbyEntity}
 import gleam/erlang/process.{type Subject}
+import gleam/json.{type Json}
 
 pub type Websocket {
   WebsocketMatched
-  WebsocketLobbyUpdate(LobbyEntity)
-  WebsocketLobbyUpdateBoard(lobby_id: String, width: Int, height: Int)
-  WebsocketLobbyUpdateName(lobby_id: String, lobby_name: String)
-  WebsocketLobbyUpdateVariant(lobby_id: String, variant: Variant)
-  WebsocketLobbyUpdateVisibility(lobby_id: String, visible: Bool)
+  WebsocketJson(Json)
 }
 
 pub type Matchmaker {

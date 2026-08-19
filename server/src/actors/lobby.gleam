@@ -7,6 +7,7 @@ import gleam/option.{type Option}
 import gleam/otp/actor
 import ipc
 import names.{type Names}
+import ws_api/ws_lobby
 import yuzu
 
 // TODO: terminate lobby after X seconds when the owner leaves
@@ -149,7 +150,12 @@ fn exit_handler(state: State, id: String) {
 
 fn update_handler(state: State, entity: LobbyEntity) {
   list.each(state.users, fn(user) {
-    process.send(user.subject, ipc.WebsocketLobbyUpdate(entity))
+    process.send(
+      user.subject,
+      entity
+        |> ws_lobby.update_json()
+        |> ipc.WebsocketJson(),
+    )
   })
 
   State(
@@ -172,7 +178,9 @@ fn update_board_handler(state: State, width: Int, height: Int) {
   list.each(state.users, fn(user) {
     process.send(
       user.subject,
-      ipc.WebsocketLobbyUpdateBoard(state.id, width, height),
+      ws_lobby.UpdateBoardPayload(state.id, width, height)
+        |> ws_lobby.update_board_json()
+        |> ipc.WebsocketJson(),
     )
   })
 
@@ -189,7 +197,12 @@ fn update_board_handler(state: State, width: Int, height: Int) {
 
 fn update_name_handler(state: State, name: String) {
   list.each(state.users, fn(user) {
-    process.send(user.subject, ipc.WebsocketLobbyUpdateName(state.id, name))
+    process.send(
+      user.subject,
+      ws_lobby.UpdateNamePayload(state.id, name)
+        |> ws_lobby.update_name_json()
+        |> ipc.WebsocketJson(),
+    )
   })
 
   State(..state, settings: Settings(..state.settings, name:))
@@ -200,7 +213,9 @@ fn update_variant_handler(state: State, variant: Variant) {
   list.each(state.users, fn(user) {
     process.send(
       user.subject,
-      ipc.WebsocketLobbyUpdateVariant(state.id, variant),
+      ws_lobby.UpdateVariantPayload(state.id, variant)
+        |> ws_lobby.update_variant_json()
+        |> ipc.WebsocketJson(),
     )
   })
 
@@ -212,7 +227,9 @@ fn update_visibility_handler(state: State, visible: Bool) {
   list.each(state.users, fn(user) {
     process.send(
       user.subject,
-      ipc.WebsocketLobbyUpdateVisibility(state.id, visible),
+      ws_lobby.UpdateVisibilityPayload(state.id, visible)
+        |> ws_lobby.update_visibility_json()
+        |> ipc.WebsocketJson(),
     )
   })
 
@@ -241,5 +258,10 @@ pub fn entity(state: State) {
 }
 
 pub fn send_update(state: State, subject: Subject(ipc.Websocket)) {
-  process.send(subject, ipc.WebsocketLobbyUpdate(entity(state)))
+  process.send(
+    subject,
+    entity(state)
+      |> ws_lobby.update_json()
+      |> ipc.WebsocketJson(),
+  )
 }

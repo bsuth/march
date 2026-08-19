@@ -76,6 +76,6 @@ fn websocket_error(model: Model) {
 }
 
 fn websocket_open(model: Model) {
-  // TODO: remove me?
+  // TODO: refresh things?
   #(model, effect.none())
 }

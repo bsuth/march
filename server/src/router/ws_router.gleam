@@ -1,6 +1,7 @@
 import gleam/erlang/process
 import gleam/json
 import gleam/option
+import glisten/socket
 import ipc
 import logging
 import mist
@@ -9,7 +10,6 @@ import router/ws_router/lobby_router
 import router/ws_router/matchmaking_router
 import router/ws_state.{type WebsocketState}
 import ws_api
-import ws_api/ws_lobby
 
 // -----------------------------------------------------------------------------
 // Hooks
@@ -77,60 +77,14 @@ fn custom_handler(
     // TODO: REMOVE ME
     ipc.WebsocketMatched -> mist.continue(state)
 
-    // TODO: move me to a proper router?
-    ipc.WebsocketLobbyUpdate(lobby) -> {
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          lobby
-            |> ws_lobby.update_json()
-            |> json.to_string(),
-        )
-      mist.continue(state)
-    }
-
-    ipc.WebsocketLobbyUpdateName(lobby_id, name) -> {
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          ws_lobby.UpdateNamePayload(lobby_id, name)
-            |> ws_lobby.update_name_json()
-            |> json.to_string(),
-        )
-      mist.continue(state)
-    }
-
-    ipc.WebsocketLobbyUpdateBoard(lobby_id, width, height) -> {
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          ws_lobby.UpdateBoardPayload(lobby_id, width, height)
-            |> ws_lobby.update_board_json()
-            |> json.to_string(),
-        )
-      mist.continue(state)
-    }
-
-    ipc.WebsocketLobbyUpdateVariant(lobby_id, variant) -> {
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          ws_lobby.UpdateVariantPayload(lobby_id, variant)
-            |> ws_lobby.update_variant_json()
-            |> json.to_string(),
-        )
-      mist.continue(state)
-    }
-
-    ipc.WebsocketLobbyUpdateVisibility(lobby_id, visible) -> {
-      let assert Ok(_) =
-        mist.send_text_frame(
-          conn,
-          ws_lobby.UpdateVisibilityPayload(lobby_id, visible)
-            |> ws_lobby.update_visibility_json()
-            |> json.to_string(),
-        )
-      mist.continue(state)
+    ipc.WebsocketJson(json) -> {
+      case mist.send_text_frame(conn, json.to_string(json)) {
+        Ok(_) -> mist.continue(state)
+        Error(reason) -> {
+          logging.log(logging.Error, socket.reason_to_string(reason))
+          mist.continue(state)
+        }
+      }
     }
   }
 }
