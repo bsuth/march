@@ -5,6 +5,7 @@ import mist
 import names.{type Names}
 import router/api_router/init_router
 import router/api_router/lobby_router
+import router/api_router/match_router
 import router/middleware
 
 pub fn handler(
@@ -21,6 +22,7 @@ pub fn handler(
   case path {
     ["init", ..subpath] -> init_router.handler(req, subpath)
     ["lobby", ..subpath] -> lobby_router.handler(names, req, subpath)
+    ["match", ..subpath] -> match_router.handler(names, req, subpath)
 
     _ ->
       response.new(404)

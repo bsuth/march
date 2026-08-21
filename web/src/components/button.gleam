@@ -14,16 +14,21 @@ import phosphor
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(loading: Bool)
+  Model(disabled: Bool, loading: Bool)
 }
 
 type Message {
+  PropsChangedDisabled(Bool)
   PropsChangedLoading(Bool)
 }
 
 // -----------------------------------------------------------------------------
 // Properties / Events
 // -----------------------------------------------------------------------------
+
+pub fn disabled(value: Bool) {
+  attribute.property("disabled", json.bool(value))
+}
 
 pub fn loading(value: Bool) {
   attribute.property("loading", json.bool(value))
@@ -49,6 +54,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("disabled", {
+      decode.bool |> decode.map(PropsChangedDisabled)
+    }),
     component.on_property_change("loading", {
       decode.bool |> decode.map(PropsChangedLoading)
     }),
@@ -57,15 +65,17 @@ pub fn register() {
 }
 
 fn init(_) {
-  #(Model(loading: False), effect.none())
+  #(Model(disabled: False, loading: False), effect.none())
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedLoading(new_loading) -> #(
-      Model(loading: new_loading),
+    PropsChangedDisabled(disabled) -> #(
+      Model(..model, disabled:),
       effect.none(),
     )
+
+    PropsChangedLoading(loading) -> #(Model(..model, loading:), effect.none())
   }
 }
 
@@ -76,8 +86,12 @@ fn view(model: Model) {
       attribute.class("flex gap-2 items-center"),
       attribute.class("rounded"),
       attribute.class("text-(--text) font-bold"),
-      attribute.class("bg-(--bg) hover:bg-(--bg-hover) active:bg-(--bg-active)"),
+      attribute.class("bg-(--bg)"),
+      attribute.class("not-disabled:hover:bg-(--bg-hover)"),
+      attribute.class("not-disabled:active:bg-(--bg-active)"),
       attribute.class("cursor-pointer"),
+      attribute.class("disabled:cursor-not-allowed disabled:opacity-70"),
+      attribute.disabled(model.disabled),
       attribute.type_("button"),
     ],
     [

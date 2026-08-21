@@ -1,7 +1,8 @@
 import components/icon_button
 import components/text_input
-import entities/lobby_entity.{type LobbyEntity}
+import core/lobby.{type Lobby}
 import gleam/option
+import gleam/string
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -9,8 +10,8 @@ import phosphor
 import routes/lobby/message
 import routes/lobby/model.{type Model}
 
-pub fn lobby_name_view(model: Model, lobby: LobbyEntity) {
-  let lobby_name = case lobby.name {
+pub fn lobby_name_view(model: Model, lobby: Lobby) {
+  let lobby_name = case string.trim(lobby.name) {
     "" -> "Untitled Lobby"
     name -> name
   }
@@ -35,7 +36,7 @@ pub fn lobby_name_view(model: Model, lobby: LobbyEntity) {
           [html.text(lobby_name)],
         )
     },
-    case model.app.user_id == lobby.owner_user_id, model.edit_name {
+    case model.app.user.id == lobby.owner.id, model.edit_name {
       False, _ -> element.none()
 
       True, option.Some(_) ->

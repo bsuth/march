@@ -1,7 +1,7 @@
-import blocks/theme_toggle
 import lustre/attribute
 import lustre/element/html
 import main/model.{type Model}
+import main/view/theme_view.{theme_view}
 import routes
 
 pub fn view(model: Model) {
@@ -20,11 +20,10 @@ pub fn view(model: Model) {
         [
           html.ul([attribute.class("flex justify-center")], [
             navbar_item_view("Home", "/"),
-            navbar_item_view("Versus", "/versus"),
             navbar_item_view("Learn", "/learn"),
             navbar_item_view("About", "/about"),
           ]),
-          theme_toggle.element([]),
+          theme_view(model),
         ],
       ),
       routes.view(model, []),

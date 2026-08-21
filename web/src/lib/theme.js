@@ -1,12 +1,9 @@
-let current_theme = localStorage.getItem('theme') ?? "light";
-
-export function get() {
-  return current_theme;
+export function apply(theme) {
+  document.body.setAttribute("data-theme", theme);
 }
 
-export function apply(theme) {
-  current_theme = theme;
-  document.body.setAttribute("data-theme", theme);
+export function load() {
+  return localStorage.getItem('theme') ?? "light";
 }
 
 export function save(theme) {

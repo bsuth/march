@@ -1,5 +1,5 @@
+import core/lobby.{type Lobby}
 import engine/variant.{type Variant}
-import entities/lobby_entity.{type LobbyEntity}
 import gleam/dynamic/decode
 import gleam/json
 
@@ -7,31 +7,20 @@ import gleam/json
 // GET
 // -----------------------------------------------------------------------------
 
-pub type GetRequest {
-  GetRequest(id: String)
-}
-
-pub fn get_request_json(request: GetRequest) {
-  json.object([
-    #("id", json.string(request.id)),
-  ])
+pub fn get_request_json(lobby_id: String) {
+  json.string(lobby_id)
 }
 
 pub fn get_request_decoder() {
-  use id <- decode.field("id", decode.string)
-  decode.success(GetRequest(id:))
+  decode.string
 }
 
-pub type GetResponse {
-  GetResponse(lobby: LobbyEntity)
-}
-
-pub fn get_response_json(response: GetResponse) {
-  lobby_entity.json(response.lobby)
+pub fn get_response_json(lobby: Lobby) {
+  lobby.json(lobby)
 }
 
 pub fn get_response_decoder() {
-  decode.map(lobby_entity.decoder(), GetResponse)
+  lobby.decoder()
 }
 
 // -----------------------------------------------------------------------------
@@ -40,48 +29,44 @@ pub fn get_response_decoder() {
 
 pub type PostRequest {
   PostRequest(
-    name: String,
-    is_public: Bool,
-    variant: Variant,
-    board_width: Int,
     board_height: Int,
+    board_width: Int,
+    name: String,
+    variant: Variant,
+    visible: Bool,
   )
 }
 
 pub fn post_request_json(request: PostRequest) {
   json.object([
-    #("name", json.string(request.name)),
-    #("is_public", json.bool(request.is_public)),
-    #("variant", variant.json(request.variant)),
-    #("board_width", json.int(request.board_width)),
     #("board_height", json.int(request.board_height)),
+    #("board_width", json.int(request.board_width)),
+    #("name", json.string(request.name)),
+    #("variant", variant.json(request.variant)),
+    #("visible", json.bool(request.visible)),
   ])
 }
 
 pub fn post_request_decoder() {
-  use name <- decode.field("name", decode.string)
-  use is_public <- decode.field("is_public", decode.bool)
-  use variant <- decode.field("variant", variant.decoder())
-  use board_width <- decode.field("board_width", decode.int)
   use board_height <- decode.field("board_height", decode.int)
+  use board_width <- decode.field("board_width", decode.int)
+  use name <- decode.field("name", decode.string)
+  use variant <- decode.field("variant", variant.decoder())
+  use visible <- decode.field("visible", decode.bool)
 
   decode.success(PostRequest(
-    name:,
-    is_public:,
-    variant:,
-    board_width:,
     board_height:,
+    board_width:,
+    name:,
+    variant:,
+    visible:,
   ))
 }
 
-pub type PostResponse {
-  PostResponse(lobby: LobbyEntity)
-}
-
-pub fn post_response_json(response: PostResponse) {
-  lobby_entity.json(response.lobby)
+pub fn post_response_json(lobby: Lobby) {
+  lobby.json(lobby)
 }
 
 pub fn post_response_decoder() {
-  decode.map(lobby_entity.decoder(), PostResponse)
+  lobby.decoder()
 }

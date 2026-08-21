@@ -1,4 +1,5 @@
-import http_api/http_init
+import core/user.{type User}
+import lib/theme
 import lib/websocket
 import lustre/effect
 import main/app.{type App, App}
@@ -9,6 +10,7 @@ import routes
 import routes/home
 import routes/learn
 import routes/lobby
+import routes/match
 import rsvp
 
 pub fn update(model: Model, message: Message) {
@@ -22,9 +24,13 @@ pub fn update(model: Model, message: Message) {
     model.Lobby(route_model), message.Lobby(route_message) ->
       lobby.update(route_model, route_message)
 
+    model.Match(route_model), message.Match(route_message) ->
+      match.update(route_model, route_message)
+
     _, message.ApiInitGetResponse(result) ->
       api_init_get_response(model, result)
     _, message.RouterChangedUri(uri) -> routes.init(model, uri)
+    _, message.ToggleTheme -> toggle_theme(model)
     _, message.WebsocketClose -> websocket_close(model)
     _, message.WebsocketError -> websocket_error(model)
     _, message.WebsocketOpen -> websocket_open(model)
@@ -44,20 +50,19 @@ fn update_app(model: Model, app: App) {
     model.Home(route) -> model.Home(home.update_app(route, app))
     model.Learn(route) -> model.Learn(learn.update_app(route, app))
     model.Lobby(route) -> model.Lobby(lobby.update_app(route, app))
-    model.Versus(_) -> model.Versus(app)
+    model.Match(route) -> model.Match(match.update_app(route, app))
   }
 }
 
 fn api_init_get_response(
   model: Model,
-  result: Result(http_init.GetResponse, rsvp.Error(String)),
+  result: Result(User, rsvp.Error(String)),
 ) {
   case result {
-    Ok(response) -> {
-      // TODO: store the response details
+    Ok(user) -> {
       let app = model.get_app(model)
       websocket.connect(app.ws)
-      #(update_app(model, App(..app, user_id: response.id)), effect.none())
+      #(update_app(model, App(..app, user:)), effect.none())
     }
 
     // TODO: handle error
@@ -65,17 +70,31 @@ fn api_init_get_response(
   }
 }
 
+fn toggle_theme(model: Model) {
+  let app = model.get_app(model)
+
+  let theme = case app.theme {
+    theme.Light -> theme.Dark
+    theme.Dark -> theme.Light
+  }
+
+  theme.apply(theme)
+  theme.save(theme)
+
+  #(update_app(model, App(..app, theme:)), effect.none())
+}
+
 fn websocket_close(model: Model) {
-  // TODO: remove me?
+  // TODO: notify user
   #(model, effect.none())
 }
 
 fn websocket_error(model: Model) {
-  // TODO: remove me?
+  // TODO: notify user
   #(model, effect.none())
 }
 
 fn websocket_open(model: Model) {
-  // TODO: refresh things?
+  // TODO: reinit page
   #(model, effect.none())
 }

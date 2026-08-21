@@ -1,6 +1,8 @@
+import core/user.{User}
 import gleam/result
 import gleam/uri
 import http_api/http_init
+import lib/theme
 import lib/websocket
 import lustre/effect
 import main/app.{App}
@@ -24,7 +26,15 @@ pub fn init(_) {
       fn() { message.WebsocketError },
     )
 
-  let #(model, routes_effect) = routes.init(Model(App(user_id: "", ws:)), uri)
+  let theme = case theme.load() {
+    Ok(theme) -> theme
+    Error(_) -> theme.Light
+  }
+
+  theme.apply(theme)
+
+  let app = App(theme:, user: User("", "", True), ws:)
+  let #(model, routes_effect) = routes.init(Model(app), uri)
 
   #(
     model,

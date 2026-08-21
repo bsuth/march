@@ -7,24 +7,27 @@ import routes/about
 import routes/home
 import routes/learn
 import routes/lobby
+import routes/match
 import routes/not_found
-import routes/versus
-
-// TODO: remove versus as component
-pub fn register() {
-  let assert Ok(_) = versus.register()
-}
 
 pub fn init(model: Model, uri: Uri) {
   let app = model.get_app(model)
+
+  case model {
+    model.Home(route) -> home.deinit(route)
+    model.Learn(route) -> learn.deinit(route)
+    model.Lobby(route) -> lobby.deinit(route)
+    model.Match(route) -> match.deinit(route)
+    _ -> Nil
+  }
 
   case uri.path_segments(uri.path) {
     [] -> home.init(app)
     ["about"] -> #(model.About(app), effect.none())
     ["learn"] -> learn.init(app)
     ["lobby", id] -> lobby.init(app, id)
-    ["versus"] -> #(model.Versus(app), effect.none())
-    _ -> #(model, effect.none())
+    ["match", id] -> match.init(app, id)
+    _ -> #(model.Model(app), effect.none())
   }
 }
 
@@ -34,7 +37,7 @@ pub fn view(model: Model, attrs: List(Attribute(Message))) {
     model.Home(route) -> home.view(route)
     model.Learn(route) -> learn.view(route)
     model.Lobby(route) -> lobby.view(route)
-    model.Versus(_) -> versus.element(attrs)
+    model.Match(route) -> match.view(route)
     _ -> not_found.view(attrs)
   }
 }

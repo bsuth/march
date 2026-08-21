@@ -1,5 +1,7 @@
+import core/user.{type User}
+import lib/theme.{type Theme}
 import lib/websocket.{type Websocket}
 
 pub type App {
-  App(user_id: String, ws: Websocket)
+  App(theme: Theme, user: User, ws: Websocket)
 }

@@ -1,3 +1,4 @@
+import core/user.{type User, User}
 import envoy
 import exception
 import gleam/bit_array
@@ -36,9 +37,9 @@ pub fn json_body(
   handler(body)
 }
 
-pub fn ensure_user_id(
+pub fn ensure_user(
   req: Request(mist.Connection),
-  handler: fn(String) -> Response(mist.ResponseData),
+  handler: fn(User) -> Response(mist.ResponseData),
 ) {
   let assert Ok(session_cookie_secret) = envoy.get("SESSION_COOKIE_SECRET")
 
@@ -59,7 +60,8 @@ pub fn ensure_user_id(
   )
 
   case bit_array.to_string(session_bit_array) {
-    Ok(user_id) -> handler(user_id)
+    // TODO: handle non-guest users
+    Ok(user_id) -> handler(User(id: user_id, name: "", guest: True))
     Error(_) -> bad_request
   }
 }

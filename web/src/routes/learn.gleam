@@ -16,6 +16,10 @@ pub fn init(app: App) {
   #(main_model.Learn(route_model), effect.map(route_effect, main_message.Learn))
 }
 
+pub fn deinit(route_model: RouteModel) {
+  init.deinit(route_model)
+}
+
 pub fn update(route_model: RouteModel, route_message: RouteMessage) {
   let #(route_model, route_effect) = update.update(route_model, route_message)
   #(main_model.Learn(route_model), effect.map(route_effect, main_message.Learn))
@@ -24,7 +28,7 @@ pub fn update(route_model: RouteModel, route_message: RouteMessage) {
 pub fn update_ws(route_model: RouteModel, ws_message: ws_api.Message) {
   let #(route_model, route_effect) =
     update_ws.update_ws(route_model, ws_message)
-  #(main_model.Learn(route_model), effect.map(route_effect, main_message.Home))
+  #(main_model.Learn(route_model), effect.map(route_effect, main_message.Learn))
 }
 
 pub fn update_app(route_model: RouteModel, app: App) {

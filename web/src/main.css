@@ -2,6 +2,7 @@
 @import "./components.css";
 
 /* https://tailwindcss.com/docs/dark-mode */
+@custom-variant light (&:where([data-theme=light], [data-theme=light] *));
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @font-face {

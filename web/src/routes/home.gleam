@@ -16,6 +16,10 @@ pub fn init(app: App) {
   #(main_model.Home(route_model), effect.map(route_effect, main_message.Home))
 }
 
+pub fn deinit(route_model: RouteModel) {
+  init.deinit(route_model)
+}
+
 pub fn update(route_model: RouteModel, route_message: RouteMessage) {
   let #(route_model, route_effect) = update.update(route_model, route_message)
   #(main_model.Home(route_model), effect.map(route_effect, main_message.Home))

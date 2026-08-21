@@ -1,10 +1,10 @@
+import core/lobby.{type Lobby, Lobby}
 import engine/variant.{type Variant}
-import entities/lobby_entity.{LobbyEntity}
 import gleam/json
-import gleam/option
-import http_api/http_lobby
+import gleam/option.{type Option}
 import lib/websocket
 import lustre/effect
+import modem
 import routes/lobby/message.{type Message}
 import routes/lobby/model.{type Model, Model}
 import rsvp
@@ -15,86 +15,78 @@ pub fn update(model: Model, message: Message) {
   case message {
     message.ApiLobbyGetResponse(response) ->
       api_lobby_get_response(model, response)
-    message.UserAssignedWhite(user_id) -> user_assigned_white(model, user_id)
-    message.UserAssignedBlack(user_id) -> user_assigned_black(model, user_id)
+    message.UserChangedBlack(black_user_id) ->
+      user_changed_black(model, black_user_id)
     message.UserChangedBoard(width, height) ->
       user_changed_board(model, width, height)
+    message.UserChangedEditName(new_edit_name) ->
+      user_changed_edit_name(model, new_edit_name)
     message.UserChangedVariant(variant) -> user_changed_variant(model, variant)
     message.UserChangedVisibility(visible) ->
       user_changed_visibility(model, visible)
-    message.UserChangedEditName(new_edit_name) ->
-      user_changed_edit_name(model, new_edit_name)
+    message.UserChangedWhite(white_user_id) ->
+      user_changed_white(model, white_user_id)
     message.UserDiscardedEditName -> user_discarded_edit_name(model)
     message.UserEnabledEditName -> user_enabled_edit_name(model)
     message.UserSavedEditName -> user_saved_edit_name(model)
+    message.UserStartedGame -> user_started_game(model)
+    message.UserTerminatedLobby -> user_terminated_lobby(model)
   }
 }
 
 fn api_lobby_get_response(
   model: Model,
-  response: Result(http_lobby.GetResponse, rsvp.Error(String)),
+  response: Result(Lobby, rsvp.Error(String)),
 ) {
-  use response <- yuzu.ok(response, #(
-    Model(..model, lobby: option.None),
+  use lobby <- yuzu.ok(response, #(
+    Model(..model, loading_lobby: False, lobby: option.None),
     effect.none(),
   ))
 
-  #(Model(..model, lobby: option.Some(response.lobby)), effect.none())
-}
-
-fn user_assigned_white(model: Model, user_id: String) {
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-
-  let lobby =
-    LobbyEntity(
-      ..lobby,
-      white_user_id: option.Some(user_id),
-      black_user_id: case lobby.black_user_id {
-        option.None -> option.None
-        option.Some(black_user_id) if black_user_id == user_id -> option.None
-        option.Some(black_user_id) -> option.Some(black_user_id)
-      },
+  case lobby.match_id {
+    option.Some(match_id) -> #(
+      model,
+      modem.push("/match/" <> match_id, option.None, option.None),
     )
 
-  lobby
-  |> ws_lobby.update_json()
+    option.None -> {
+      ws_lobby.enter_json(lobby.id)
+      |> json.to_string()
+      |> websocket.send(model.app.ws, _)
+
+      #(
+        Model(..model, loading_lobby: False, lobby: option.Some(lobby)),
+        effect.none(),
+      )
+    }
+  }
+}
+
+fn user_changed_black(model: Model, black_user_id: Option(String)) {
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+
+  use lobby <- yuzu.ok(lobby.assign_black(lobby, black_user_id), #(
+    model,
+    effect.none(),
+  ))
+
+  ws_lobby.UpdateBlackPayload(model.lobby_id, black_user_id:)
+  |> ws_lobby.update_black_json()
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
-fn user_assigned_black(model: Model, user_id: String) {
+fn user_changed_board(model: Model, board_width: Int, board_height: Int) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
 
-  let lobby =
-    LobbyEntity(
-      ..lobby,
-      black_user_id: option.Some(user_id),
-      white_user_id: case lobby.white_user_id {
-        option.None -> option.None
-        option.Some(white_user_id) if white_user_id == user_id -> option.None
-        option.Some(white_user_id) -> option.Some(white_user_id)
-      },
-    )
-
-  lobby
-  |> ws_lobby.update_json()
-  |> json.to_string()
-  |> websocket.send(model.app.ws, _)
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn user_changed_board(model: Model, width: Int, height: Int) {
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-
-  ws_lobby.UpdateBoardPayload(model.lobby_id, width, height)
+  ws_lobby.UpdateBoardPayload(model.lobby_id, board_width, board_height)
   |> ws_lobby.update_board_json()
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let lobby = LobbyEntity(..lobby, board_width: width, board_height: height)
+  let lobby = Lobby(..lobby, board_width:, board_height:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
@@ -111,7 +103,7 @@ fn user_changed_variant(model: Model, variant: Variant) {
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let lobby = LobbyEntity(..lobby, variant:)
+  let lobby = Lobby(..lobby, variant:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
@@ -124,7 +116,23 @@ fn user_changed_visibility(model: Model, visible: Bool) {
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let lobby = LobbyEntity(..lobby, is_public: visible)
+  let lobby = Lobby(..lobby, visible:)
+
+  #(Model(..model, lobby: option.Some(lobby)), effect.none())
+}
+
+fn user_changed_white(model: Model, white_user_id: Option(String)) {
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+
+  use lobby <- yuzu.ok(lobby.assign_white(lobby, white_user_id), #(
+    model,
+    effect.none(),
+  ))
+
+  ws_lobby.UpdateWhitePayload(model.lobby_id, white_user_id:)
+  |> ws_lobby.update_white_json()
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
@@ -146,7 +154,7 @@ fn user_saved_edit_name(model: Model) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
   use name <- yuzu.some(model.edit_name, #(model, effect.none()))
 
-  let lobby = LobbyEntity(..lobby, name: name)
+  let lobby = Lobby(..lobby, name:)
 
   ws_lobby.UpdateNamePayload(lobby.id, name)
   |> ws_lobby.update_name_json()
@@ -157,4 +165,24 @@ fn user_saved_edit_name(model: Model) {
     Model(..model, lobby: option.Some(lobby), edit_name: option.None),
     effect.none(),
   )
+}
+
+fn user_started_game(model: Model) {
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+
+  ws_lobby.start_json(lobby.id)
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
+
+  #(model, effect.none())
+}
+
+fn user_terminated_lobby(model: Model) {
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+
+  ws_lobby.terminate_json(lobby.id)
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
+
+  #(model, effect.none())
 }

@@ -6,12 +6,12 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/json
-import gleam/option
 import gleam/otp/actor
 import http_api/http_lobby
 import ipc
 import mist
 import names.{type Names}
+import router/api_router/lobby_router/list_router
 import router/middleware
 import yuzu
 
@@ -21,6 +21,8 @@ pub fn handler(
   path: List(String),
 ) {
   case req.method, path {
+    _, ["list", ..subpath] -> list_router.handler(names, req, subpath)
+
     http.Get, [id] -> get(names, req, id)
     http.Post, [] -> post(names, req)
 
@@ -40,7 +42,7 @@ fn get(names: Names, _req: Request(mist.Connection), id: String) {
   let lobby = process.call_forever(lobby_subject, ipc.LobbyGet)
 
   let response_body =
-    http_lobby.GetResponse(lobby)
+    lobby
     |> http_lobby.get_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()
@@ -52,33 +54,31 @@ fn get(names: Names, _req: Request(mist.Connection), id: String) {
 }
 
 fn post(names: Names, req: Request(mist.Connection)) {
-  use user_id <- middleware.ensure_user_id(req)
+  use user <- middleware.ensure_user(req)
 
   use request_body <- middleware.json_body(
     req,
     http_lobby.post_request_decoder(),
   )
 
-  let lobby_settings =
-    lobby.Settings(
-      owner_user_id: user_id,
-      black_user_id: option.None,
-      white_user_id: option.None,
-      name: request_body.name,
-      is_public: request_body.is_public,
-      variant: request_body.variant,
-      board_width: request_body.board_width,
+  let init_args =
+    lobby.StartArgs(
       board_height: request_body.board_height,
+      board_width: request_body.board_width,
+      name: request_body.name,
+      owner: user,
+      variant: request_body.variant,
+      visible: request_body.visible,
     )
 
-  use actor.Started(_, lobby_state) <- yuzu.ok(
-    lobby.start(names, lobby_settings),
+  use actor.Started(_, lobby_actor_state) <- yuzu.ok(
+    lobby.start(names, init_args),
     response.new(500)
       |> response.set_body(mist.Bytes(bytes_tree.new())),
   )
 
   let response_body =
-    http_lobby.PostResponse(lobby.entity(lobby_state))
+    lobby_actor_state.lobby
     |> http_lobby.post_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()

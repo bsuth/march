@@ -37,11 +37,11 @@ fn handler(names: Names) {
       ["api", ..subpath] -> api_router.handler(names, req, subpath)
 
       ["ws"] -> {
-        use user_id <- middleware.ensure_user_id(req)
+        use user <- middleware.ensure_user(req)
 
         mist.websocket(
           request: req,
-          on_init: ws_router.on_init(_, user_id, names),
+          on_init: ws_router.on_init(_, user, names),
           on_close: ws_router.on_close,
           handler: ws_router.handler,
         )

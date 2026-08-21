@@ -6,10 +6,6 @@ pub type Variant {
   Standard
 }
 
-// -----------------------------------------------------------------------------
-// Encoding / Decoding
-// -----------------------------------------------------------------------------
-
 pub fn to_string(variant: Variant) {
   case variant {
     Classic -> "classic"

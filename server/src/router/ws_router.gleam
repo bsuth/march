@@ -1,3 +1,4 @@
+import core/user.{type User}
 import gleam/erlang/process
 import gleam/json
 import gleam/option
@@ -7,6 +8,7 @@ import logging
 import mist
 import names.{type Names}
 import router/ws_router/lobby_router
+import router/ws_router/match_router
 import router/ws_router/matchmaking_router
 import router/ws_state.{type WebsocketState}
 import ws_api
@@ -15,21 +17,19 @@ import ws_api
 // Hooks
 // -----------------------------------------------------------------------------
 
-pub fn on_init(_conn: mist.WebsocketConnection, user_id: String, names: Names) {
+pub fn on_init(_conn: mist.WebsocketConnection, user: User, names: Names) {
   let subject = process.new_subject()
 
   #(
-    ws_state.WebsocketState(user_id:, names:, subject:),
+    ws_state.WebsocketState(names:, user:, subject:),
     process.new_selector()
       |> process.select(subject)
       |> option.Some(),
   )
 }
 
-pub fn on_close(state: WebsocketState) {
-  state.names.matchmaker
-  |> process.named_subject()
-  |> process.send(ipc.MatchmakerExit(state.subject))
+pub fn on_close(_state: WebsocketState) {
+  Nil
 }
 
 // -----------------------------------------------------------------------------
@@ -54,12 +54,18 @@ fn text_handler(
   conn: mist.WebsocketConnection,
   text: String,
 ) {
-  case json.parse(text, ws_api.decoder()) {
-    Ok(ws_api.Message("matchmaking." <> subpath, payload)) ->
-      matchmaking_router.handler(state, conn, subpath, payload)
+  logging.log(logging.Info, "WS " <> text)
 
+  case json.parse(text, ws_api.decoder()) {
     Ok(ws_api.Message("lobby." <> subpath, payload)) ->
       lobby_router.handler(state, conn, subpath, payload)
+
+    Ok(ws_api.Message("match." <> subpath, payload)) ->
+      match_router.handler(state, conn, subpath, payload)
+
+    // TODO: remove me
+    Ok(ws_api.Message("matchmaking." <> subpath, payload)) ->
+      matchmaking_router.handler(state, conn, subpath, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws text message: " <> text)

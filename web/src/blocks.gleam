@@ -1,7 +1,9 @@
+import blocks/board
 import blocks/game
-import blocks/theme_toggle
+import blocks/old_game
 
 pub fn register() {
+  let assert Ok(_) = board.register()
   let assert Ok(_) = game.register()
-  let assert Ok(_) = theme_toggle.register()
+  let assert Ok(_) = old_game.register()
 }

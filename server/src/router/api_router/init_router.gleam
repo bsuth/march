@@ -1,4 +1,6 @@
+import core/user.{User}
 import envoy
+import gleam/bit_array
 import gleam/bytes_tree
 import gleam/crypto
 import gleam/http
@@ -33,14 +35,16 @@ fn get(req: Request(mist.Connection)) {
       crypto.verify_signed_message(cookie.1, <<session_cookie_secret:utf8>>)
     })
     |> result.flatten()
-    |> result.map(fn(user_id) { uuid.from_bit_array(user_id) })
+    |> result.map(bit_array.to_string)
+    |> result.flatten()
+    |> result.map(fn(user_id) { uuid.from_string(user_id) })
     |> result.flatten()
     |> result.unwrap(uuid.v7())
     |> uuid.to_string()
 
-  // TODO: add `type: User | Guest`
   let response_body =
-    http_init.GetResponse(id: user_id)
+    // TODO: handle non-guest users
+    User(user_id, "", True)
     |> http_init.get_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()

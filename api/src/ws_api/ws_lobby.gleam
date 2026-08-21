@@ -1,7 +1,8 @@
+import core/user.{type User}
 import engine/variant.{type Variant}
-import entities/lobby_entity.{type LobbyEntity}
 import gleam/dynamic/decode
 import gleam/json
+import gleam/option.{type Option}
 import ws_api
 
 // -----------------------------------------------------------------------------
@@ -17,6 +18,30 @@ pub fn enter_decoder() {
 }
 
 // -----------------------------------------------------------------------------
+// ENTERED
+// -----------------------------------------------------------------------------
+
+pub type EnteredPayload {
+  EnteredPayload(lobby_id: String, user: User)
+}
+
+pub fn entered_json(payload: EnteredPayload) {
+  ws_api.json(
+    "lobby.entered",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("user", user.json(payload.user)),
+    ]),
+  )
+}
+
+pub fn entered_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use user <- decode.field("user", user.decoder())
+  decode.success(EnteredPayload(lobby_id, user))
+}
+
+// -----------------------------------------------------------------------------
 // EXIT
 // -----------------------------------------------------------------------------
 
@@ -29,15 +54,115 @@ pub fn exit_decoder() {
 }
 
 // -----------------------------------------------------------------------------
-// UPDATE
+// EXITED
 // -----------------------------------------------------------------------------
 
-pub fn update_json(lobby: LobbyEntity) {
-  ws_api.json("lobby.update", lobby_entity.json(lobby))
+pub type ExitedPayload {
+  ExitedPayload(lobby_id: String, user_id: String)
 }
 
-pub fn update_decoder() {
-  lobby_entity.decoder()
+pub fn exited_json(payload: ExitedPayload) {
+  ws_api.json(
+    "lobby.exited",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("user_id", json.string(payload.user_id)),
+    ]),
+  )
+}
+
+pub fn exited_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use user_id <- decode.field("user_id", decode.string)
+  decode.success(ExitedPayload(lobby_id, user_id))
+}
+
+// -----------------------------------------------------------------------------
+// START
+// -----------------------------------------------------------------------------
+
+pub fn start_json(lobby_id: String) {
+  ws_api.json("lobby.start", json.string(lobby_id))
+}
+
+pub fn start_decoder() {
+  decode.string
+}
+
+// -----------------------------------------------------------------------------
+// STARTED
+// -----------------------------------------------------------------------------
+
+pub type StartedPayload {
+  StartedPayload(lobby_id: String, match_id: String)
+}
+
+pub fn started_json(payload: StartedPayload) {
+  ws_api.json(
+    "lobby.started",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("match_id", json.string(payload.match_id)),
+    ]),
+  )
+}
+
+pub fn started_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use match_id <- decode.field("match_id", decode.string)
+  decode.success(StartedPayload(lobby_id, match_id))
+}
+
+// -----------------------------------------------------------------------------
+// TERMINATE
+// -----------------------------------------------------------------------------
+
+pub fn terminate_json(lobby_id: String) {
+  ws_api.json("lobby.terminate", json.string(lobby_id))
+}
+
+pub fn terminate_decoder() {
+  decode.string
+}
+
+// -----------------------------------------------------------------------------
+// TERMINATED
+// -----------------------------------------------------------------------------
+
+pub fn terminated_json(lobby_id: String) {
+  ws_api.json("lobby.terminated", json.string(lobby_id))
+}
+
+pub fn terminated_decoder() {
+  decode.string
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE.BLACK
+// -----------------------------------------------------------------------------
+
+pub type UpdateBlackPayload {
+  UpdateBlackPayload(lobby_id: String, black_user_id: Option(String))
+}
+
+pub fn update_black_json(payload: UpdateBlackPayload) {
+  ws_api.json(
+    "lobby.update.black",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("black_user_id", json.nullable(payload.black_user_id, json.string)),
+    ]),
+  )
+}
+
+pub fn update_black_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use black_user_id <- decode.field(
+    "black_user_id",
+    decode.optional(decode.string),
+  )
+
+  decode.success(UpdateBlackPayload(lobby_id, black_user_id))
 }
 
 // -----------------------------------------------------------------------------
@@ -136,4 +261,32 @@ pub fn update_visibility_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
   use visible <- decode.field("visible", decode.bool)
   decode.success(UpdateVisibilityPayload(lobby_id, visible))
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE.WHITE
+// -----------------------------------------------------------------------------
+
+pub type UpdateWhitePayload {
+  UpdateWhitePayload(lobby_id: String, white_user_id: Option(String))
+}
+
+pub fn update_white_json(payload: UpdateWhitePayload) {
+  ws_api.json(
+    "lobby.update.white",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("white_user_id", json.nullable(payload.white_user_id, json.string)),
+    ]),
+  )
+}
+
+pub fn update_white_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use white_user_id <- decode.field(
+    "white_user_id",
+    decode.optional(decode.string),
+  )
+
+  decode.success(UpdateWhitePayload(lobby_id, white_user_id))
 }

@@ -1,16 +1,19 @@
+import core/user.{type User}
 import gleam/uri.{type Uri}
-import http_api/http_init
 import routes/home/message as home
 import routes/learn/message as learn
 import routes/lobby/message as lobby
+import routes/match/message as match
 import rsvp
 
 pub type Message {
-  ApiInitGetResponse(Result(http_init.GetResponse, rsvp.Error(String)))
+  ApiInitGetResponse(Result(User, rsvp.Error(String)))
   Home(home.Message)
   Learn(learn.Message)
   Lobby(lobby.Message)
+  Match(match.Message)
   RouterChangedUri(Uri)
+  ToggleTheme
   WebsocketClose
   WebsocketError
   WebsocketOpen
