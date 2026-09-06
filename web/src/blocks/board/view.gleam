@@ -1,5 +1,5 @@
 import blocks/board/model.{type Model}
-import blocks/board/view/card_view.{card_view}
+import blocks/card
 import engine/board
 import engine/board/cell.{Cell}
 import engine/color.{type Color}
@@ -15,23 +15,49 @@ import phosphor
 import yuzu
 
 pub fn view(model: Model) {
-  html.div(
-    [
-      attribute.class("grid gap-0"),
-      attribute.style(
-        "grid-template-columns",
-        "repeat(" <> int.to_string(model.board.width) <> ", 1fr)",
+  html.div([attribute.class("w-full h-full relative")], [
+    html.div([attribute.class("absolute inset-0")], [
+      html.div(
+        [
+          attribute.class("max-w-full max-h-full"),
+          attribute.class("relative top-1/2 left-1/2 -translate-1/2"),
+          attribute.style(
+            "aspect-ratio",
+            int.to_string(model.board.width)
+              <> "/"
+              <> int.to_string(model.board.height),
+          ),
+        ],
+        [
+          html.div(
+            [
+              attribute.class("grid gap-0"),
+              attribute.style(
+                "grid-template-columns",
+                "repeat(" <> int.to_string(model.board.width) <> ", 1fr)",
+              ),
+              attribute.style(
+                "grid-template-rows",
+                "repeat(" <> int.to_string(model.board.height) <> ", 1fr)",
+              ),
+            ],
+            int.range(
+              0,
+              model.board.width * model.board.height,
+              [],
+              fn(cells, index) {
+                cell_view(
+                  model,
+                  model.board.width * model.board.height - 1 - index,
+                )
+                |> list.prepend(cells, _)
+              },
+            ),
+          ),
+        ],
       ),
-      attribute.style(
-        "grid-template-rows",
-        "repeat(" <> int.to_string(model.board.height) <> ", 1fr)",
-      ),
-    ],
-    int.range(0, model.board.width * model.board.height, [], fn(cells, index) {
-      cell_view(model, model.board.width * model.board.height - 1 - index)
-      |> list.prepend(cells, _)
-    }),
-  )
+    ]),
+  ])
 }
 
 fn cell_view(model: Model, render_index: Int) {
@@ -62,7 +88,7 @@ fn cell_view(model: Model, render_index: Int) {
     [
       case cell, cell_index {
         Cell(_, _, option.Some(card)), _ ->
-          card_view([attribute.class("w-full h-full")], card)
+          card.element([attribute.class("w-full h-full"), card.value(card)])
 
         _, 0 -> base_icon_view(color.Black, model.theme)
 

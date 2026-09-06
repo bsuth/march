@@ -1,13 +1,14 @@
+import blocks/card
 import blocks/game/message
-import blocks/game/view/slot_view.{card_slot_view, unknown_slot_view}
+import blocks/game/view/slot_view.{unknown_slot_view}
 import engine.{type Engine}
 import engine/board
 import engine/player.{type Player}
 import gleam/int
 import gleam/list
-import gleam/option
 import lustre/attribute
 import lustre/element/html
+import lustre/event
 
 pub fn hand_view(engine: Engine, player: Player) {
   let player_base_index = board.get_base_index(engine.board, player.color)
@@ -20,14 +21,13 @@ pub fn hand_view(engine: Engine, player: Player) {
   let children = case player {
     player.Managed(_, _, hand, _) | player.Controlled(_, _, hand, _) ->
       list.map(hand, fn(card) {
-        card_slot_view(
-          card,
+        card.element([
+          card.value(card),
           case needs_player_deployment {
-            True -> option.Some(message.Deploy(card))
-            False -> option.None
+            True -> event.on_click(message.Deploy(card))
+            False -> attribute.none()
           },
-          [],
-        )
+        ])
       })
 
     player.Observed(_, _, hand, _) ->
@@ -36,5 +36,10 @@ pub fn hand_view(engine: Engine, player: Player) {
       })
   }
 
-  html.div([attribute.class("flex gap-4")], children)
+  html.div(
+    [attribute.class("flex gap-4")],
+    list.map(children, fn(child) {
+      html.div([attribute.class("w-24 h-24 rounded overflow-hidden")], [child])
+    }),
+  )
 }

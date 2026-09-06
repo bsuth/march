@@ -80,12 +80,11 @@ fn lobby_view(model: Model, lobby: Lobby) {
                 },
               ]),
             ]),
-            html.div([attribute.class("flex-1 aspect-square m-auto")], [
-              board.element([
-                board.board(model.board),
-                board.theme(model.app.theme),
-                board.color(color.Black),
-              ]),
+            board.element([
+              attribute.class("w-full h-full"),
+              board.board(model.board),
+              board.theme(model.app.theme),
+              board.color(color.Black),
             ]),
             // TODO: allow clicking here to set player
             field.element(

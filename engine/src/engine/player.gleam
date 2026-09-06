@@ -147,18 +147,16 @@ fn deploy_first(hand: List(Card), card: Card) {
 pub fn draw(player: Player) {
   use color, deck, hand, max_hand_size <- use_managed(player, Error(Nil))
 
-  let #(hand, deck) =
-    int.range(
-      0,
-      max_hand_size - list.length(hand),
-      #(hand, deck),
-      fn(hand_deck, _) {
-        case hand_deck.1 {
-          [] -> hand_deck
-          [card, ..deck] -> #(list.prepend(hand_deck.0, card), deck)
-        }
-      },
-    )
+  let #(drawn_cards, deck) =
+    int.range(0, max_hand_size - list.length(hand), #([], deck), fn(acc, _) {
+      case acc.1 {
+        [] -> acc
+        [card, ..deck] -> #(list.prepend(acc.0, card), deck)
+      }
+    })
 
-  Ok(Managed(color:, deck:, hand:, max_hand_size:))
+  Ok(#(
+    Managed(color:, deck:, hand: list.append(hand, drawn_cards), max_hand_size:),
+    drawn_cards,
+  ))
 }

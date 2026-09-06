@@ -30,6 +30,7 @@ pub fn init() {
 
   #(
     Model(
+      active_turn: engine.ActiveStartTurn,
       color: color.White,
       engine:,
       hover_index: option.None,

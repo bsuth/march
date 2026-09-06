@@ -1,4 +1,4 @@
-import engine/card.{type Card}
+import blocks/card/model.{type Model}
 import engine/card/face.{type Face}
 import engine/card/suit.{type Suit}
 import engine/color.{type Color}
@@ -6,37 +6,41 @@ import lustre/attribute.{type Attribute}
 import lustre/element/html
 import phosphor
 
-pub fn card_view(attrs: List(Attribute(message)), card: Card) {
+pub fn view(model: Model) {
   html.div(
     [
+      attribute.class("w-full h-full"),
       attribute.class("flex flex-col justify-center items-center gap-1"),
       attribute.class("text-4xl font-bold"),
       attribute.class("select-none"),
-      case card.suit, card.color {
+      case model.suit, model.color {
         suit.Diamonds, _ -> attribute.class("text-red-400")
         suit.Hearts, _ -> attribute.class("text-red-400")
         _, color.Black -> attribute.class("text-white")
         _, color.White -> attribute.class("text-black")
       },
-      case card.color {
+      case model.color {
         color.Black -> attribute.class("bg-black")
         color.White -> attribute.class("bg-white")
       },
-      ..attrs
     ],
     [
-      suit_view([attribute.class("size-4")], suit.strong(card.suit), card.color),
+      suit_view(
+        [attribute.class("size-4")],
+        suit.strong(model.suit),
+        model.color,
+      ),
       html.div(
         [
           attribute.class("flex items-center gap-1"),
           attribute.class("text-4xl font-bold"),
         ],
         [
-          face_view(card.face),
-          suit_view([attribute.class("size-8")], card.suit, card.color),
+          face_view(model.face),
+          suit_view([attribute.class("size-8")], model.suit, model.color),
         ],
       ),
-      suit_view([attribute.class("size-4")], suit.weak(card.suit), card.color),
+      suit_view([attribute.class("size-4")], suit.weak(model.suit), model.color),
     ],
   )
 }

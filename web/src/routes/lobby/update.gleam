@@ -1,4 +1,5 @@
 import core/lobby.{type Lobby, Lobby}
+import engine/board.{Board}
 import engine/variant.{type Variant}
 import gleam/json
 import gleam/option.{type Option}
@@ -87,8 +88,9 @@ fn user_changed_board(model: Model, board_width: Int, board_height: Int) {
   |> websocket.send(model.app.ws, _)
 
   let lobby = Lobby(..lobby, board_width:, board_height:)
+  let board = Board(..model.board, width: board_width, height: board_height)
 
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
+  #(Model(..model, board:, lobby: option.Some(lobby)), effect.none())
 }
 
 fn user_changed_edit_name(model: Model, new_edit_name: String) {

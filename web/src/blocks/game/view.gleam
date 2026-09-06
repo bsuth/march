@@ -21,21 +21,20 @@ pub fn view(model: Model) {
 
   html.div(
     [
-      attribute.class("h-full p-4"),
-      attribute.class("flex justify-center gap-12"),
+      attribute.class("h-full"),
+      attribute.class("flex gap-8"),
     ],
     [
       // TODO: allow ability to flip colors
       html.div(
         [
-          attribute.class(
-            "flex flex-col items-center justify-center gap-12 h-full",
-          ),
+          attribute.class("grow"),
+          attribute.class("flex flex-col justify-center items-center gap-8"),
         ],
         [
           player_view.hand_view(model.engine, top_player),
           board.element([
-            attribute.class("w-full"),
+            attribute.class("w-full h-full max-w-96 max-h-96"),
             board.board(model.engine.board),
             board.color(model.color),
             board.theme(model.theme),
