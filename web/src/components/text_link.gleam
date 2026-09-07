@@ -59,8 +59,12 @@ fn update(_model: Model, msg: Msg) {
 fn view(model: Model) {
   html.a(
     [
-      attribute.class("text-(--text)"),
-      attribute.class("hover:text-(--text-hover)"),
+      attribute.class(
+        "text-[light-dark(var(--color-blue-700),var(--color-blue-400))]",
+      ),
+      attribute.class(
+        "hover:text-[light-dark(var(--color-blue-500),var(--color-blue-600))]",
+      ),
       attribute.href(model.href),
     ],
     [

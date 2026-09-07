@@ -75,16 +75,23 @@ fn view(model: Model) {
       [
         attribute.class("p-2"),
         attribute.class("flex justify-center items-center"),
-        attribute.class("text-(--text)"),
         attribute.class("rounded-full"),
+        attribute.class(
+          "text-[light-dark(var(--color-black),var(--color-white))]",
+        ),
         attribute.type_("button"),
         attribute.disabled(model.disabled),
       ],
       case model.disabled {
         True -> []
         False -> [
-          attribute.class("hover:bg-(--bg-hover) active:bg-(--bg-active)"),
           attribute.class("cursor-pointer"),
+          attribute.class(
+            "hover:bg-[light-dark(var(--color-zinc-200),var(--color-zinc-700))]",
+          ),
+          attribute.class(
+            "active:bg-[light-dark(var(--color-zinc-300),var(--color-zinc-800))]",
+          ),
         ]
       },
     ]),

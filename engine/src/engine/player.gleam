@@ -114,6 +114,33 @@ pub fn use_observed(
 // Lib
 // -----------------------------------------------------------------------------
 
+pub fn to_managed(player: Player) {
+  case player {
+    Managed(..) -> Ok(player)
+    Controlled(..) -> Error(Nil)
+    Observed(..) -> Error(Nil)
+  }
+}
+
+pub fn to_controlled(player: Player) {
+  case player {
+    Managed(color, deck, hand, max_hand_size) ->
+      Ok(Controlled(color, list.length(deck), hand, max_hand_size))
+    Controlled(..) -> Ok(player)
+    Observed(..) -> Error(Nil)
+  }
+}
+
+pub fn to_observed(player: Player) {
+  case player {
+    Managed(color, deck, hand, max_hand_size) ->
+      Observed(color, list.length(deck), list.length(hand), max_hand_size)
+    Controlled(color, deck, hand, max_hand_size) ->
+      Observed(color, deck, list.length(hand), max_hand_size)
+    Observed(..) -> player
+  }
+}
+
 pub fn has_empty_hand(player: Player) {
   case player {
     Managed(_, _, hand, _) -> list.is_empty(hand)

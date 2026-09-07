@@ -1,12 +1,10 @@
 import blocks/board
-import blocks/game/message
 import blocks/game/model.{type Model}
+import blocks/game/view/end_turn_view.{end_turn_view}
 import blocks/game/view/player_view
-import components/button
 import engine/color
 import lustre/attribute
 import lustre/element/html
-import lustre/event
 
 pub fn view(model: Model) {
   let top_player = case model.color {
@@ -44,10 +42,7 @@ pub fn view(model: Model) {
       ),
       html.div(
         [attribute.class("flex flex-col items-center justify-center gap-4")],
-        [
-          // TODO: check if can end turn
-          button.element([event.on_click(message.Pass)], [html.text("End Turn")]),
-        ],
+        [end_turn_view(model)],
       ),
     ],
   )

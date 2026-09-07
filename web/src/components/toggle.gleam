@@ -79,8 +79,14 @@ fn view(model: Model) {
       attribute.class("cursor-pointer"),
       attribute.class("transition-all"),
       case model.value {
-        True -> attribute.class("bg-(--bg-on)")
-        False -> attribute.class("bg-(--bg-off)")
+        True ->
+          attribute.class(
+            "bg-[light-dark(var(--color-zinc-800),var(--color-zinc-200))]",
+          )
+        False ->
+          attribute.class(
+            "bg-[light-dark(var(--color-zinc-400),var(--color-zinc-600))]",
+          )
       },
       event.on_click(OnUpdate(!model.value)),
     ],
@@ -89,7 +95,10 @@ fn view(model: Model) {
         [
           attribute.class("size-4"),
           attribute.class("absolute top-1/2 -translate-y-1/2"),
-          attribute.class("bg-(--fg) rounded-full"),
+          attribute.class(
+            "bg-[light-dark(var(--color-white),var(--color-black))]",
+          ),
+          attribute.class("rounded-full"),
           attribute.class("transition-all"),
           case model.value {
             True -> attribute.class("left-7")

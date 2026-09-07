@@ -4,14 +4,14 @@ import engine/color.{type Color}
 import lib/theme.{type Theme}
 
 pub type Message {
-  PropsChangedColor(Color)
-  PropsChangedEngine(Engine)
-  PropsChangedTheme(Theme)
+  Deploy(Card)
+  EndTurn
   Hover(Int)
   Unhover
   Move(Int, Int)
   March(Int)
-  Deploy(Card)
-  Pass
+  PropsChangedColor(Color)
+  PropsChangedEngine(Engine)
+  PropsChangedTheme(Theme)
   Undo
 }

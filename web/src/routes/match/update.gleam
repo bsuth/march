@@ -31,9 +31,9 @@ fn api_match_get_response(
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let color = case match.white.id {
-    _ if model.app.user.id == match.white.id -> color.White
-    _ -> color.Black
+  let color = case model.app.user.id == match.white.id {
+    True -> color.White
+    False -> color.Black
   }
 
   #(
