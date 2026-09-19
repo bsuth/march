@@ -8,7 +8,7 @@ import routes/lobby/message
 import routes/lobby/model.{type Model}
 
 pub fn lobby_variant_view(model: Model, lobby: Lobby) {
-  field.element([field.label("Variant")], [
+  field.element([field.prop_label("Variant")], [
     case model.app.user.id == lobby.owner.id {
       False -> labels.variant(lobby.variant) |> html.text()
 
@@ -16,8 +16,8 @@ pub fn lobby_variant_view(model: Model, lobby: Lobby) {
         single_select.element([
           lobby.variant
             |> variant.to_string()
-            |> single_select.value(),
-          single_select.options([
+            |> single_select.prop_value(),
+          single_select.prop_options([
             #("standard", labels.variant(variant.Standard)),
             #("classic", labels.variant(variant.Classic)),
           ]),

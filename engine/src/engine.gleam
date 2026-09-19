@@ -13,26 +13,16 @@ import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/option.{type Option}
-import gleam/result
 import yuzu
 
+// TODO: add history / snapshots?
+
 pub type Engine {
-  Engine(
-    active_player_color: Color,
-    black: Player,
-    board: Board,
-    history: List(HistoryItem),
-    white: Player,
-  )
+  Engine(active_player_color: Color, black: Player, board: Board, white: Player)
 }
 
 pub type Turn {
-  Turn(
-    color: Color,
-    move: #(Int, Int),
-    marches: List(Int),
-    deploy: Option(Card),
-  )
+  Turn(move: #(Int, Int), marches: List(Int), deploy: Option(Card))
 }
 
 pub type ActiveTurn {
@@ -40,17 +30,6 @@ pub type ActiveTurn {
   ActiveMarchTurn(move: #(Int, Int), marches: List(Int))
   ActiveDeployTurn(move: #(Int, Int), marches: List(Int), deploy: Card)
   ActiveDeployOnlyTurn(deploy: Card)
-}
-
-pub type HistoryItem {
-  HistoryDraw(Card)
-  HistoryPass
-  HistoryTurn(
-    color: Color,
-    move: #(Int, Int, Option(Card)),
-    marches: List(#(Int, Int)),
-    deploy: Option(Card),
-  )
 }
 
 pub fn json(engine: Engine) {
@@ -72,14 +51,7 @@ pub fn decoder() {
   use board <- decode.field("board", board.decoder())
   use white <- decode.field("white", player.decoder())
 
-  decode.success(Engine(
-    active_player_color:,
-    black:,
-    board:,
-    // TODO
-    history: [],
-    white:,
-  ))
+  decode.success(Engine(active_player_color:, black:, board:, white:))
 }
 
 pub fn get_active_player(engine: Engine) {
@@ -97,20 +69,13 @@ pub fn update_active_player(engine: Engine, player: Player) {
 }
 
 pub fn commit(engine: Engine, turn: Turn) {
-  use <- yuzu.true(turn.color == engine.active_player_color, Error(Nil))
-
-  let turn_player = case turn.color {
+  let turn_player = case engine.active_player_color {
     color.Black -> engine.black
     color.White -> engine.white
   }
 
-  let capture =
-    dict.get(engine.board.cells, turn.move.1)
-    |> result.map(fn(cell) { cell.card })
-    |> result.unwrap(option.None)
-
   use board <- yuzu.ok(
-    move.commit(turn.move.0, turn.move.1, engine.board, turn.color),
+    move.commit(turn.move.0, turn.move.1, engine.board, turn_player.color),
     Error(Nil),
   )
 
@@ -123,7 +88,7 @@ pub fn commit(engine: Engine, turn: Turn) {
 
   use board <- yuzu.ok(
     list.try_fold(marches, board, fn(board, march) {
-      march.commit(march.0, march.1, board, turn.color)
+      march.commit(march.0, march.1, board, turn_player.color)
     }),
     Error(Nil),
   )
@@ -133,23 +98,9 @@ pub fn commit(engine: Engine, turn: Turn) {
     Error(Nil),
   )
 
-  use #(turn_player, drawn_cards) <- yuzu.ok(
-    player.draw(turn_player),
-    Error(Nil),
-  )
+  use turn_player <- yuzu.ok(player.draw(turn_player), Error(Nil))
 
-  let history =
-    drawn_cards
-    |> list.map(HistoryDraw)
-    |> list.prepend(HistoryTurn(
-      color: turn.color,
-      move: #(turn.move.0, turn.move.1, capture),
-      marches: marches,
-      deploy: turn.deploy,
-    ))
-    |> list.append(engine.history, _)
-
-  let next_player = case turn.color {
+  let next_player = case turn_player.color {
     color.Black -> engine.white
     color.White -> engine.black
   }
@@ -173,9 +124,9 @@ pub fn commit(engine: Engine, turn: Turn) {
 
   let pass_next_player = !next_player_has_deploy && !next_player_has_moves
 
-  let #(active_player_color, history) = case pass_next_player {
-    True -> #(next_player.color, history)
-    False -> #(turn_player.color, list.prepend(history, HistoryPass))
+  let active_player_color = case pass_next_player {
+    True -> next_player.color
+    False -> turn_player.color
   }
 
   Engine(
@@ -185,7 +136,6 @@ pub fn commit(engine: Engine, turn: Turn) {
       color.White -> engine.black
     },
     board:,
-    history:,
     white: case turn_player.color {
       color.Black -> engine.white
       color.White -> turn_player

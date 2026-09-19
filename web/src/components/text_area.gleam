@@ -9,40 +9,25 @@ import lustre/element/html
 import lustre/event
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(value: String, type_: String)
-}
-
-type Msg {
-  PropsChangedValue(String)
-  PropsChangedType(String)
-  OnInput(String)
-  OnChange(String)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn value(value: String) {
+pub fn prop_value(value: String) {
   attribute.property("value", json.string(value))
 }
 
-pub fn type_(type_: String) {
+pub fn prop_type(type_: String) {
   attribute.property("type_", json.string(type_))
 }
 
-pub fn on_input(handler: fn(String) -> msg) {
+pub fn on_input(handler: fn(String) -> message) {
   event.on(
     "input",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
   )
 }
 
-pub fn on_change(handler: fn(String) -> msg) {
+pub fn on_change(handler: fn(String) -> message) {
   event.on(
     "change",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
@@ -55,7 +40,7 @@ pub fn on_change(handler: fn(String) -> msg) {
 
 const element_name = "march-text-area"
 
-pub fn element(attrs: List(Attribute(msg))) {
+pub fn element(attrs: List(Attribute(message))) {
   element.element(element_name, attrs, [])
 }
 
@@ -71,12 +56,31 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(value: String, type_: String)
+}
+
 fn init(_) {
   #(Model(value: "", type_: "text"), effect.none())
 }
 
-fn update(model: Model, msg: Msg) {
-  case msg {
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedValue(String)
+  PropsChangedType(String)
+  OnInput(String)
+  OnChange(String)
+}
+
+fn update(model: Model, message: Message) {
+  case message {
     PropsChangedValue(new_value) -> {
       #(Model(..model, value: new_value), effect.none())
     }
@@ -94,6 +98,10 @@ fn update(model: Model, msg: Msg) {
     )
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.input([

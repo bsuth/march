@@ -26,9 +26,12 @@ pub fn view(attrs: List(Attribute(Message))) {
               "after playing the wonderful ",
             ]),
           ),
-          text_link.element([text_link.href("https://www.regicidegame.com/")], [
-            html.text("Regicide"),
-          ]),
+          text_link.element(
+            [text_link.prop_href("https://www.regicidegame.com/")],
+            [
+              html.text("Regicide"),
+            ],
+          ),
           html.text(
             string.concat([
               " and having a coworker express their desire for more modern ",

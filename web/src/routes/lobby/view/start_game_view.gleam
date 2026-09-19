@@ -14,7 +14,7 @@ pub fn start_game_view(model: Model, lobby: Lobby) {
   button.element(
     [
       attribute.class("m-auto"),
-      button.disabled(
+      button.prop_disabled(
         option.is_none(lobby.white) || option.is_none(lobby.black),
       ),
       button.on_click(message.UserStartedGame),

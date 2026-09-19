@@ -10,27 +10,14 @@ import lustre/event
 import phosphor
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(disabled: Bool, loading: Bool)
-}
-
-type Message {
-  PropsChangedDisabled(Bool)
-  PropsChangedLoading(Bool)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn disabled(value: Bool) {
+pub fn prop_disabled(value: Bool) {
   attribute.property("disabled", json.bool(value))
 }
 
-pub fn loading(value: Bool) {
+pub fn prop_loading(value: Bool) {
   attribute.property("loading", json.bool(value))
 }
 
@@ -42,7 +29,6 @@ pub fn on_click(message: message) -> Attribute(message) {
 // Component
 // -----------------------------------------------------------------------------
 
-// NOTE: If this is changed, it must be synced with `button.css`.
 const element_name = "march-button"
 
 pub fn element(
@@ -64,8 +50,25 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(disabled: Bool, loading: Bool)
+}
+
 fn init(_) {
   #(Model(disabled: False, loading: False), effect.none())
+}
+
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedDisabled(Bool)
+  PropsChangedLoading(Bool)
 }
 
 fn update(model: Model, message: Message) {
@@ -78,6 +81,10 @@ fn update(model: Model, message: Message) {
     PropsChangedLoading(loading) -> #(Model(..model, loading:), effect.none())
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.button(

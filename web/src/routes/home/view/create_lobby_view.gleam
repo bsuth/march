@@ -14,21 +14,21 @@ import routes/home/model.{type Model}
 
 pub fn create_lobby_view(model: Model) {
   html.div([attribute.class("w-48 flex flex-col gap-4")], [
-    field.element([field.label("Name")], [
+    field.element([field.prop_label("Name")], [
       text_input.element([
-        text_input.value(model.post_lobby_request.name),
+        text_input.prop_value(model.post_lobby_request.name),
         text_input.on_change(fn(value) {
           http_lobby.PostRequest(..model.post_lobby_request, name: value)
           |> message.UpdateLobbyPostRequest()
         }),
       ]),
     ]),
-    field.element([field.label("Variant")], [
+    field.element([field.prop_label("Variant")], [
       single_select.element([
         model.post_lobby_request.variant
           |> variant.to_string()
-          |> single_select.value(),
-        single_select.options([
+          |> single_select.prop_value(),
+        single_select.prop_options([
           #("standard", labels.variant(variant.Standard)),
           #("classic", labels.variant(variant.Classic)),
         ]),
@@ -39,9 +39,9 @@ pub fn create_lobby_view(model: Model) {
         }),
       ]),
     ]),
-    field.element([field.label("Board")], [
+    field.element([field.prop_label("Board")], [
       single_select.element([
-        single_select.value(
+        single_select.prop_value(
           case
             model.post_lobby_request.board_width,
             model.post_lobby_request.board_height
@@ -50,7 +50,7 @@ pub fn create_lobby_view(model: Model) {
             _, _ -> "4_by_4"
           },
         ),
-        single_select.options([
+        single_select.prop_options([
           #("4_by_4", "4 x 4"),
           #("3_by_3", "3 x 3"),
         ]),
@@ -69,9 +69,9 @@ pub fn create_lobby_view(model: Model) {
         }),
       ]),
     ]),
-    field.element([field.label("Public")], [
+    field.element([field.prop_label("Public")], [
       toggle.element([
-        toggle.value(model.post_lobby_request.visible),
+        toggle.prop_value(model.post_lobby_request.visible),
         toggle.on_update(fn(value) {
           http_lobby.PostRequest(..model.post_lobby_request, visible: value)
           |> message.UpdateLobbyPostRequest()
@@ -81,7 +81,7 @@ pub fn create_lobby_view(model: Model) {
     button.element(
       [
         attribute.class("mt-auto"),
-        button.loading(model.post_lobby_request_loading),
+        button.prop_loading(model.post_lobby_request_loading),
         event.on_click(message.SubmitLobbyPostRequest),
       ],
       [html.text("Create Lobby")],

@@ -10,29 +10,14 @@ import lustre/element/html
 import lustre/event
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(value: String, options: List(#(String, String)), disabled: Bool)
-}
-
-type Msg {
-  OnChange(String)
-  PropsChangedDisabled(Bool)
-  PropsChangedOptions(List(#(String, String)))
-  PropsChangedValue(String)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn value(value: String) {
+pub fn prop_value(value: String) {
   attribute.property("value", json.string(value))
 }
 
-pub fn options(options: List(#(String, String))) {
+pub fn prop_options(options: List(#(String, String))) {
   attribute.property(
     "options",
     json.array(options, fn(option) {
@@ -44,11 +29,11 @@ pub fn options(options: List(#(String, String))) {
   )
 }
 
-pub fn disabled(disabled: Bool) {
+pub fn prop_disabled(disabled: Bool) {
   attribute.property("disabled", json.bool(disabled))
 }
 
-pub fn on_change(handler: fn(String) -> msg) {
+pub fn on_change(handler: fn(String) -> message) {
   event.on(
     "change",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
@@ -86,12 +71,31 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(value: String, options: List(#(String, String)), disabled: Bool)
+}
+
 fn init(_) {
   #(Model(value: "", options: [], disabled: False), effect.none())
 }
 
-fn update(model: Model, msg: Msg) {
-  case msg {
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  OnChange(String)
+  PropsChangedDisabled(Bool)
+  PropsChangedOptions(List(#(String, String)))
+  PropsChangedValue(String)
+}
+
+fn update(model: Model, message: Message) {
+  case message {
     PropsChangedDisabled(new_disabled) -> #(
       Model(..model, disabled: new_disabled),
       effect.none(),
@@ -113,6 +117,10 @@ fn update(model: Model, msg: Msg) {
     )
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.select(

@@ -10,17 +10,17 @@ import routes/lobby/message
 import routes/lobby/model.{type Model}
 
 pub fn lobby_board_view(model: Model, lobby: Lobby) {
-  field.element([field.label("Board")], [
+  field.element([field.prop_label("Board")], [
     case model.app.user.id == lobby.owner.id {
       False -> html.text(labels.board(lobby.board_width, lobby.board_height))
       True ->
         single_select.element([
-          single_select.value(
+          single_select.prop_value(
             int.to_string(lobby.board_width)
             <> "x"
             <> int.to_string(lobby.board_height),
           ),
-          single_select.options([
+          single_select.prop_options([
             #("4x4", labels.board(4, 4)),
             #("3x3", labels.board(3, 3)),
           ]),

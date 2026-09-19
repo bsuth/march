@@ -10,22 +10,10 @@ import lustre/element/html
 import lustre/event
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(disabled: Bool)
-}
-
-type Message {
-  PropsChangedDisabled(Bool)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn disabled(value: Bool) {
+pub fn prop_disabled(value: Bool) {
   attribute.property("disabled", json.bool(value))
 }
 
@@ -37,7 +25,6 @@ pub fn on_click(message: message) -> Attribute(message) {
 // Component
 // -----------------------------------------------------------------------------
 
-// NOTE: If this is changed, it must be synced with `icon_button.css`.
 const element_name = "march-icon-button"
 
 pub fn element(
@@ -56,8 +43,24 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(disabled: Bool)
+}
+
 fn init(_) {
   #(Model(disabled: False), effect.none())
+}
+
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedDisabled(Bool)
 }
 
 fn update(_model: Model, message: Message) {
@@ -68,6 +71,10 @@ fn update(_model: Model, message: Message) {
     )
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.button(

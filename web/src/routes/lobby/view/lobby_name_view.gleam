@@ -23,7 +23,7 @@ pub fn lobby_name_view(model: Model, lobby: Lobby) {
         // TODO: allow pressing Enter to save
         text_input.element([
           attribute.class("grow"),
-          text_input.value(edit_name),
+          text_input.prop_value(edit_name),
           text_input.on_change(message.UserChangedEditName),
         ])
 

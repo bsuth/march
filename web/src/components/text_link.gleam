@@ -8,22 +8,10 @@ import lustre/element.{type Element}
 import lustre/element/html
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(href: String)
-}
-
-type Msg {
-  PropsChangedHref(String)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn href(value: String) {
+pub fn prop_href(value: String) {
   attribute.property("href", json.string(value))
 }
 
@@ -33,7 +21,10 @@ pub fn href(value: String) {
 
 const element_name = "march-text-link"
 
-pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
+pub fn element(
+  attrs: List(Attribute(message)),
+  children: List(Element(message)),
+) {
   element.element(element_name, attrs, children)
 }
 
@@ -46,15 +37,35 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(href: String)
+}
+
 fn init(_) {
   #(Model(href: "/"), effect.none())
 }
 
-fn update(_model: Model, msg: Msg) {
-  case msg {
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedHref(String)
+}
+
+fn update(_model: Model, message: Message) {
+  case message {
     PropsChangedHref(href) -> #(Model(href:), effect.none())
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.a(

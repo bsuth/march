@@ -14,7 +14,7 @@ pub fn view(model: Model) {
     ]),
     button.element(
       [
-        button.loading(model.get_lobby_list_loading),
+        button.prop_loading(model.get_lobby_list_loading),
         button.on_click(message.UserRefreshedLobbyList),
       ],
       // TODO: Remove this in favor of auto-refresh

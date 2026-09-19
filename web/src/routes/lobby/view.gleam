@@ -72,7 +72,7 @@ fn lobby_view(model: Model, lobby: Lobby) {
               lobby_board_view(model, lobby),
             ]),
             // TODO: allow clicking here to set player
-            field.element([field.label("White")], [
+            field.element([field.prop_label("White")], [
               html.p([], [
                 case lobby.white {
                   option.Some(white) -> html.text(labels.user(white))
@@ -82,13 +82,13 @@ fn lobby_view(model: Model, lobby: Lobby) {
             ]),
             board.element([
               attribute.class("w-full h-full"),
-              board.board(model.board),
-              board.theme(model.app.theme),
-              board.color(color.Black),
+              board.prop_board(model.board),
+              board.prop_theme(model.app.theme),
+              board.prop_color(color.Black),
             ]),
             // TODO: allow clicking here to set player
             field.element(
-              [field.label("Black"), attribute.class("text-right")],
+              [field.prop_label("Black"), attribute.class("text-right")],
               [
                 html.p([], [
                   case lobby.black {

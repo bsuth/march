@@ -63,7 +63,6 @@ pub fn start(names: Names, args: StartArgs) {
           args.hand_size,
         ),
         board: board.new(args.board_width, args.board_height),
-        history: [],
         white: player.Managed(
           color.White,
           white_deck,

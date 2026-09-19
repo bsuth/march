@@ -8,22 +8,10 @@ import lustre/element.{type Element}
 import lustre/element/html
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(label: String)
-}
-
-type Msg {
-  PropsChangedLabel(String)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn label(label: String) {
+pub fn prop_label(label: String) {
   attribute.property("label", json.string(label))
 }
 
@@ -33,7 +21,10 @@ pub fn label(label: String) {
 
 const element_name = "march-field"
 
-pub fn element(attrs: List(Attribute(msg)), children: List(Element(msg))) {
+pub fn element(
+  attrs: List(Attribute(message)),
+  children: List(Element(message)),
+) {
   element.element(element_name, attrs, children)
 }
 
@@ -46,15 +37,35 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(label: String)
+}
+
 fn init(_) {
   #(Model(label: ""), effect.none())
 }
 
-fn update(_model: Model, msg: Msg) {
-  case msg {
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedLabel(String)
+}
+
+fn update(_model: Model, message: Message) {
+  case message {
     PropsChangedLabel(new_label) -> #(Model(new_label), effect.none())
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(model: Model) {
   html.div([attribute.class("flex flex-col gap-1")], [

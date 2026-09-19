@@ -9,27 +9,14 @@ import lustre/element/html
 import lustre/event
 
 // -----------------------------------------------------------------------------
-// Model / Message
+// Props / Events
 // -----------------------------------------------------------------------------
 
-type Model {
-  Model(value: String)
-}
-
-type Msg {
-  PropsChangedValue(String)
-  OnUpdate(String)
-}
-
-// -----------------------------------------------------------------------------
-// Properties / Events
-// -----------------------------------------------------------------------------
-
-pub fn value(value: String) {
+pub fn prop_value(value: String) {
   attribute.property("value", json.string(value))
 }
 
-pub fn on_update(handler: fn(String) -> msg) {
+pub fn on_update(handler: fn(String) -> message) {
   event.on(
     "update",
     ["detail"] |> decode.at(decode.string) |> decode.map(handler),
@@ -42,7 +29,7 @@ pub fn on_update(handler: fn(String) -> msg) {
 
 const element_name = "march-location-input"
 
-pub fn element(attrs: List(Attribute(msg))) {
+pub fn element(attrs: List(Attribute(message))) {
   element.element(element_name, attrs, [])
 }
 
@@ -55,12 +42,29 @@ pub fn register() {
   |> lustre.register(element_name)
 }
 
+// -----------------------------------------------------------------------------
+// Init
+// -----------------------------------------------------------------------------
+
+type Model {
+  Model(value: String)
+}
+
 fn init(_) {
   #(Model(value: ""), effect.none())
 }
 
-fn update(model: Model, msg: Msg) {
-  case msg {
+// -----------------------------------------------------------------------------
+// Update
+// -----------------------------------------------------------------------------
+
+type Message {
+  PropsChangedValue(String)
+  OnUpdate(String)
+}
+
+fn update(model: Model, message: Message) {
+  case message {
     PropsChangedValue(new_value) -> {
       #(Model(value: new_value), effect.none())
     }
@@ -71,6 +75,10 @@ fn update(model: Model, msg: Msg) {
     )
   }
 }
+
+// -----------------------------------------------------------------------------
+// View
+// -----------------------------------------------------------------------------
 
 fn view(_model: Model) {
   html.div([], [html.text("TODO")])
