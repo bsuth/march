@@ -86,15 +86,10 @@ fn view(model: Model) {
       attribute.class("relative"),
       attribute.class("cursor-pointer"),
       attribute.class("transition-all"),
+      attribute.class("bg-(--march-50)"),
       case model.value {
-        True ->
-          attribute.class(
-            "bg-[light-dark(var(--color-zinc-800),var(--color-zinc-200))]",
-          )
-        False ->
-          attribute.class(
-            "bg-[light-dark(var(--color-zinc-400),var(--color-zinc-600))]",
-          )
+        True -> attribute.class("bg-(--march-800)")
+        False -> attribute.class("bg-(--march-400)")
       },
       event.on_click(OnUpdate(!model.value)),
     ],
@@ -103,9 +98,7 @@ fn view(model: Model) {
         [
           attribute.class("size-4"),
           attribute.class("absolute top-1/2 -translate-y-1/2"),
-          attribute.class(
-            "bg-[light-dark(var(--color-white),var(--color-black))]",
-          ),
+          attribute.class("bg-(--march-50)"),
           attribute.class("rounded-full"),
           attribute.class("transition-all"),
           case model.value {

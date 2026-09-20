@@ -14,7 +14,7 @@ pub fn lobby_list_view(model: Model) {
     [
       attribute.class("w-2xl min-h-96"),
       attribute.class("flex flex-col"),
-      attribute.class("border rounded overflow-hidden"),
+      attribute.class("border"),
     ],
     case model.get_lobby_list_loading, list.is_empty(model.lobbies) {
       False, False -> list.map(model.lobbies, lobby_list_item)
@@ -48,7 +48,7 @@ fn lobby_list_item(lobby: Lobby) {
     [
       attribute.class("px-4 py-2"),
       attribute.class("flex items-center justify-between"),
-      attribute.class("hover:bg-zinc-200 dark:hover:bg-zinc-700"),
+      attribute.class("hover:bg-(--march-200)"),
       attribute.class("cursor-pointer"),
       event.on_click(message.UserClickedLobby(lobby)),
     ],

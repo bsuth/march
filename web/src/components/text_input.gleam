@@ -109,7 +109,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   html.input([
     attribute.class("w-full px-2 py-1"),
-    attribute.class("ring rounded"),
+    attribute.class("ring"),
     attribute.class("outline-none"),
     attribute.class("focus:ring-2"),
     attribute.value(model.value),

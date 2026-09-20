@@ -110,8 +110,8 @@ fn attribution_view(
     [
       attribute.class("p-4 flex flex-col gap-2"),
       attribute.class("rounded"),
-      attribute.class("bg-zinc-200 dark:bg-zinc-800"),
-      attribute.class("hover:bg-zinc-300 dark:hover:bg-zinc-700"),
+      attribute.class("bg-(--march-200)"),
+      attribute.class("hover:bg-(--march-300)"),
       attribute.class("cursor-pointer"),
       attribute.target("_blank"),
       attribute.href(href),

@@ -8,8 +8,8 @@ pub fn view(model: Model) {
   html.div(
     [
       attribute.class("h-dvh flex flex-col overflow-auto"),
-      attribute.class("text-black bg-zinc-50"),
-      attribute.class("dark:text-white dark:bg-zinc-900"),
+      attribute.class("bg-(--march-100)"),
+      attribute.class("text-(--march-950)"),
     ],
     [
       html.nav(

@@ -99,7 +99,7 @@ fn black_indicator(attrs: List(Attribute(message))) {
   html.div(
     [
       attribute.class("size-5"),
-      attribute.class("dark:border border-zinc-50 bg-zinc-900"),
+      attribute.class("dark:border border-neutral-50 bg-neutral-900"),
       attribute.class("rounded-full"),
       ..attrs
     ],
@@ -111,7 +111,7 @@ fn white_indicator(attrs: List(Attribute(message))) {
   html.div(
     [
       attribute.class("size-5"),
-      attribute.class("light:border border-zinc-900 bg-zinc-50"),
+      attribute.class("light:border border-neutral-900 bg-neutral-50"),
       attribute.class("rounded-full"),
       ..attrs
     ],

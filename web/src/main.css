@@ -17,18 +17,50 @@
   font-style: italic;
 }
 
-@layer base {
-  * {
-    font-family: "Roboto Mono", monospace;
-    font-weight: 400;
-  }
+:root {
+  --march-primary: var(--color-sky-600);
+  --march-info: var(--color-neutral-600);
+  --march-success: var(--color-emerald-600);
+  --march-warning: var(--color-amber-600);
+  --march-error: var(--color-red-600);
 
   [data-theme=light] {
     color-scheme: light;
+
+    --march-50: var(--color-neutral-50);
+    --march-100: var(--color-neutral-100);
+    --march-200: var(--color-neutral-200);
+    --march-300: var(--color-neutral-300);
+    --march-400: var(--color-neutral-400);
+    --march-500: var(--color-neutral-500);
+    --march-600: var(--color-neutral-600);
+    --march-700: var(--color-neutral-700);
+    --march-800: var(--color-neutral-800);
+    --march-900: var(--color-neutral-900);
+    --march-950: var(--color-neutral-950);
   }
 
   [data-theme=dark] {
     color-scheme: dark;
+
+    --march-50: var(--color-neutral-950);
+    --march-100: var(--color-neutral-900);
+    --march-200: var(--color-neutral-800);
+    --march-300: var(--color-neutral-700);
+    --march-400: var(--color-neutral-600);
+    --march-500: var(--color-neutral-500);
+    --march-600: var(--color-neutral-400);
+    --march-700: var(--color-neutral-300);
+    --march-800: var(--color-neutral-200);
+    --march-900: var(--color-neutral-100);
+    --march-950: var(--color-neutral-50);
+  }
+}
+
+@layer base {
+  * {
+    font-family: "Roboto Mono", monospace;
+    font-weight: 400;
   }
 
   h1 {

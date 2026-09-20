@@ -126,7 +126,7 @@ fn view(model: Model) {
   html.select(
     [
       attribute.class("p-2"),
-      attribute.class("border rounded"),
+      attribute.class("border"),
       attribute.class("cursor-pointer outline-none"),
       attribute.class("disabled:opacity-70 disabled:cursor-not-allowed"),
       attribute.value(model.value),

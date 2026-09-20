@@ -43,11 +43,19 @@ pub fn lobby_name_view(model: Model, lobby: Lobby) {
         html.div([attribute.class("flex items-center")], [
           icon_button.element(
             [icon_button.on_click(message.UserSavedEditName)],
-            [phosphor.check_regular([attribute.class("size-6")])],
+            [
+              phosphor.check_regular([
+                attribute.class("text-(--march-success) size-6"),
+              ]),
+            ],
           ),
           icon_button.element(
             [icon_button.on_click(message.UserDiscardedEditName)],
-            [phosphor.x_regular([attribute.class("size-6")])],
+            [
+              phosphor.x_regular([
+                attribute.class("text-(--march-error) size-6"),
+              ]),
+            ],
           ),
         ])
 

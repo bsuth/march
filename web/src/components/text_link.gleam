@@ -70,12 +70,7 @@ fn update(_model: Model, message: Message) {
 fn view(model: Model) {
   html.a(
     [
-      attribute.class(
-        "text-[light-dark(var(--color-blue-700),var(--color-blue-400))]",
-      ),
-      attribute.class(
-        "hover:text-[light-dark(var(--color-blue-500),var(--color-blue-600))]",
-      ),
+      attribute.class("text-(--color-primary)"),
       attribute.href(model.href),
     ],
     [

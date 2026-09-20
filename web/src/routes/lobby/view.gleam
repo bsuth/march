@@ -58,7 +58,7 @@ fn lobby_view(model: Model, lobby: Lobby) {
         [
           attribute.class("grow min-w-0 p-4"),
           attribute.class("flex flex-col gap-4"),
-          attribute.class("border rounded"),
+          attribute.class("border"),
         ],
         [
           html.div([attribute.class("grow flex flex-col gap-4")], [
@@ -102,13 +102,10 @@ fn lobby_view(model: Model, lobby: Lobby) {
           start_game_view(model, lobby),
         ],
       ),
-      html.div(
-        [attribute.class("w-96 flex flex-col gap-4 p-4 border rounded")],
-        [
-          html.text("Lobby Members"),
-          lobby_members_list_view(model, lobby),
-        ],
-      ),
+      html.div([attribute.class("w-96 flex flex-col gap-4 p-4 border")], [
+        html.text("Lobby Members"),
+        lobby_members_list_view(model, lobby),
+      ]),
     ],
   )
 }

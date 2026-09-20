@@ -91,22 +91,13 @@ fn view(model: Model) {
     [
       attribute.class("px-4 py-2"),
       attribute.class("flex gap-2 items-center"),
-      attribute.class(
-        "bg-[light-dark(var(--color-zinc-800),var(--color-zinc-100))]",
-      ),
-      attribute.class("rounded"),
-      attribute.class(
-        "text-[light-dark(var(--color-white),var(--color-black))]",
-      ),
+      attribute.class("bg-(--march-800)"),
+      attribute.class("text-(--march-50)"),
       attribute.class("font-bold"),
       attribute.class("cursor-pointer"),
+      attribute.class("not-disabled:hover:bg-(--march-700)"),
+      attribute.class("not-disabled:active:bg-(--march-600)"),
       attribute.class("disabled:cursor-not-allowed disabled:opacity-70"),
-      attribute.class(
-        "not-disabled:hover:bg-[light-dark(var(--color-zinc-700),var(--color-zinc-200))]",
-      ),
-      attribute.class(
-        "not-disabled:active:bg-[light-dark(var(--color-zinc-600),var(--color-zinc-300))]",
-      ),
       attribute.disabled(model.disabled),
       attribute.type_("button"),
     ],
