@@ -7,8 +7,6 @@ pub type Trait {
   Diagonal
   Jump
   Mobius
-  Slide
-  Teleport
 }
 
 pub fn to_string(trait: Trait) {
@@ -18,8 +16,6 @@ pub fn to_string(trait: Trait) {
     Diagonal -> "diagonal"
     Jump -> "jump"
     Mobius -> "mobius"
-    Slide -> "slide"
-    Teleport -> "teleport"
   }
 }
 
@@ -30,8 +26,6 @@ pub fn from_string(trait_string: String) {
     "diagonal" -> Ok(Diagonal)
     "jump" -> Ok(Jump)
     "mobius" -> Ok(Mobius)
-    "slide" -> Ok(Slide)
-    "teleport" -> Ok(Slide)
     _ -> Error(Nil)
   }
 }
