@@ -1,15 +1,15 @@
 import core/lobby.{type Lobby}
 import core/user.{type User}
 import gleam/list
-import gleam/option
+import gleam/result
 import lib/labels
+import lib/player_color
 import lustre/attribute.{type Attribute}
 import lustre/element
 import lustre/element/html
-import lustre/event
 import phosphor
-import routes/lobby/message
 import routes/lobby/model.{type Model}
+import yuzu
 
 // TODO: allow muting players
 // TODO: allow kicking players
@@ -26,33 +26,40 @@ pub fn lobby_members_list_view(model: Model, lobby: Lobby) {
 }
 
 fn lobby_member_list_item_view(model: Model, lobby: Lobby, user: User) {
-  let is_assigned_to_white = case lobby.white {
-    option.Some(white) -> white.id == user.id
-    option.None -> False
-  }
+  let player_index =
+    lobby.players
+    |> list.index_map(fn(user, player_index) { #(user, player_index) })
+    |> list.find_map(fn(lobby_player) {
+      use player_user <- yuzu.some(lobby_player.0, Error(Nil))
+      use <- yuzu.true(player_user == user, Error(Nil))
+      Ok(lobby_player.1)
+    })
 
-  let is_assigned_to_black = case lobby.black {
-    option.Some(black) -> black.id == user.id
-    option.None -> False
-  }
+  let player_color =
+    result.map(player_index, fn(player_index) {
+      player_color.from_player_index(
+        player_index,
+        lobby.engine_settings.doubles,
+      )
+    })
+
+  // TODO: handle other colors
 
   html.li([attribute.class("flex gap-2 items-center")], [
-    case is_assigned_to_black {
+    case player_color == Ok(player_color.Black) {
       False -> element.none()
       True ->
         black_indicator([
           attribute.class("cursor-pointer"),
           attribute.title("Assigned to Black"),
-          event.on_click(message.UserChangedBlack(option.None)),
         ])
     },
-    case is_assigned_to_white {
+    case player_color == Ok(player_color.White) {
       False -> element.none()
       True ->
         white_indicator([
           attribute.class("cursor-pointer"),
           attribute.title("Assigned to White"),
-          event.on_click(message.UserChangedWhite(option.None)),
         ])
     },
     case user.id == lobby.owner.id {
@@ -80,7 +87,6 @@ fn lobby_member_list_item_view(model: Model, lobby: Lobby, user: User) {
         black_indicator([
           attribute.class("cursor-pointer"),
           attribute.title("Assign to Black"),
-          event.on_click(message.UserChangedBlack(option.Some(user.id))),
         ])
     },
     case model.app.user.id == lobby.owner.id {
@@ -89,7 +95,6 @@ fn lobby_member_list_item_view(model: Model, lobby: Lobby, user: User) {
         white_indicator([
           attribute.class("cursor-pointer"),
           attribute.title("Assign to White"),
-          event.on_click(message.UserChangedWhite(option.Some(user.id))),
         ])
     },
   ])

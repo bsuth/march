@@ -1,5 +1,5 @@
 import core/lobby.{type Lobby}
-import engine/variant.{type Variant}
+import engine/settings.{type Settings as EngineSettings} as engine_settings
 import gleam/dynamic/decode
 import gleam/json
 
@@ -28,39 +28,25 @@ pub fn get_response_decoder() {
 // -----------------------------------------------------------------------------
 
 pub type PostRequest {
-  PostRequest(
-    board_height: Int,
-    board_width: Int,
-    name: String,
-    variant: Variant,
-    visible: Bool,
-  )
+  PostRequest(engine_settings: EngineSettings, name: String, visible: Bool)
 }
 
 pub fn post_request_json(request: PostRequest) {
   json.object([
-    #("board_height", json.int(request.board_height)),
-    #("board_width", json.int(request.board_width)),
+    #("engine_settings", engine_settings.json(request.engine_settings)),
     #("name", json.string(request.name)),
-    #("variant", variant.json(request.variant)),
     #("visible", json.bool(request.visible)),
   ])
 }
 
 pub fn post_request_decoder() {
-  use board_height <- decode.field("board_height", decode.int)
-  use board_width <- decode.field("board_width", decode.int)
+  use engine_settings <- decode.field(
+    "engine_settings",
+    engine_settings.decoder(),
+  )
   use name <- decode.field("name", decode.string)
-  use variant <- decode.field("variant", variant.decoder())
   use visible <- decode.field("visible", decode.bool)
-
-  decode.success(PostRequest(
-    board_height:,
-    board_width:,
-    name:,
-    variant:,
-    visible:,
-  ))
+  decode.success(PostRequest(engine_settings:, name:, visible:))
 }
 
 pub fn post_response_json(lobby: Lobby) {

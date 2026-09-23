@@ -1,8 +1,8 @@
 import engine/card.{type Card, Card}
-import engine/card/face.{type Face}
-import engine/card/suit.{type Suit}
-import engine/color.{type Color}
+import engine/face.{type Face}
+import engine/suit.{type Suit}
 import gleam/dynamic/decode
+import lib/player_color.{type PlayerColor}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -16,7 +16,11 @@ import phosphor
 // -----------------------------------------------------------------------------
 
 pub fn prop_value(card: Card) {
-  attribute.property("value", card.json(card))
+  attribute.property("card", card.json(card))
+}
+
+pub fn prop_player_color(player_color: PlayerColor) {
+  attribute.property("player_color", player_color.json(player_color))
 }
 
 // -----------------------------------------------------------------------------
@@ -31,8 +35,11 @@ pub fn element(attrs: List(Attribute(msg))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
-    component.on_property_change("value", {
+    component.on_property_change("card", {
       card.decoder() |> decode.map(PropsChangedCard)
+    }),
+    component.on_property_change("player_color", {
+      player_color.decoder() |> decode.map(PropsChangedPlayerColor)
     }),
   ])
   |> lustre.register(element_name)
@@ -42,12 +49,16 @@ pub fn register() {
 // Init
 // -----------------------------------------------------------------------------
 
-type Model =
-  Card
+type Model {
+  Model(card: Card, player_color: PlayerColor)
+}
 
 fn init(_) {
   #(
-    Card(face: face.Ace, suit: suit.Spades, color: color.Black, traits: []),
+    Model(
+      card: Card(face: face.Ace, suit: suit.Spades, player_index: 0),
+      player_color: player_color.Black,
+    ),
     effect.none(),
   )
 }
@@ -58,11 +69,16 @@ fn init(_) {
 
 type Message {
   PropsChangedCard(Card)
+  PropsChangedPlayerColor(PlayerColor)
 }
 
-fn update(_model: Model, msg: Message) {
+fn update(model: Model, msg: Message) {
   case msg {
-    PropsChangedCard(card) -> #(card, effect.none())
+    PropsChangedCard(card) -> #(Model(..model, card:), effect.none())
+    PropsChangedPlayerColor(player_color) -> #(
+      Model(..model, player_color:),
+      effect.none(),
+    )
   }
 }
 
@@ -77,22 +93,24 @@ fn view(model: Model) {
       attribute.class("flex flex-col justify-center items-center gap-1"),
       attribute.class("text-4xl font-bold"),
       attribute.class("select-none"),
-      case model.suit, model.color {
+      case model.card.suit, model.player_color {
         suit.Diamonds, _ -> attribute.class("text-red-400")
         suit.Hearts, _ -> attribute.class("text-red-400")
-        _, color.Black -> attribute.class("text-white")
-        _, color.White -> attribute.class("text-black")
+        _, player_color.White -> attribute.class("text-black")
+        _, _ -> attribute.class("text-white")
       },
-      case model.color {
-        color.Black -> attribute.class("bg-black")
-        color.White -> attribute.class("bg-white")
+      case model.player_color {
+        player_color.Black -> attribute.class("bg-black")
+        player_color.White -> attribute.class("bg-white")
+        player_color.Red -> attribute.class("bg-red-400")
+        player_color.Blue -> attribute.class("bg-blue-400")
       },
     ],
     [
       suit_view(
         [attribute.class("size-4")],
-        suit.strong(model.suit),
-        model.color,
+        suit.strong(model.card.suit),
+        model.player_color,
       ),
       html.div(
         [
@@ -100,11 +118,19 @@ fn view(model: Model) {
           attribute.class("text-4xl font-bold"),
         ],
         [
-          face_view(model.face),
-          suit_view([attribute.class("size-8")], model.suit, model.color),
+          face_view(model.card.face),
+          suit_view(
+            [attribute.class("size-8")],
+            model.card.suit,
+            model.player_color,
+          ),
         ],
       ),
-      suit_view([attribute.class("size-4")], suit.weak(model.suit), model.color),
+      suit_view(
+        [attribute.class("size-4")],
+        suit.weak(model.card.suit),
+        model.player_color,
+      ),
     ],
   )
 }
@@ -118,12 +144,16 @@ fn face_view(face: Face) {
   }
 }
 
-fn suit_view(attrs: List(Attribute(message)), suit: Suit, color: Color) {
-  let text_attribute = case suit, color {
+fn suit_view(
+  attrs: List(Attribute(message)),
+  suit: Suit,
+  player_color: PlayerColor,
+) {
+  let text_attribute = case suit, player_color {
     suit.Diamonds, _ -> attribute.class("text-red-400")
     suit.Hearts, _ -> attribute.class("text-red-400")
-    _, color.Black -> attribute.class("text-white")
-    _, color.White -> attribute.class("text-black")
+    _, player_color.Black -> attribute.class("text-white")
+    _, _ -> attribute.class("text-black")
   }
 
   let icon = case suit {

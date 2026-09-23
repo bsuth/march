@@ -1,9 +1,7 @@
 import blocks/board
 import components/field
 import core/lobby.{type Lobby}
-import engine/color
 import gleam/option
-import lib/labels
 import lustre/attribute
 import lustre/element/html
 import phosphor
@@ -11,13 +9,12 @@ import routes/lobby/model.{type Model}
 import routes/lobby/view/lobby_board_view.{lobby_board_view}
 import routes/lobby/view/lobby_members_list_view.{lobby_members_list_view}
 import routes/lobby/view/lobby_name_view.{lobby_name_view}
-import routes/lobby/view/lobby_variant_view.{lobby_variant_view}
 import routes/lobby/view/lobby_visibility_view.{lobby_visibility_view}
 import routes/lobby/view/start_game_view.{start_game_view}
 import routes/lobby/view/terminate_lobby_view.{terminate_lobby_view}
 
 pub fn view(model: Model) {
-  case model.loading_lobby, model.lobby {
+  case model.lobby_loading, model.lobby {
     False, option.Some(lobby) -> lobby_view(model, lobby)
 
     False, option.None ->
@@ -68,34 +65,25 @@ fn lobby_view(model: Model, lobby: Lobby) {
               terminate_lobby_view(model, lobby),
             ]),
             html.div([attribute.class("flex gap-4")], [
-              lobby_variant_view(model, lobby),
               lobby_board_view(model, lobby),
             ]),
             // TODO: allow clicking here to set player
+            // TODO: show white player
             field.element([field.prop_label("White")], [
-              html.p([], [
-                case lobby.white {
-                  option.Some(white) -> html.text(labels.user(white))
-                  option.None -> html.text("-")
-                },
-              ]),
+              html.p([], [html.text("-")]),
             ]),
             board.element([
               attribute.class("w-full h-full"),
-              board.prop_board(model.board),
+              board.prop_player_index(0),
+              board.prop_settings(lobby.engine_settings),
               board.prop_theme(model.app.theme),
-              board.prop_color(color.Black),
             ]),
             // TODO: allow clicking here to set player
+            // TODO: show black player
             field.element(
               [field.prop_label("Black"), attribute.class("text-right")],
               [
-                html.p([], [
-                  case lobby.black {
-                    option.Some(black) -> html.text(labels.user(black))
-                    option.None -> html.text("-")
-                  },
-                ]),
+                html.p([], [html.text("-")]),
               ],
             ),
           ]),

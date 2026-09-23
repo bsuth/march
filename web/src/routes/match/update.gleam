@@ -1,5 +1,4 @@
 import core/match.{type Match}
-import engine/color
 import gleam/json
 import gleam/option
 import lib/websocket
@@ -31,13 +30,8 @@ fn api_match_get_response(
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let color = case model.app.user.id == match.white.id {
-    True -> color.White
-    False -> color.Black
-  }
-
   #(
-    Model(..model, color:, loading_match: False, match: option.Some(match)),
+    Model(..model, loading_match: False, match: option.Some(match)),
     effect.none(),
   )
 }

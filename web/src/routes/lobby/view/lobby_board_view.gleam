@@ -1,6 +1,7 @@
 import components/field
 import components/single_select
 import core/lobby.{type Lobby}
+import engine/board
 import gleam/int
 import gleam/list
 import gleam/string
@@ -10,15 +11,16 @@ import routes/lobby/message
 import routes/lobby/model.{type Model}
 
 pub fn lobby_board_view(model: Model, lobby: Lobby) {
+  let width = lobby.engine_settings.board.width
+  let height = lobby.engine_settings.board.height
+
   field.element([field.prop_label("Board")], [
     case model.app.user.id == lobby.owner.id {
-      False -> html.text(labels.board(lobby.board_width, lobby.board_height))
+      False -> html.text(labels.board(width, height))
       True ->
         single_select.element([
           single_select.prop_value(
-            int.to_string(lobby.board_width)
-            <> "x"
-            <> int.to_string(lobby.board_height),
+            int.to_string(width) <> "x" <> int.to_string(height),
           ),
           single_select.prop_options([
             #("4x4", labels.board(4, 4)),
@@ -26,9 +28,9 @@ pub fn lobby_board_view(model: Model, lobby: Lobby) {
           ]),
           single_select.on_change(fn(board_string) {
             case string.split(board_string, "x") |> list.map(int.parse) {
-              [Ok(board_width), Ok(board_height)] ->
-                message.UserChangedBoard(board_width, board_height)
-              _ -> message.UserChangedBoard(4, 4)
+              [Ok(new_width), Ok(new_height)] ->
+                message.UserChangedBoard(board.normal(new_width, new_height))
+              _ -> message.UserChangedBoard(board.normal(width, height))
             }
           }),
         ])

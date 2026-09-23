@@ -11,6 +11,13 @@ pub fn true(
   }
 }
 
+pub fn true_(condition: Bool, callback: fn() -> Bool) {
+  case condition {
+    True -> callback()
+    False -> False
+  }
+}
+
 pub fn false(
   condition: Bool,
   default_return_value: return_value,
@@ -18,6 +25,13 @@ pub fn false(
 ) {
   case condition {
     True -> default_return_value
+    False -> callback()
+  }
+}
+
+pub fn false_(condition: Bool, callback: fn() -> Bool) {
+  case condition {
+    True -> True
     False -> callback()
   }
 }
