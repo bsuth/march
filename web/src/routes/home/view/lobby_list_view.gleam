@@ -64,14 +64,6 @@ fn lobby_list_item(lobby: Lobby) {
           html.text(labels.user(lobby.owner)),
         ]),
       ]),
-      html.div([attribute.class("flex flex-col text-right")], [
-        html.p([], [
-          html.text(labels.variant(lobby.variant)),
-        ]),
-        html.p([attribute.class("text-sm")], [
-          html.text(labels.board(lobby.board_width, lobby.board_height)),
-        ]),
-      ]),
     ],
   )
 }

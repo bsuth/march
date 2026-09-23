@@ -1,16 +1,19 @@
 import core/lobby.{type Lobby}
-import engine/variant.{type Variant}
-import gleam/option.{type Option}
+import engine/board.{type Board}
+import engine/face.{type Face}
+import engine/trait.{type Trait}
+import gleam/dict.{type Dict}
 import rsvp
 
 pub type Message {
   ApiLobbyGetResponse(Result(Lobby, rsvp.Error(String)))
-  UserChangedBlack(Option(String))
-  UserChangedBoard(Int, Int)
+  UserChangedBoard(Board)
+  UserChangedDoubles(Bool)
   UserChangedEditName(String)
-  UserChangedVariant(Variant)
+  UserChangedHandSize(Int)
+  UserChangedPlayer(String, Int)
+  UserChangedTraits(Dict(Face, List(Trait)))
   UserChangedVisibility(Bool)
-  UserChangedWhite(Option(String))
   UserDiscardedEditName
   UserEnabledEditName
   UserSavedEditName

@@ -1,17 +1,20 @@
 import blocks/board as ui_board
 import blocks/card as ui_card
 import components/button
-import engine.{type ActiveTurn, type Engine, Engine}
+import engine.{type Engine}
 import engine/board
-import engine/board/cell.{type Cell}
 import engine/card.{type Card}
-import engine/color.{type Color}
-import engine/player.{type Player}
-import engine/variant
+import engine/player
+import engine/position
+import engine/settings.{Settings}
+import engine/turn
+import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/option.{type Option}
+import lib/player_color
 import lib/theme.{type Theme}
 import lustre
 import lustre/attribute.{type Attribute}
@@ -27,12 +30,12 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_color(color: Color) {
-  attribute.property("color", color.json(color))
-}
-
 pub fn prop_engine(engine: Engine) {
   attribute.property("engine", engine.json(engine))
+}
+
+pub fn prop_player_index(player_index: Int) {
+  attribute.property("player_index", json.int(player_index))
 }
 
 pub fn prop_theme(theme: Theme) {
@@ -51,11 +54,11 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
-    component.on_property_change("color", {
-      color.decoder() |> decode.map(PropsChangedColor)
-    }),
     component.on_property_change("engine", {
       engine.decoder() |> decode.map(PropsChangedEngine)
+    }),
+    component.on_property_change("player_index", {
+      decode.int |> decode.map(PropsChangedPlayerIndex)
     }),
     component.on_property_change("theme", {
       theme.decoder() |> decode.map(PropsChangedTheme)
@@ -70,40 +73,34 @@ pub fn register() {
 
 type Model {
   Model(
-    active_turn: ActiveTurn,
-    color: Color,
     engine: Engine,
     hover_index: Option(Int),
+    player_index: Int,
     theme: Theme,
+    turn_request: turn.Request,
+    turn_request_engine: Engine,
   )
 }
 
 fn init(_) {
-  // TODO: make this configurable
-  let board_size = 4
-  let hand_size = 4
-
-  let #(black_hand, black_deck) =
-    card.deal(variant.Classic, color.Black, hand_size)
-
-  let #(white_hand, white_deck) =
-    card.deal(variant.Classic, color.White, hand_size)
-
-  let engine =
-    Engine(
-      active_player_color: color.Black,
-      black: player.Managed(color.Black, black_deck, black_hand, hand_size),
-      board: board.new(board_size, board_size),
-      white: player.Managed(color.White, white_deck, white_hand, hand_size),
+  let settings =
+    Settings(
+      board: board.normal(4, 4),
+      doubles: False,
+      hand_size: 4,
+      traits: dict.new(),
     )
+
+  let engine = engine.new(settings)
 
   #(
     Model(
-      active_turn: engine.ActiveStartTurn,
-      color: color.White,
       engine:,
       hover_index: option.None,
+      player_index: 0,
       theme: theme.Light,
+      turn_request: turn.Request(option.None, [], option.None),
+      turn_request_engine: engine,
     ),
     effect.none(),
   )
@@ -114,11 +111,10 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
-  PropsChangedColor(Color)
   PropsChangedEngine(Engine)
+  PropsChangedPlayerIndex(Int)
   PropsChangedTheme(Theme)
 
-  CellClick(Cell)
   Deploy(Card)
   EndTurn
   Hover(Int)
@@ -130,11 +126,22 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
-    PropsChangedColor(color) -> #(Model(..model, color:), effect.none())
-    PropsChangedEngine(engine) -> #(Model(..model, engine:), effect.none())
+    PropsChangedEngine(engine) -> {
+      #(
+        Model(
+          ..model,
+          engine:,
+          turn_request_engine: apply_turn_request(engine, model.turn_request),
+        ),
+        effect.none(),
+      )
+    }
+    PropsChangedPlayerIndex(player_index) -> #(
+      Model(..model, player_index:),
+      effect.none(),
+    )
     PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
-    CellClick(cell) -> update_cell_click(model, cell)
     Deploy(card) -> update_deploy(model, card)
     EndTurn -> update_end_turn(model)
     Hover(index) -> update_hover(model, index)
@@ -145,27 +152,13 @@ fn update(model: Model, msg: Message) {
   }
 }
 
-fn update_cell_click(model: Model, cell: Cell) {
-  echo cell
-  #(model, effect.none())
-}
-
 fn update_deploy(model: Model, card: Card) {
-  use engine <- yuzu.ok(engine.deploy(model.engine, option.Some(card)), #(
-    model,
-    effect.none(),
-  ))
+  let turn_request =
+    turn.Request(..model.turn_request, deploy: option.Some(card))
 
-  let active_turn = case model.active_turn {
-    engine.ActiveStartTurn -> engine.ActiveDeployOnlyTurn(card)
-    engine.ActiveMarchTurn(move, marches) ->
-      engine.ActiveDeployTurn(move, marches, card)
-    engine.ActiveDeployTurn(move, marches, _) ->
-      engine.ActiveDeployTurn(move, marches, card)
-    engine.ActiveDeployOnlyTurn(_) -> engine.ActiveDeployOnlyTurn(card)
-  }
+  let turn_request_engine = apply_turn_request(model.engine, turn_request)
 
-  #(Model(..model, active_turn:, engine:), effect.none())
+  #(Model(..model, turn_request:, turn_request_engine:), effect.none())
 }
 
 fn update_end_turn(model: Model) {
@@ -187,38 +180,29 @@ fn update_undo(model: Model) {
 // -----------------------------------------------------------------------------
 
 fn view(model: Model) {
-  let top_player = case model.color {
-    color.Black -> model.engine.white
-    color.White -> model.engine.black
-  }
-
-  let bottom_player = case model.color {
-    color.Black -> model.engine.black
-    color.White -> model.engine.white
-  }
-
   html.div(
     [
       attribute.class("h-full"),
       attribute.class("flex justify-center gap-8"),
     ],
     [
-      // TODO: allow ability to flip colors
+      // TODO: allow ability to change player index
       html.div(
         [
           attribute.class("max-w-2xl flex-2"),
           attribute.class("flex flex-col justify-center items-center gap-8"),
         ],
         [
-          player_hand_view(model.engine, top_player),
+          // TODO: handle doubles
+          player_hand_view(model, 0),
           ui_board.element([
             attribute.class("w-full h-full max-w-96 max-h-96"),
-            ui_board.prop_board(model.engine.board),
-            ui_board.prop_color(model.color),
+            ui_board.prop_player_index(model.player_index),
+            ui_board.prop_position(model.engine.position),
+            ui_board.prop_settings(model.engine.settings),
             ui_board.prop_theme(model.theme),
-            ui_board.on_cell_click(CellClick),
           ]),
-          player_hand_view(model.engine, bottom_player),
+          player_hand_view(model, 1),
         ],
       ),
       html.div(
@@ -233,29 +217,36 @@ fn view(model: Model) {
   )
 }
 
-fn player_hand_view(engine: Engine, player: Player) {
-  let player_base_index = board.get_base_index(engine.board, player.color)
+fn player_hand_view(model: Model, player_index: Int) {
+  let engine = model.engine
+  let assert Ok(player) = dict.get(model.engine.players, player_index)
+  let player_base_index = settings.get_base_index(engine.settings, player_index)
 
-  let needs_player_deployment =
-    engine.active_player_color == player.color
-    && board.is_none(engine.board, player_base_index)
-    && !player.has_empty_hand(player)
+  let can_deploy = {
+    use <- yuzu.true(engine.active_player_index == player_index, False)
+    use <- yuzu.true(!player.has_empty_hand(player), False)
+    position.is_none(engine.position, player_base_index)
+  }
 
   let children = case player {
-    player.Managed(_, _, hand, _) | player.Controlled(_, _, hand, _) ->
+    player.Managed(_, _, hand) | player.Controlled(_, _, hand) ->
       list.map(hand, fn(card) {
         ui_card.element([
           ui_card.prop_value(card),
-          case needs_player_deployment {
+          case can_deploy {
+            True -> attribute.class("cursor-pointer")
+            False -> attribute.none()
+          },
+          case can_deploy {
             True -> event.on_click(Deploy(card))
             False -> attribute.none()
           },
         ])
       })
 
-    player.Observed(_, _, hand, _) ->
+    player.Observed(_, _, hand) ->
       int.range(0, hand, [], fn(children, _) {
-        list.prepend(children, unknown_card_view(player.color))
+        list.prepend(children, unknown_card_view(model, player_index))
       })
   }
 
@@ -267,15 +258,19 @@ fn player_hand_view(engine: Engine, player: Player) {
   )
 }
 
-fn unknown_card_view(color: Color) {
+fn unknown_card_view(model: Model, player_index: Int) {
   let suit_class = attribute.class("size-6 -rotate-45")
+  let player_color =
+    player_color.from_player_index(player_index, model.engine.settings.doubles)
 
   html.div(
     [
       attribute.class("h-full flex justify-center items-center"),
-      case color {
-        color.Black -> attribute.class("text-white bg-black")
-        color.White -> attribute.class("text-black bg-white")
+      case player_color {
+        player_color.Black -> attribute.class("text-white bg-black")
+        player_color.White -> attribute.class("text-black bg-white")
+        player_color.Red -> attribute.class("text-black bg-red-400")
+        player_color.Blue -> attribute.class("text-black bg-blue-400")
       },
     ],
     [
@@ -292,16 +287,18 @@ fn unknown_card_view(color: Color) {
 fn end_turn_view(model: Model) {
   let engine = model.engine
 
-  let active_player = engine.get_active_player(engine)
+  let assert Ok(active_player) =
+    dict.get(engine.players, engine.active_player_index)
+
   let active_player_base_index =
-    board.get_base_index(engine.board, active_player.color)
+    settings.get_base_index(engine.settings, engine.active_player_index)
 
   case active_player {
     player.Observed(..) -> element.none()
 
     _ -> {
       let needs_player_deployment =
-        board.is_none(engine.board, active_player_base_index)
+        position.is_none(engine.position, active_player_base_index)
         && !player.has_empty_hand(active_player)
 
       // TODO: check if has moved (when possible)
@@ -313,4 +310,15 @@ fn end_turn_view(model: Model) {
       )
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// Lib
+// -----------------------------------------------------------------------------
+
+pub fn apply_turn_request(engine: Engine, request: turn.Request) {
+  engine.turn(
+    engine,
+    turn.Observed(request.lead, request.marches, request.deploy, False),
+  )
 }

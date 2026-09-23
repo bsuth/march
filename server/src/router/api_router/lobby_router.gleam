@@ -63,11 +63,9 @@ fn post(names: Names, req: Request(mist.Connection)) {
 
   let init_args =
     lobby.StartArgs(
-      board_height: request_body.board_height,
-      board_width: request_body.board_width,
+      engine_settings: request_body.engine_settings,
       name: request_body.name,
       owner: user,
-      variant: request_body.variant,
       visible: request_body.visible,
     )
 

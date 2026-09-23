@@ -1,4 +1,4 @@
-import engine/variant
+import engine/settings
 import http_api/http_lobby
 import http_api/http_lobby_list
 import main/app.{type App}
@@ -9,10 +9,8 @@ import rsvp
 pub fn init(app: App) {
   let post_lobby_request =
     http_lobby.PostRequest(
-      board_height: 4,
-      board_width: 4,
+      engine_settings: settings.classic(),
       name: "",
-      variant: variant.Standard,
       visible: True,
     )
 

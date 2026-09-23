@@ -40,7 +40,6 @@ pub fn view(model: Model) {
 fn match_view(model: Model, match: Match) {
   html.div([attribute.class("h-full p-4")], [
     game_ui.element([
-      game_ui.prop_color(model.color),
       game_ui.prop_engine(match.engine),
       game_ui.prop_theme(model.app.theme),
     ]),

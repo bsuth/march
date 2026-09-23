@@ -1,12 +1,8 @@
 import actors/match_registry
 import core/match.{type Match, Match}
 import core/user.{type User}
-import engine.{Engine}
-import engine/board
-import engine/card
-import engine/color
-import engine/player
-import engine/variant.{type Variant}
+import engine
+import engine/settings.{type Settings}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
@@ -20,15 +16,7 @@ import yuzu
 // If only 1 player leaves, other wins. otherwise draw
 
 pub type StartArgs {
-  StartArgs(
-    black: User,
-    board_height: Int,
-    board_width: Int,
-    hand_size: Int,
-    variant: Variant,
-    visible: Bool,
-    white: User,
-  )
+  StartArgs(engine_settings: Settings, players: List(User), visible: Bool)
 }
 
 pub type MatchActor {
@@ -47,37 +35,12 @@ pub fn start(names: Names, args: StartArgs) {
   actor.new_with_initialiser(100, fn(_) {
     let #(id, subjects) = match_registry.register_self(names)
 
-    let #(black_hand, black_deck) =
-      card.deal(args.variant, color.Black, args.hand_size)
-
-    let #(white_hand, white_deck) =
-      card.deal(args.variant, color.White, args.hand_size)
-
-    let engine =
-      Engine(
-        active_player_color: color.Black,
-        black: player.Managed(
-          color.Black,
-          black_deck,
-          black_hand,
-          args.hand_size,
-        ),
-        board: board.new(args.board_width, args.board_height),
-        white: player.Managed(
-          color.White,
-          white_deck,
-          white_hand,
-          args.hand_size,
-        ),
-      )
-
     let match =
       Match(
         id:,
-        engine:,
-        black: args.black,
+        engine: engine.new(args.engine_settings),
+        players: [],
         visible: args.visible,
-        white: args.white,
       )
 
     let selector = list.fold(subjects, process.new_selector(), process.select)
@@ -124,6 +87,7 @@ fn enter_handler(
       MatchActorUserMeta(subject: enter_user_subject, monitor:),
     )
 
+  // TODO
   // ws_lobby.EnteredPayload(state.lobby.id, enter_user)
   // |> ws_lobby.entered_json()
   // |> broadcast_json(meta, _)
@@ -147,6 +111,7 @@ fn exit_handler(state: MatchActor, exit_user_id: String) {
 
   let meta = dict.delete(state.meta, exit_user_id)
 
+  // TODO
   // ws_lobby.ExitedPayload(state.lobby.id, exit_user_id)
   // |> ws_lobby.exited_json()
   // |> broadcast_json(meta, _)
