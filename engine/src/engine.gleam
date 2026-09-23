@@ -1,168 +1,122 @@
-import engine/board.{type Board}
-import engine/board/cell.{Cell}
-import engine/board/tile
-import engine/card.{type Card}
-import engine/color.{type Color}
-import engine/deploy
-import engine/march
-import engine/move
+import engine/card
 import engine/player.{type Player}
-import gleam/bool
-import gleam/dict
+import engine/position.{type Position}
+import engine/settings.{type Settings}
+import engine/turn.{type Turn}
+import gleam/dict.{type Dict}
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
-import gleam/option.{type Option}
-import yuzu
-
-// TODO: add history / snapshots?
+import gleam/option
 
 pub type Engine {
-  Engine(active_player_color: Color, black: Player, board: Board, white: Player)
+  Engine(
+    active_player_index: Int,
+    players: Dict(Int, Player),
+    position: Position,
+    seeds: Dict(Int, Player),
+    settings: Settings,
+    turns: List(Turn),
+  )
 }
 
-pub type Turn {
-  Turn(move: #(Int, Int), marches: List(Int), deploy: Option(Card))
+pub fn new(settings: Settings) {
+  let num_players = case settings.doubles {
+    True -> 4
+    False -> 2
+  }
+
+  let seeds =
+    int.range(0, num_players, dict.new(), fn(players, index) {
+      let #(hand, deck) =
+        card.deck(index)
+        |> list.shuffle()
+        |> list.split(settings.hand_size)
+
+      dict.insert(players, index, player.Managed(index, deck, hand))
+    })
+
+  let position =
+    int.range(
+      0,
+      settings.board.width * settings.board.height,
+      dict.new(),
+      fn(position, index) { dict.insert(position, index, option.None) },
+    )
+
+  Engine(
+    active_player_index: 0,
+    players: seeds,
+    position:,
+    seeds:,
+    settings:,
+    turns: [],
+  )
 }
 
-pub type ActiveTurn {
-  ActiveStartTurn
-  ActiveMarchTurn(move: #(Int, Int), marches: List(Int))
-  ActiveDeployTurn(move: #(Int, Int), marches: List(Int), deploy: Card)
-  ActiveDeployOnlyTurn(deploy: Card)
-}
+// -----------------------------------------------------------------------------
+// Encoding / Decoding
+// -----------------------------------------------------------------------------
 
 pub fn json(engine: Engine) {
   json.object([
-    #("board", board.json(engine.board)),
-    #("black", player.json(engine.black)),
-    #("white", player.json(engine.white)),
-    #("active_player_color", color.json(engine.active_player_color)),
+    #("active_player_index", json.int(engine.active_player_index)),
+    #(
+      "players",
+      dict.to_list(engine.players)
+        |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+        |> list.map(fn(entry) { entry.1 })
+        |> json.array(player.json),
+    ),
+    #("position", position.json(engine.position)),
+    #(
+      "seeds",
+      dict.to_list(engine.seeds)
+        |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+        |> list.map(fn(entry) { entry.1 })
+        |> json.array(player.json),
+    ),
+    #("settings", settings.json(engine.settings)),
   ])
 }
 
 pub fn decoder() {
-  use active_player_color <- decode.field(
-    "active_player_color",
-    color.decoder(),
+  use active_player_index <- decode.field("active_player_index", decode.int)
+
+  use players <- decode.field(
+    "players",
+    player.decoder()
+      |> decode.list()
+      |> decode.map(fn(positions) {
+        positions
+        |> list.index_map(fn(position, index) { #(index, position) })
+        |> dict.from_list()
+      }),
   )
 
-  use black <- decode.field("black", player.decoder())
-  use board <- decode.field("board", board.decoder())
-  use white <- decode.field("white", player.decoder())
+  use position <- decode.field("position", position.decoder())
 
-  decode.success(Engine(active_player_color:, black:, board:, white:))
-}
-
-pub fn get_active_player(engine: Engine) {
-  case engine.active_player_color {
-    color.Black -> engine.black
-    color.White -> engine.white
-  }
-}
-
-pub fn update_active_player(engine: Engine, player: Player) {
-  case engine.active_player_color {
-    color.Black -> Engine(..engine, black: player)
-    color.White -> Engine(..engine, white: player)
-  }
-}
-
-pub fn commit(engine: Engine, turn: Turn) {
-  let turn_player = case engine.active_player_color {
-    color.Black -> engine.black
-    color.White -> engine.white
-  }
-
-  use board <- yuzu.ok(
-    move.commit(turn.move.0, turn.move.1, engine.board, turn_player.color),
-    Error(Nil),
+  use seeds <- decode.field(
+    "seeds",
+    player.decoder()
+      |> decode.list()
+      |> decode.map(fn(positions) {
+        positions
+        |> list.index_map(fn(position, index) { #(index, position) })
+        |> dict.from_list()
+      }),
   )
 
-  let marches =
-    turn.marches
-    |> list.prepend(turn.move.0)
-    |> list.reverse()
-    |> list.window_by_2()
-    |> list.reverse()
+  use settings <- decode.field("settings", settings.decoder())
+  use turns <- decode.field("turns", decode.list(turn.decoder()))
 
-  use board <- yuzu.ok(
-    list.try_fold(marches, board, fn(board, march) {
-      march.commit(march.0, march.1, board, turn_player.color)
-    }),
-    Error(Nil),
-  )
-
-  use #(turn_player, board) <- yuzu.ok(
-    deploy.commit(turn.deploy, turn_player, board),
-    Error(Nil),
-  )
-
-  use turn_player <- yuzu.ok(player.draw(turn_player), Error(Nil))
-
-  let next_player = case turn_player.color {
-    color.Black -> engine.white
-    color.White -> engine.black
-  }
-
-  let next_player_has_deploy =
-    board
-    |> board.get_base_index(next_player.color)
-    |> board.is_none(board, _)
-    |> bool.and(!player.has_empty_hand(next_player))
-
-  let next_player_has_moves =
-    list.any(dict.values(engine.board.cells), fn(cell) {
-      use card <- yuzu.some(cell.card, False)
-      use <- yuzu.true(card.color == next_player.color, False)
-
-      engine.board
-      |> move.list_dest_indices(cell)
-      |> list.is_empty()
-      |> bool.negate()
-    })
-
-  let pass_next_player = !next_player_has_deploy && !next_player_has_moves
-
-  let active_player_color = case pass_next_player {
-    True -> next_player.color
-    False -> turn_player.color
-  }
-
-  Engine(
-    active_player_color:,
-    black: case turn_player.color {
-      color.Black -> turn_player
-      color.White -> engine.black
-    },
-    board:,
-    white: case turn_player.color {
-      color.Black -> engine.white
-      color.White -> turn_player
-    },
-  )
-  |> Ok()
-}
-
-pub fn deploy(engine: Engine, card: Option(Card)) {
-  let active_player = get_active_player(engine)
-  let base_index = board.get_base_index(engine.board, active_player.color)
-
-  case card, dict.get(engine.board.cells, base_index) {
-    option.None, Ok(Cell(_, _, option.Some(_))) -> Ok(engine)
-
-    option.Some(card), Ok(Cell(_, _, option.None)) -> {
-      use player <- yuzu.ok(player.deploy(active_player, card), Error(Nil))
-
-      let board =
-        [Cell(base_index, tile: tile.Normal, card: option.Some(card))]
-        |> board.update(engine.board, _)
-
-      Engine(..engine, board:)
-      |> update_active_player(player)
-      |> Ok()
-    }
-
-    _, _ -> Error(Nil)
-  }
+  decode.success(Engine(
+    active_player_index:,
+    players:,
+    position:,
+    seeds:,
+    settings:,
+    turns:,
+  ))
 }

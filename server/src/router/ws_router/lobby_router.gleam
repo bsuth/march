@@ -24,12 +24,13 @@ pub fn handler(
     "exit" -> exit(state, conn, payload)
     "start" -> start(state, conn, payload)
     "terminate" -> terminate(state, conn, payload)
-    "update.black" -> update_black(state, conn, payload)
     "update.board" -> update_board(state, conn, payload)
+    "update.doubles" -> update_doubles(state, conn, payload)
+    "update.hand_size" -> update_hand_size(state, conn, payload)
     "update.name" -> update_name(state, conn, payload)
-    "update.variant" -> update_variant(state, conn, payload)
+    "update.player" -> update_player(state, conn, payload)
+    "update.traits" -> update_traits(state, conn, payload)
     "update.visibility" -> update_visibility(state, conn, payload)
-    "update.white" -> update_white(state, conn, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws path: lobby." <> path)
@@ -90,23 +91,6 @@ fn terminate(
   send_to_lobby(state, lobby_id, ipc.LobbyTerminate(state.user.id))
 }
 
-fn update_black(
-  state: WebsocketState,
-  _conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_black_decoder()),
-    mist.continue(state),
-  )
-
-  send_to_lobby(
-    state,
-    payload.lobby_id,
-    ipc.LobbyUpdateBlack(state.user.id, payload.black_user_id),
-  )
-}
-
 fn update_board(
   state: WebsocketState,
   _conn: mist.WebsocketConnection,
@@ -120,7 +104,41 @@ fn update_board(
   send_to_lobby(
     state,
     payload.lobby_id,
-    ipc.LobbyUpdateBoard(state.user.id, payload.width, payload.height),
+    ipc.LobbyUpdateBoard(state.user.id, payload.board),
+  )
+}
+
+fn update_doubles(
+  state: WebsocketState,
+  _conn: mist.WebsocketConnection,
+  payload: Dynamic,
+) {
+  use payload <- yuzu.ok(
+    decode.run(payload, ws_lobby.update_doubles_decoder()),
+    mist.continue(state),
+  )
+
+  send_to_lobby(
+    state,
+    payload.lobby_id,
+    ipc.LobbyUpdateDoubles(state.user.id, payload.doubles),
+  )
+}
+
+fn update_hand_size(
+  state: WebsocketState,
+  _conn: mist.WebsocketConnection,
+  payload: Dynamic,
+) {
+  use payload <- yuzu.ok(
+    decode.run(payload, ws_lobby.update_hand_size_decoder()),
+    mist.continue(state),
+  )
+
+  send_to_lobby(
+    state,
+    payload.lobby_id,
+    ipc.LobbyUpdateHandSize(state.user.id, payload.hand_size),
   )
 }
 
@@ -141,20 +159,37 @@ fn update_name(
   )
 }
 
-fn update_variant(
+fn update_player(
   state: WebsocketState,
   _conn: mist.WebsocketConnection,
   payload: Dynamic,
 ) {
   use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_variant_decoder()),
+    decode.run(payload, ws_lobby.update_player_decoder()),
     mist.continue(state),
   )
 
   send_to_lobby(
     state,
     payload.lobby_id,
-    ipc.LobbyUpdateVariant(state.user.id, payload.variant),
+    ipc.LobbyUpdatePlayer(state.user.id, payload.user_id, payload.player_index),
+  )
+}
+
+fn update_traits(
+  state: WebsocketState,
+  _conn: mist.WebsocketConnection,
+  payload: Dynamic,
+) {
+  use payload <- yuzu.ok(
+    decode.run(payload, ws_lobby.update_traits_decoder()),
+    mist.continue(state),
+  )
+
+  send_to_lobby(
+    state,
+    payload.lobby_id,
+    ipc.LobbyUpdateTraits(state.user.id, payload.traits),
   )
 }
 
@@ -172,23 +207,6 @@ fn update_visibility(
     state,
     payload.lobby_id,
     ipc.LobbyUpdateVisibility(state.user.id, payload.visible),
-  )
-}
-
-fn update_white(
-  state: WebsocketState,
-  _conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_white_decoder()),
-    mist.continue(state),
-  )
-
-  send_to_lobby(
-    state,
-    payload.lobby_id,
-    ipc.LobbyUpdateWhite(state.user.id, payload.white_user_id),
   )
 }
 

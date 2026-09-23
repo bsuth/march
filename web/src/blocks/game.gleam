@@ -210,7 +210,7 @@ fn view(model: Model) {
           attribute.class("flex flex-col justify-center items-center gap-8"),
         ],
         [
-          player_hand_view(model.engine, top_player),
+          player_hand_view(model, top_player),
           ui_board.element([
             attribute.class("w-full h-full max-w-96 max-h-96"),
             ui_board.prop_board(model.engine.board),
@@ -218,7 +218,7 @@ fn view(model: Model) {
             ui_board.prop_theme(model.theme),
             ui_board.on_cell_click(CellClick),
           ]),
-          player_hand_view(model.engine, bottom_player),
+          player_hand_view(model, bottom_player),
         ],
       ),
       html.div(
@@ -233,20 +233,30 @@ fn view(model: Model) {
   )
 }
 
-fn player_hand_view(engine: Engine, player: Player) {
+fn player_hand_view(model: Model, player: Player) {
+  let engine = model.engine
   let player_base_index = board.get_base_index(engine.board, player.color)
 
-  let needs_player_deployment =
-    engine.active_player_color == player.color
-    && board.is_none(engine.board, player_base_index)
-    && !player.has_empty_hand(player)
+  let can_deploy = {
+    use <- yuzu.true(engine.active_player_color == player.color, False)
+    use <- yuzu.true(!player.has_empty_hand(player), False)
+
+    case model.active_turn {
+      engine.ActiveDeployTurn(..) | engine.ActiveDeployOnlyTurn(..) -> True
+      _ -> board.is_none(engine.board, player_base_index)
+    }
+  }
 
   let children = case player {
     player.Managed(_, _, hand, _) | player.Controlled(_, _, hand, _) ->
       list.map(hand, fn(card) {
         ui_card.element([
           ui_card.prop_value(card),
-          case needs_player_deployment {
+          case can_deploy {
+            True -> attribute.class("cursor-pointer")
+            False -> attribute.none()
+          },
+          case can_deploy {
             True -> event.on_click(Deploy(card))
             False -> attribute.none()
           },

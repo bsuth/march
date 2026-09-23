@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/json
+import gleam/order
 
 pub type Suit {
   Spades
@@ -7,6 +8,10 @@ pub type Suit {
   Clubs
   Hearts
 }
+
+// -----------------------------------------------------------------------------
+// Encoding / Decoding
+// -----------------------------------------------------------------------------
 
 pub fn to_string(suit: Suit) {
   case suit {
@@ -40,6 +45,10 @@ pub fn decoder() {
   })
 }
 
+// -----------------------------------------------------------------------------
+// Lib
+// -----------------------------------------------------------------------------
+
 pub fn strong(suit: Suit) {
   case suit {
     Spades -> Diamonds
@@ -55,5 +64,22 @@ pub fn weak(suit: Suit) {
     Diamonds -> Spades
     Clubs -> Diamonds
     Hearts -> Clubs
+  }
+}
+
+pub fn compare(a: Suit, b: Suit) {
+  case a, b {
+    Spades, Diamonds -> order.Gt
+    Spades, Hearts -> order.Lt
+    Spades, _ -> order.Eq
+    Diamonds, Clubs -> order.Gt
+    Diamonds, Spades -> order.Lt
+    Diamonds, _ -> order.Eq
+    Clubs, Hearts -> order.Gt
+    Clubs, Diamonds -> order.Lt
+    Clubs, _ -> order.Eq
+    Hearts, Spades -> order.Gt
+    Hearts, Clubs -> order.Lt
+    Hearts, _ -> order.Eq
   }
 }

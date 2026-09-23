@@ -1,8 +1,10 @@
 import core/user.{type User}
-import engine/variant.{type Variant}
+import engine/board.{type Board}
+import engine/face.{type Face}
+import engine/trait.{type Trait}
+import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
-import gleam/option.{type Option}
 import ws_api
 
 // -----------------------------------------------------------------------------
@@ -138,39 +140,11 @@ pub fn terminated_decoder() {
 }
 
 // -----------------------------------------------------------------------------
-// UPDATE.BLACK
-// -----------------------------------------------------------------------------
-
-pub type UpdateBlackPayload {
-  UpdateBlackPayload(lobby_id: String, black_user_id: Option(String))
-}
-
-pub fn update_black_json(payload: UpdateBlackPayload) {
-  ws_api.json(
-    "lobby.update.black",
-    json.object([
-      #("lobby_id", json.string(payload.lobby_id)),
-      #("black_user_id", json.nullable(payload.black_user_id, json.string)),
-    ]),
-  )
-}
-
-pub fn update_black_decoder() {
-  use lobby_id <- decode.field("lobby_id", decode.string)
-  use black_user_id <- decode.field(
-    "black_user_id",
-    decode.optional(decode.string),
-  )
-
-  decode.success(UpdateBlackPayload(lobby_id, black_user_id))
-}
-
-// -----------------------------------------------------------------------------
 // UPDATE.BOARD
 // -----------------------------------------------------------------------------
 
 pub type UpdateBoardPayload {
-  UpdateBoardPayload(lobby_id: String, width: Int, height: Int)
+  UpdateBoardPayload(lobby_id: String, board: Board)
 }
 
 pub fn update_board_json(payload: UpdateBoardPayload) {
@@ -178,17 +152,63 @@ pub fn update_board_json(payload: UpdateBoardPayload) {
     "lobby.update.board",
     json.object([
       #("lobby_id", json.string(payload.lobby_id)),
-      #("width", json.int(payload.width)),
-      #("height", json.int(payload.height)),
+      #("board", board.json(payload.board)),
     ]),
   )
 }
 
 pub fn update_board_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
-  use width <- decode.field("width", decode.int)
-  use height <- decode.field("height", decode.int)
-  decode.success(UpdateBoardPayload(lobby_id, width, height))
+  use board <- decode.field("board", board.decoder())
+  decode.success(UpdateBoardPayload(lobby_id, board))
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE.DOUBLES
+// -----------------------------------------------------------------------------
+
+pub type UpdateDoublesPayload {
+  UpdateDoublesPayload(lobby_id: String, doubles: Bool)
+}
+
+pub fn update_doubles_json(payload: UpdateDoublesPayload) {
+  ws_api.json(
+    "lobby.update.doubles",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("doubles", json.bool(payload.doubles)),
+    ]),
+  )
+}
+
+pub fn update_doubles_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use doubles <- decode.field("doubles", decode.bool)
+  decode.success(UpdateDoublesPayload(lobby_id, doubles))
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE.HAND_SIZE
+// -----------------------------------------------------------------------------
+
+pub type UpdateHandSizePayload {
+  UpdateHandSizePayload(lobby_id: String, hand_size: Int)
+}
+
+pub fn update_hand_size_json(payload: UpdateHandSizePayload) {
+  ws_api.json(
+    "lobby.update.hand_size",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("hand_size", json.int(payload.hand_size)),
+    ]),
+  )
+}
+
+pub fn update_hand_size_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use hand_size <- decode.field("hand_size", decode.int)
+  decode.success(UpdateHandSizePayload(lobby_id, hand_size))
 }
 
 // -----------------------------------------------------------------------------
@@ -216,27 +236,61 @@ pub fn update_name_decoder() {
 }
 
 // -----------------------------------------------------------------------------
-// UPDATE.VARIANT
+// UPDATE.PLAYER
 // -----------------------------------------------------------------------------
 
-pub type UpdateVariantPayload {
-  UpdateVariantPayload(lobby_id: String, variant: Variant)
+pub type UpdatePlayerPayload {
+  UpdatePlayerPayload(lobby_id: String, user_id: String, player_index: Int)
 }
 
-pub fn update_variant_json(payload: UpdateVariantPayload) {
+pub fn update_player_json(payload: UpdatePlayerPayload) {
   ws_api.json(
-    "lobby.update.variant",
+    "lobby.update.player",
     json.object([
       #("lobby_id", json.string(payload.lobby_id)),
-      #("variant", variant.json(payload.variant)),
+      #("user_id", json.string(payload.user_id)),
+      #("player_index", json.int(payload.player_index)),
     ]),
   )
 }
 
-pub fn update_variant_decoder() {
+pub fn update_player_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
-  use variant <- decode.field("variant", variant.decoder())
-  decode.success(UpdateVariantPayload(lobby_id, variant))
+  use user_id <- decode.field("user_id", decode.string)
+  use player_index <- decode.field("player_index", decode.int)
+  decode.success(UpdatePlayerPayload(lobby_id, user_id, player_index))
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE.TRAITS
+// -----------------------------------------------------------------------------
+
+pub type UpdateTraitsPayload {
+  UpdateTraitsPayload(lobby_id: String, traits: Dict(Face, List(Trait)))
+}
+
+pub fn update_traits_json(payload: UpdateTraitsPayload) {
+  ws_api.json(
+    "lobby.update.traits",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #(
+        "traits",
+        json.dict(payload.traits, face.to_string, json.array(_, trait.json)),
+      ),
+    ]),
+  )
+}
+
+pub fn update_traits_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+
+  use traits <- decode.field(
+    "traits",
+    decode.dict(face.decoder(), decode.list(trait.decoder())),
+  )
+
+  decode.success(UpdateTraitsPayload(lobby_id, traits))
 }
 
 // -----------------------------------------------------------------------------
@@ -261,32 +315,4 @@ pub fn update_visibility_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
   use visible <- decode.field("visible", decode.bool)
   decode.success(UpdateVisibilityPayload(lobby_id, visible))
-}
-
-// -----------------------------------------------------------------------------
-// UPDATE.WHITE
-// -----------------------------------------------------------------------------
-
-pub type UpdateWhitePayload {
-  UpdateWhitePayload(lobby_id: String, white_user_id: Option(String))
-}
-
-pub fn update_white_json(payload: UpdateWhitePayload) {
-  ws_api.json(
-    "lobby.update.white",
-    json.object([
-      #("lobby_id", json.string(payload.lobby_id)),
-      #("white_user_id", json.nullable(payload.white_user_id, json.string)),
-    ]),
-  )
-}
-
-pub fn update_white_decoder() {
-  use lobby_id <- decode.field("lobby_id", decode.string)
-  use white_user_id <- decode.field(
-    "white_user_id",
-    decode.optional(decode.string),
-  )
-
-  decode.success(UpdateWhitePayload(lobby_id, white_user_id))
 }

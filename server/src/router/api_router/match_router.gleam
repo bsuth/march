@@ -36,12 +36,9 @@ fn get(names: Names, req: Request(mist.Connection), id: String) {
       |> response.set_body(mist.Bytes(bytes_tree.new())),
   )
 
-  use match <- yuzu.ok(
+  let match =
     process.call_forever(match_subject, ipc.MatchGet)
-      |> match.mask_players(user),
-    response.new(500)
-      |> response.set_body(mist.Bytes(bytes_tree.new())),
-  )
+    |> match.mask(user)
 
   let response_body =
     match
