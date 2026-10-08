@@ -7,6 +7,7 @@ import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
+import gleam/option.{type Option}
 
 pub type Lobby {
   LobbyEnter(User, Subject(Websocket))
@@ -19,7 +20,11 @@ pub type Lobby {
   LobbyUpdateDoubles(request_user_id: String, doubles: Bool)
   LobbyUpdateHandSize(request_user_id: String, hand_size: Int)
   LobbyUpdateName(request_user_id: String, name: String)
-  LobbyUpdatePlayer(request_user_id: String, user_id: String, player_index: Int)
+  LobbyUpdatePlayer(
+    request_user_id: String,
+    player_index: Int,
+    user_id: Option(String),
+  )
   LobbyUpdateTraits(request_user_id: String, traits: Dict(Face, List(Trait)))
   LobbyUpdateVisibility(request_user_id: String, visible: Bool)
 }

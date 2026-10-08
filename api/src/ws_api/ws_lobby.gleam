@@ -5,6 +5,7 @@ import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
+import gleam/option.{type Option}
 import ws_api
 
 // -----------------------------------------------------------------------------
@@ -240,7 +241,11 @@ pub fn update_name_decoder() {
 // -----------------------------------------------------------------------------
 
 pub type UpdatePlayerPayload {
-  UpdatePlayerPayload(lobby_id: String, user_id: String, player_index: Int)
+  UpdatePlayerPayload(
+    lobby_id: String,
+    player_index: Int,
+    user_id: Option(String),
+  )
 }
 
 pub fn update_player_json(payload: UpdatePlayerPayload) {
@@ -248,17 +253,17 @@ pub fn update_player_json(payload: UpdatePlayerPayload) {
     "lobby.update.player",
     json.object([
       #("lobby_id", json.string(payload.lobby_id)),
-      #("user_id", json.string(payload.user_id)),
       #("player_index", json.int(payload.player_index)),
+      #("user_id", json.nullable(payload.user_id, json.string)),
     ]),
   )
 }
 
 pub fn update_player_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
-  use user_id <- decode.field("user_id", decode.string)
   use player_index <- decode.field("player_index", decode.int)
-  decode.success(UpdatePlayerPayload(lobby_id, user_id, player_index))
+  use user_id <- decode.field("user_id", decode.optional(decode.string))
+  decode.success(UpdatePlayerPayload(lobby_id, player_index, user_id))
 }
 
 // -----------------------------------------------------------------------------

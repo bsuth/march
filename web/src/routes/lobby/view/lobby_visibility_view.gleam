@@ -10,6 +10,10 @@ import routes/lobby/model.{type Model}
 pub fn lobby_visibility_view(model: Model, lobby: Lobby) {
   icon_button.element(
     [
+      case model.app.user.id == lobby.owner.id {
+        True -> attribute.title("Toggle Visibility")
+        False -> attribute.title("Visibility")
+      },
       icon_button.prop_disabled(model.app.user.id != lobby.owner.id),
       icon_button.on_click(message.UserChangedVisibility(!lobby.visible)),
       case lobby.visible {

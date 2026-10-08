@@ -3,6 +3,7 @@ import engine/board.{type Board}
 import engine/face.{type Face}
 import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
+import gleam/option.{type Option}
 import rsvp
 
 pub type Message {
@@ -11,7 +12,7 @@ pub type Message {
   UserChangedDoubles(Bool)
   UserChangedEditName(String)
   UserChangedHandSize(Int)
-  UserChangedPlayer(String, Int)
+  UserChangedPlayer(Int, Option(String))
   UserChangedTraits(Dict(Face, List(Trait)))
   UserChangedVisibility(Bool)
   UserDiscardedEditName

@@ -1,7 +1,7 @@
 import actors/lobby_registry
 import actors/match
 import core/lobby.{type Lobby, Lobby}
-import core/user.{type User}
+import core/user.{type User, User}
 import engine/board.{type Board}
 import engine/face.{type Face}
 import engine/settings.{
@@ -12,14 +12,16 @@ import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
 import gleam/list
-import gleam/option
+import gleam/option.{type Option}
 import gleam/otp/actor
 import ipc
+import lib/guest
 import names.{type Names}
 import ws_api/ws_lobby
 import yuzu
 
 // TODO: auto terminate lobby after X seconds when the owner leaves
+// TODO: enforce maximum number of users in a lobby
 
 pub type StartArgs {
   StartArgs(
@@ -94,8 +96,8 @@ fn handler(state: LobbyActor, message: ipc.Lobby) {
       update_hand_size_handler(state, request_user_id, hand_size)
     ipc.LobbyUpdateName(request_user_id, name) ->
       update_name_handler(state, request_user_id, name)
-    ipc.LobbyUpdatePlayer(request_user_id, user_id, player_index) ->
-      update_player_handler(state, request_user_id, user_id, player_index)
+    ipc.LobbyUpdatePlayer(request_user_id, player_index, user_id) ->
+      update_player_handler(state, request_user_id, player_index, user_id)
     ipc.LobbyUpdateTraits(request_user_id, traits) ->
       update_traits_handler(state, request_user_id, traits)
     ipc.LobbyUpdateVisibility(request_user_id, visible) ->
@@ -119,33 +121,39 @@ fn enter_handler(
     actor.continue(state),
   )
 
+  let lobby_user = case enter_user.guest {
+    False -> enter_user
+    True -> {
+      let existing_names = list.map(state.lobby.users, fn(user) { user.name })
+      case guest.new_name(existing_names) {
+        Ok(name) -> User(..enter_user, name:)
+        _ -> User(..enter_user, name: enter_user.id)
+      }
+    }
+  }
+
   let monitor = process.monitor(user_pid)
 
   let meta =
     dict.insert(
       state.meta,
-      enter_user.id,
+      lobby_user.id,
       LobbyActorUserMeta(subject: enter_user_subject, monitor:),
     )
 
-  ws_lobby.EnteredPayload(state.lobby.id, enter_user)
+  ws_lobby.EnteredPayload(state.lobby.id, lobby_user)
   |> ws_lobby.entered_json()
   |> broadcast_json(meta, _)
 
   let selector =
     process.select_specific_monitor(state.selector, monitor, fn(_) {
-      ipc.LobbyExit(enter_user.id)
+      ipc.LobbyExit(lobby_user.id)
     })
 
-  LobbyActor(
-    ..state,
-    lobby: Lobby(
-      ..state.lobby,
-      users: list.prepend(state.lobby.users, enter_user),
-    ),
-    meta:,
-    selector:,
-  )
+  let users = list.prepend(state.lobby.users, lobby_user)
+  let lobby = Lobby(..state.lobby, users:)
+
+  LobbyActor(..state, lobby:, meta:, selector:)
   |> actor.continue()
   |> actor.with_selector(selector)
 }
@@ -280,8 +288,7 @@ fn update_doubles_handler(
   |> ws_lobby.update_doubles_json()
   |> broadcast_json(state.meta, _)
 
-  let engine_settings = EngineSettings(..state.lobby.engine_settings, doubles:)
-  let lobby = Lobby(..state.lobby, engine_settings:)
+  let lobby = lobby.set_doubles(state.lobby, doubles)
 
   LobbyActor(..state, lobby:) |> actor.continue()
 }
@@ -328,8 +335,8 @@ fn update_name_handler(
 fn update_player_handler(
   state: LobbyActor,
   request_user_id: String,
-  user_id: String,
   player_index: Int,
+  user_id: Option(String),
 ) {
   use <- yuzu.true(
     request_user_id == state.lobby.owner.id,
@@ -337,11 +344,11 @@ fn update_player_handler(
   )
 
   use lobby <- yuzu.ok(
-    lobby.assign_player(state.lobby, user_id, player_index),
+    lobby.set_player_index(state.lobby, player_index, user_id),
     actor.continue(state),
   )
 
-  ws_lobby.UpdatePlayerPayload(state.lobby.id, user_id, player_index)
+  ws_lobby.UpdatePlayerPayload(state.lobby.id, player_index, user_id)
   |> ws_lobby.update_player_json()
   |> broadcast_json(state.meta, _)
 

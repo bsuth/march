@@ -172,7 +172,7 @@ fn update_player(
   send_to_lobby(
     state,
     payload.lobby_id,
-    ipc.LobbyUpdatePlayer(state.user.id, payload.user_id, payload.player_index),
+    ipc.LobbyUpdatePlayer(state.user.id, payload.player_index, payload.user_id),
   )
 }
 

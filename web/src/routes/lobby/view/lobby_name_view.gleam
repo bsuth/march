@@ -19,12 +19,12 @@ pub fn lobby_name_view(model: Model, lobby: Lobby) {
   html.div([attribute.class("w-full min-w-0 flex items-center gap-2")], [
     case model.edit_name {
       option.Some(edit_name) ->
-        // TODO: autofocus input on mount
-        // TODO: allow pressing Enter to save
         text_input.element([
           attribute.class("grow"),
+          text_input.prop_autofocus(True),
           text_input.prop_value(edit_name),
-          text_input.on_change(message.UserChangedEditName),
+          text_input.on_input(message.UserChangedEditName),
+          text_input.on_submit(message.UserSavedEditName),
         ])
 
       option.None ->

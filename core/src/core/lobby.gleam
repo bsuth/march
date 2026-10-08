@@ -1,5 +1,7 @@
 import core/user.{type User}
-import engine/settings.{type Settings as EngineSettings} as engine_settings
+import engine/settings.{
+  type Settings as EngineSettings, Settings as EngineSettings,
+} as engine_settings
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
@@ -74,24 +76,66 @@ pub fn decoder() {
 // Lib
 // -----------------------------------------------------------------------------
 
-pub fn assign_player(lobby: Lobby, user_id: String, player_index: Int) {
-  use user <- yuzu.ok(
-    list.find(lobby.users, fn(user) { user.id == user_id }),
-    Error(Nil),
-  )
+pub fn get_player_by_index(lobby: Lobby, player_index: Int) {
+  case lobby.players, player_index {
+    [p1, ..], 0 -> Ok(p1)
+    [_, p2, ..], 1 -> Ok(p2)
+    [_, _, p3, ..], 2 -> Ok(p3)
+    [_, _, _, p4], 3 -> Ok(p4)
+    _, _ -> Error(Nil)
+  }
+}
 
-  let players =
-    list.index_map(lobby.players, fn(player_user, index) {
-      use <- yuzu.false(index == player_index, option.Some(user))
-      use player_user <- yuzu.some_(player_user)
+pub fn set_doubles(lobby: Lobby, doubles: Bool) {
+  let engine_settings = EngineSettings(..lobby.engine_settings, doubles:)
 
-      case player_user.id == user.id {
-        True -> option.None
-        False -> option.Some(player_user)
-      }
-    })
+  let players = case doubles, lobby.players {
+    True, [p1, p2] -> [p1, option.None, p2, option.None]
+    False, [p1, _, p3, _] -> [p1, p3]
+    _, _ -> lobby.players
+  }
 
-  Ok(Lobby(..lobby, players:))
+  Lobby(..lobby, engine_settings:, players:)
+}
+
+pub fn set_player_index(
+  lobby: Lobby,
+  player_index: Int,
+  user_id: Option(String),
+) {
+  case user_id {
+    option.None -> {
+      let players =
+        list.index_map(lobby.players, fn(player_user, index) {
+          case index == player_index {
+            True -> option.None
+            False -> player_user
+          }
+        })
+
+      Ok(Lobby(..lobby, players:))
+    }
+
+    option.Some(user_id) -> {
+      use user <- yuzu.ok(
+        list.find(lobby.users, fn(user) { user.id == user_id }),
+        Error(Nil),
+      )
+
+      let players =
+        list.index_map(lobby.players, fn(player_user, index) {
+          use <- yuzu.false(index == player_index, option.Some(user))
+          use player_user <- yuzu.some_(player_user)
+
+          case player_user.id == user.id {
+            True -> option.None
+            False -> option.Some(player_user)
+          }
+        })
+
+      Ok(Lobby(..lobby, players:))
+    }
+  }
 }
 
 pub fn remove_user(lobby: Lobby, removed_user_id: String) {

@@ -14,6 +14,7 @@ import yuzu
 
 // TODO: auto terminate game after X seconds when players leave
 // If only 1 player leaves, other wins. otherwise draw
+// TODO: enforce maximum number of users in a match
 
 pub type StartArgs {
   StartArgs(engine_settings: Settings, players: List(User), visible: Bool)
@@ -39,7 +40,7 @@ pub fn start(names: Names, args: StartArgs) {
       Match(
         id:,
         engine: engine.new(args.engine_settings),
-        players: [],
+        players: args.players,
         visible: args.visible,
       )
 

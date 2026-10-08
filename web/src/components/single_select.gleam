@@ -125,7 +125,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   html.select(
     [
-      attribute.class("p-2"),
+      attribute.class("w-full p-2"),
       attribute.class("border"),
       attribute.class("cursor-pointer outline-none"),
       attribute.class("disabled:opacity-70 disabled:cursor-not-allowed"),

@@ -5,8 +5,7 @@ import engine/settings.{Settings as EngineSettings}
 import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
 import gleam/json
-import gleam/list
-import gleam/option
+import gleam/option.{type Option}
 import lib/websocket
 import lustre/effect
 import modem
@@ -26,8 +25,8 @@ pub fn update(model: Model, message: Message) {
       user_changed_edit_name(model, edit_name)
     message.UserChangedHandSize(hand_size) ->
       user_changed_hand_size(model, hand_size)
-    message.UserChangedPlayer(user_id, player_index) ->
-      user_changed_player(model, user_id, player_index)
+    message.UserChangedPlayer(player_index, user_id) ->
+      user_changed_player(model, player_index, user_id)
     message.UserChangedTraits(traits) -> user_changed_traits(model, traits)
     message.UserChangedVisibility(visible) ->
       user_changed_visibility(model, visible)
@@ -89,8 +88,7 @@ fn user_changed_doubles(model: Model, doubles: Bool) {
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let engine_settings = EngineSettings(..lobby.engine_settings, doubles:)
-  let lobby = Lobby(..lobby, engine_settings:)
+  let lobby = lobby.set_doubles(lobby, doubles)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
@@ -113,28 +111,22 @@ fn user_changed_hand_size(model: Model, hand_size: Int) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
-fn user_changed_player(model: Model, user_id: String, player_index: Int) {
+fn user_changed_player(
+  model: Model,
+  player_index: Int,
+  user_id: Option(String),
+) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
 
-  use player_user <- yuzu.ok(
-    list.find(lobby.users, fn(user) { user.id == user_id }),
-    #(model, effect.none()),
-  )
+  use lobby <- yuzu.ok(lobby.set_player_index(lobby, player_index, user_id), #(
+    model,
+    effect.none(),
+  ))
 
-  ws_lobby.UpdatePlayerPayload(model.lobby_id, user_id, player_index)
+  ws_lobby.UpdatePlayerPayload(model.lobby_id, player_index, user_id)
   |> ws_lobby.update_player_json()
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
-
-  let players =
-    list.index_map(lobby.players, fn(lobby_player, index) {
-      case index == player_index {
-        True -> option.Some(player_user)
-        False -> lobby_player
-      }
-    })
-
-  let lobby = Lobby(..lobby, players:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }

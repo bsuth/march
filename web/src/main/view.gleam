@@ -1,10 +1,16 @@
+import components/icon_button
+import lib/theme
 import lustre/attribute
 import lustre/element/html
+import lustre/event
+import main/message
 import main/model.{type Model}
-import main/view/theme_view.{theme_view}
+import phosphor
 import routes
 
 pub fn view(model: Model) {
+  let app = model.get_app(model)
+
   html.div(
     [
       attribute.class("h-dvh flex flex-col overflow-auto"),
@@ -23,7 +29,12 @@ pub fn view(model: Model) {
             navbar_item_view("Learn", "/learn"),
             navbar_item_view("About", "/about"),
           ]),
-          theme_view(model),
+          icon_button.element([event.on_click(message.ToggleTheme)], [
+            case app.theme {
+              theme.Light -> phosphor.sun_fill([attribute.class("size-6")])
+              theme.Dark -> phosphor.moon_fill([attribute.class("size-6")])
+            },
+          ]),
         ],
       ),
       routes.view(model, []),

@@ -186,7 +186,6 @@ fn view(model: Model) {
       attribute.class("flex justify-center gap-8"),
     ],
     [
-      // TODO: allow ability to change player index
       html.div(
         [
           attribute.class("max-w-2xl flex-2"),
@@ -269,8 +268,8 @@ fn unknown_card_view(model: Model, player_index: Int) {
       case player_color {
         player_color.Black -> attribute.class("text-white bg-black")
         player_color.White -> attribute.class("text-black bg-white")
-        player_color.Red -> attribute.class("text-black bg-red-400")
-        player_color.Blue -> attribute.class("text-black bg-blue-400")
+        player_color.LightRed -> attribute.class("text-black bg-red-200")
+        player_color.DarkRed -> attribute.class("text-black bg-red-900")
       },
     ],
     [

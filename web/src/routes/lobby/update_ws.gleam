@@ -158,20 +158,10 @@ fn lobby_update_player(model: Model, payload: Dynamic) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
   use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
 
-  use player_user <- yuzu.ok(
-    list.find(lobby.users, fn(user) { user.id == payload.user_id }),
+  use lobby <- yuzu.ok(
+    lobby.set_player_index(lobby, payload.player_index, payload.user_id),
     #(model, effect.none()),
   )
-
-  let players =
-    list.index_map(lobby.players, fn(lobby_player, index) {
-      case index == payload.player_index {
-        True -> option.Some(player_user)
-        False -> lobby_player
-      }
-    })
-
-  let lobby = Lobby(..lobby, players:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }

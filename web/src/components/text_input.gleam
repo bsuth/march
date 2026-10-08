@@ -12,12 +12,23 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_autofocus(value: Bool) {
+  attribute.property("autofocus", json.bool(value))
+}
+
+pub fn prop_type(type_: String) {
+  attribute.property("type", json.string(type_))
+}
+
 pub fn prop_value(value: String) {
   attribute.property("value", json.string(value))
 }
 
-pub fn prop_type(type_: String) {
-  attribute.property("type_", json.string(type_))
+pub fn on_change(handler: fn(String) -> message) {
+  event.on(
+    "change",
+    ["detail"] |> decode.at(decode.string) |> decode.map(handler),
+  )
 }
 
 pub fn on_input(handler: fn(String) -> message) {
@@ -27,11 +38,10 @@ pub fn on_input(handler: fn(String) -> message) {
   )
 }
 
-pub fn on_change(handler: fn(String) -> message) {
-  event.on(
-    "change",
-    ["detail"] |> decode.at(decode.string) |> decode.map(handler),
-  )
+pub fn on_submit(message: message) {
+  // Lustre handles the "submit" event exceptionally, so we have to use
+  // "submit_" instead.
+  event.on("submit_", decode.success(message))
 }
 
 // -----------------------------------------------------------------------------
@@ -46,11 +56,14 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("autofocus", {
+      decode.bool |> decode.map(PropsChangedAutofocus)
+    }),
+    component.on_property_change("type", {
+      decode.string |> decode.map(PropsChangedType)
+    }),
     component.on_property_change("value", {
       decode.string |> decode.map(PropsChangedValue)
-    }),
-    component.on_property_change("type_", {
-      decode.string |> decode.map(PropsChangedType)
     }),
   ])
   |> lustre.register(element_name)
@@ -61,11 +74,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: String, type_: String)
+  Model(autofocus: Bool, type_: String, value: String)
 }
 
 fn init(_) {
-  #(Model(value: "", type_: "text"), effect.none())
+  #(Model(autofocus: False, type_: "text", value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -73,32 +86,39 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
-  PropsChangedValue(String)
+  PropsChangedAutofocus(Bool)
   PropsChangedType(String)
-  OnInput(String)
+  PropsChangedValue(String)
   OnChange(String)
+  OnInput(String)
+  OnKeypress(String)
 }
 
 fn update(model: Model, message: Message) {
   case message {
-    PropsChangedValue(new_value) -> {
-      #(Model(..model, value: new_value), effect.none())
-    }
-
-    PropsChangedType(new_type_) -> #(
-      Model(..model, type_: new_type_),
+    PropsChangedAutofocus(autofocus) -> #(
+      Model(..model, autofocus:),
       effect.none(),
     )
-
-    OnInput(value) -> #(
-      Model(..model, value:),
-      event.emit("input", json.string(value)),
-    )
+    PropsChangedType(type_) -> #(Model(..model, type_:), effect.none())
+    PropsChangedValue(value) -> {
+      #(Model(..model, value:), effect.none())
+    }
 
     OnChange(value) -> #(
       Model(..model, value:),
       event.emit("change", json.string(value)),
     )
+    OnInput(value) -> #(
+      Model(..model, value:),
+      event.emit("input", json.string(value)),
+    )
+    OnKeypress(value) -> {
+      case value {
+        "Enter" -> #(model, event.emit("submit_", json.null()))
+        _ -> #(model, effect.none())
+      }
+    }
   }
 }
 
@@ -108,13 +128,15 @@ fn update(model: Model, message: Message) {
 
 fn view(model: Model) {
   html.input([
+    attribute.autofocus(model.autofocus),
     attribute.class("w-full px-2 py-1"),
     attribute.class("ring"),
     attribute.class("outline-none"),
     attribute.class("focus:ring-2"),
-    attribute.value(model.value),
     attribute.type_(model.type_),
-    event.on_input(OnInput),
+    attribute.value(model.value),
     event.on_change(OnChange),
+    event.on_input(OnInput),
+    event.on_keypress(OnKeypress),
   ])
 }

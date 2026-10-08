@@ -60,14 +60,13 @@ fn init(_) {
 
 type Message {
   PropsChangedValue(Bool)
+
   OnUpdate(Bool)
 }
 
 fn update(_model: Model, message: Message) {
   case message {
-    PropsChangedValue(value) -> {
-      #(Model(value:), effect.none())
-    }
+    PropsChangedValue(value) -> #(Model(value:), effect.none())
 
     OnUpdate(value) -> #(Model(value:), event.emit("update", json.bool(value)))
   }
@@ -85,8 +84,8 @@ fn view(model: Model) {
       attribute.class("rounded-full"),
       attribute.class("relative"),
       attribute.class("cursor-pointer"),
+      attribute.class("select-none"),
       attribute.class("transition-all"),
-      attribute.class("bg-(--march-50)"),
       case model.value {
         True -> attribute.class("bg-(--march-800)")
         False -> attribute.class("bg-(--march-400)")
