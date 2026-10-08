@@ -1,13 +1,13 @@
 import blocks/card
-import engine/board
 import engine/position.{type Position}
-import engine/settings.{type Settings, Settings}
+import engine/settings.{type Settings}
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/result
 import lib/player_color.{type PlayerColor}
 import lib/theme.{type Theme}
 import lustre
@@ -135,91 +135,126 @@ fn view(model: Model) {
   let width = model.settings.board.width
   let height = model.settings.board.height
 
-  // TODO: rotate board based on player index
-
-  html.div([attribute.class("w-full h-full relative")], [
-    html.div([attribute.class("absolute inset-0")], [
-      html.div(
-        [
-          attribute.class("max-w-full max-h-full"),
-          attribute.class("relative top-1/2 left-1/2 -translate-1/2"),
-          attribute.style(
-            "aspect-ratio",
-            int.to_string(width) <> "/" <> int.to_string(height),
-          ),
-        ],
-        [
-          html.div(
-            [
-              attribute.class("grid gap-0"),
-              attribute.style(
-                "grid-template-columns",
-                "repeat(" <> int.to_string(width) <> ", 1fr)",
-              ),
-              attribute.style(
-                "grid-template-rows",
-                "repeat(" <> int.to_string(height) <> ", 1fr)",
-              ),
-            ],
-            int.range(0, width * height, [], fn(cells, index) {
-              cell_view(model, index) |> list.prepend(cells, _)
-            }),
-          ),
-        ],
-      ),
-    ]),
-  ])
-}
-
-fn cell_view(model: Model, cell_index: Int) {
-  use cell <- yuzu.ok(dict.get(model.position, cell_index), element.none())
-
-  // TODO: render doubles bases
-
-  let width = model.settings.board.width
-  let height = model.settings.board.height
+  // TODO: allow rotating board
 
   html.div(
     [
+      attribute.class("w-full h-full relative"),
+      case model.player_index, model.settings.doubles {
+        0, _ -> attribute.class("rotate-180")
+        1, True -> attribute.class("rotate-90")
+        3, True -> attribute.class("rotate-270")
+        _, _ -> attribute.none()
+      },
+    ],
+    [
+      html.div([attribute.class("absolute inset-0")], [
+        html.div(
+          [
+            attribute.class("max-w-full max-h-full"),
+            attribute.class("relative top-1/2 left-1/2 -translate-1/2"),
+            attribute.style(
+              "aspect-ratio",
+              int.to_string(width) <> "/" <> int.to_string(height),
+            ),
+          ],
+          [
+            html.div(
+              [
+                attribute.class("grid gap-0"),
+                attribute.style(
+                  "grid-template-columns",
+                  "repeat(" <> int.to_string(width) <> ", 1fr)",
+                ),
+                attribute.style(
+                  "grid-template-rows",
+                  "repeat(" <> int.to_string(height) <> ", 1fr)",
+                ),
+              ],
+              int.range(width * height - 1, -1, [], fn(cells, index) {
+                cell_view(model, index) |> list.prepend(cells, _)
+              }),
+            ),
+          ],
+        ),
+      ]),
+    ],
+  )
+}
+
+fn cell_view(model: Model, cell_index: Int) {
+  html.div(
+    [
       attribute.class("aspect-square"),
-      attribute.class("flex justify-center items-center"),
       attribute.class("border-b border-r"),
       attribute.class("cursor-pointer"),
-      case cell_index / width {
+      case cell_index / model.settings.board.width {
         0 -> attribute.class("border-t")
         _ -> attribute.none()
       },
-      case cell_index % width {
+      case cell_index % model.settings.board.width {
         0 -> attribute.class("border-l")
         _ -> attribute.none()
       },
       event.on_click(OnClick(cell_index)),
     ],
     [
-      case cell, cell_index {
-        option.Some(card), _ ->
-          card.element([attribute.class("w-full h-full"), card.prop_value(card)])
-
-        _, 0 -> base_icon_view(player_color.Black, model.theme)
-
-        _, _ if cell_index == width * height - 1 ->
-          base_icon_view(player_color.White, model.theme)
-
-        _, _ -> element.none()
-      },
+      html.div(
+        [
+          attribute.class("w-full h-full"),
+          attribute.class("flex justify-center items-center"),
+          case model.player_index, model.settings.doubles {
+            0, _ -> attribute.class("-rotate-180")
+            1, True -> attribute.class("-rotate-90")
+            3, True -> attribute.class("-rotate-270")
+            _, _ -> attribute.none()
+          },
+        ],
+        [cell_content_view(model, cell_index)],
+      ),
     ],
   )
 }
 
-fn base_icon_view(player_color: PlayerColor, theme: Theme) {
-  let icon = case player_color, theme {
-    player_color.Black, theme.Light -> phosphor.castle_turret_fill
-    player_color.Black, theme.Dark -> phosphor.castle_turret_light
-    player_color.White, theme.Light -> phosphor.castle_turret_light
-    player_color.White, theme.Dark -> phosphor.castle_turret_fill
-    player_color.Red, _ -> phosphor.castle_turret_fill
-    player_color.Blue, _ -> phosphor.castle_turret_fill
-  }
+fn cell_content_view(model: Model, cell_index: Int) {
+  let width = model.settings.board.width
+  let height = model.settings.board.height
 
-  icon([attribute.class("size-1/2")])
+  case dict.get(model.position, cell_index) {
+    Ok(option.Some(card)) ->
+      card.element([
+        attribute.class("w-full h-full"),
+        card.prop_value(card),
+      ])
+
+    _ if cell_index == 0 -> base_icon_view(player_color.Black, model.theme)
+
+    _ if cell_index == width * height - 1 ->
+      base_icon_view(player_color.White, model.theme)
+
+    _ if cell_index == width - 1 && model.settings.doubles ->
+      base_icon_view(player_color.LightRed, model.theme)
+
+    _ if cell_index == width * { height - 1 } && model.settings.doubles ->
+      base_icon_view(player_color.DarkRed, model.theme)
+
+    _ -> element.none()
+  }
+}
+
+fn base_icon_view(player_color: PlayerColor, theme: Theme) {
+  case player_color, theme {
+    player_color.Black, theme.Light ->
+      phosphor.castle_turret_fill([attribute.class("size-1/2")])
+    player_color.Black, theme.Dark ->
+      phosphor.castle_turret_light([attribute.class("size-1/2")])
+    player_color.White, theme.Light ->
+      phosphor.castle_turret_light([attribute.class("size-1/2")])
+    player_color.White, theme.Dark ->
+      phosphor.castle_turret_fill([attribute.class("size-1/2")])
+    player_color.LightRed, _ ->
+      phosphor.castle_turret_fill([attribute.class("size-1/2 text-red-200")])
+    player_color.DarkRed, _ ->
+      phosphor.castle_turret_fill([attribute.class("size-1/2 text-red-900")])
+  }
 }

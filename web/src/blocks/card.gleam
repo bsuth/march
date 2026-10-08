@@ -102,8 +102,8 @@ fn view(model: Model) {
       case model.player_color {
         player_color.Black -> attribute.class("bg-black")
         player_color.White -> attribute.class("bg-white")
-        player_color.Red -> attribute.class("bg-red-400")
-        player_color.Blue -> attribute.class("bg-blue-400")
+        player_color.LightRed -> attribute.class("bg-red-200")
+        player_color.DarkRed -> attribute.class("bg-red-900")
       },
     ],
     [

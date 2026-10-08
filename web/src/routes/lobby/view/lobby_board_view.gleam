@@ -4,8 +4,7 @@ import core/lobby.{type Lobby}
 import engine/board
 import gleam/int
 import gleam/list
-import gleam/string
-import lib/labels
+import lustre/attribute
 import lustre/element/html
 import routes/lobby/message
 import routes/lobby/model.{type Model}
@@ -16,23 +15,48 @@ pub fn lobby_board_view(model: Model, lobby: Lobby) {
 
   field.element([field.prop_label("Board")], [
     case model.app.user.id == lobby.owner.id {
-      False -> html.text(labels.board(width, height))
+      False ->
+        html.div([attribute.class("flex items-center gap-2")], [
+          html.p([], [html.text(int.to_string(width))]),
+          html.p([], [html.text("x")]),
+          html.p([], [html.text(int.to_string(height))]),
+        ])
+
       True ->
-        single_select.element([
-          single_select.prop_value(
-            int.to_string(width) <> "x" <> int.to_string(height),
-          ),
-          single_select.prop_options([
-            #("4x4", labels.board(4, 4)),
-            #("3x3", labels.board(3, 3)),
+        html.div([attribute.class("flex items-center gap-2")], [
+          single_select.element([
+            single_select.prop_value(int.to_string(width)),
+            single_select.prop_options(
+              int.range(9, 0, [], fn(options, width) {
+                let width_string = int.to_string(width)
+                list.prepend(options, #(width_string, width_string))
+              }),
+            ),
+            single_select.on_change(fn(width_string) {
+              case int.parse(width_string) {
+                Ok(width) ->
+                  message.UserChangedBoard(board.normal(width, height))
+                _ -> message.UserChangedBoard(board.normal(width, height))
+              }
+            }),
           ]),
-          single_select.on_change(fn(board_string) {
-            case string.split(board_string, "x") |> list.map(int.parse) {
-              [Ok(new_width), Ok(new_height)] ->
-                message.UserChangedBoard(board.normal(new_width, new_height))
-              _ -> message.UserChangedBoard(board.normal(width, height))
-            }
-          }),
+          html.text("x"),
+          single_select.element([
+            single_select.prop_value(int.to_string(height)),
+            single_select.prop_options(
+              int.range(9, 0, [], fn(options, height) {
+                let height_string = int.to_string(height)
+                list.prepend(options, #(height_string, height_string))
+              }),
+            ),
+            single_select.on_change(fn(height_string) {
+              case int.parse(height_string) {
+                Ok(height) ->
+                  message.UserChangedBoard(board.normal(width, height))
+                _ -> message.UserChangedBoard(board.normal(width, height))
+              }
+            }),
+          ]),
         ])
     },
   ])

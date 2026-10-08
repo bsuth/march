@@ -7,6 +7,7 @@ import lustre/element/html
 import phosphor
 import routes/lobby/model.{type Model}
 import routes/lobby/view/lobby_board_view.{lobby_board_view}
+import routes/lobby/view/lobby_doubles_view.{lobby_doubles_view}
 import routes/lobby/view/lobby_members_list_view.{lobby_members_list_view}
 import routes/lobby/view/lobby_name_view.{lobby_name_view}
 import routes/lobby/view/lobby_visibility_view.{lobby_visibility_view}
@@ -66,19 +67,19 @@ fn lobby_view(model: Model, lobby: Lobby) {
             ]),
             html.div([attribute.class("flex gap-4")], [
               lobby_board_view(model, lobby),
+              lobby_doubles_view(model, lobby),
             ]),
-            // TODO: allow clicking here to set player
+            // TODO: use select here
             // TODO: show white player
             field.element([field.prop_label("White")], [
               html.p([], [html.text("-")]),
             ]),
             board.element([
               attribute.class("w-full h-full"),
-              board.prop_player_index(0),
               board.prop_settings(lobby.engine_settings),
               board.prop_theme(model.app.theme),
             ]),
-            // TODO: allow clicking here to set player
+            // TODO: use select here
             // TODO: show black player
             field.element(
               [field.prop_label("Black"), attribute.class("text-right")],

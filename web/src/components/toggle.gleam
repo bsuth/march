@@ -12,6 +12,10 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_disabled(disabled: Bool) {
+  attribute.property("disabled", json.bool(disabled))
+}
+
 pub fn prop_value(value: Bool) {
   attribute.property("value", json.bool(value))
 }
@@ -35,6 +39,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("disabled", {
+      decode.bool |> decode.map(PropsChangedDisabled)
+    }),
     component.on_property_change("value", {
       decode.bool |> decode.map(PropsChangedValue)
     }),
@@ -47,11 +54,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: Bool)
+  Model(disabled: Bool, value: Bool)
 }
 
 fn init(_) {
-  #(Model(value: False), effect.none())
+  #(Model(disabled: False, value: False), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -59,17 +66,24 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedDisabled(Bool)
   PropsChangedValue(Bool)
+
   OnUpdate(Bool)
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedValue(value) -> {
-      #(Model(value:), effect.none())
-    }
+    PropsChangedDisabled(disabled) -> #(
+      Model(..model, disabled:),
+      effect.none(),
+    )
+    PropsChangedValue(value) -> #(Model(..model, value:), effect.none())
 
-    OnUpdate(value) -> #(Model(value:), event.emit("update", json.bool(value)))
+    OnUpdate(value) -> #(
+      Model(..model, value:),
+      event.emit("update", json.bool(value)),
+    )
   }
 }
 
@@ -91,6 +105,7 @@ fn view(model: Model) {
         True -> attribute.class("bg-(--march-800)")
         False -> attribute.class("bg-(--march-400)")
       },
+      attribute.disabled(model.disabled),
       event.on_click(OnUpdate(!model.value)),
     ],
     [
