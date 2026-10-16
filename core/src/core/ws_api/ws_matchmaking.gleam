@@ -1,5 +1,5 @@
+import core/ws_api
 import gleam/json
-import ws_api
 
 // -----------------------------------------------------------------------------
 // Enter

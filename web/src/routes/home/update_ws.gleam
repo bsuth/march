@@ -1,7 +1,7 @@
+import core/ws_api
 import gleam/dynamic.{type Dynamic}
 import lustre/effect
 import routes/home/model.{type Model}
-import ws_api
 
 pub fn update_ws(model: Model, ws_message: ws_api.Message) {
   case ws_message.path {

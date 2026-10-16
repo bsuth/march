@@ -2,7 +2,7 @@ import components/button
 import components/field
 import components/text_input
 import components/toggle
-import http_api/http_lobby
+import core/http_api/http_lobby
 import lustre/attribute
 import lustre/element/html
 import lustre/event

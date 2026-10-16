@@ -1,12 +1,12 @@
+import core/http_api/http_lobby
+import core/ws_api/ws_lobby
 import gleam/json
 import gleam/option
-import http_api/http_lobby
 import lib/websocket
 import main/app.{type App}
 import routes/lobby/message
 import routes/lobby/model.{type Model, Model}
 import rsvp
-import ws_api/ws_lobby
 
 pub fn init(app: App, lobby_id: String) {
   #(

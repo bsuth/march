@@ -1,5 +1,5 @@
+import core/http_api/http_lobby
 import core/lobby.{type Lobby}
-import http_api/http_lobby
 import rsvp
 
 pub type Message {

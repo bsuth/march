@@ -1,7 +1,7 @@
-import core/user.{type User}
-import engine/settings.{
+import core/engine/settings.{
   type Settings as EngineSettings, Settings as EngineSettings,
 } as engine_settings
+import core/user.{type User}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list

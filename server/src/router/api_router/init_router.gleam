@@ -1,3 +1,4 @@
+import core/http_api/http_init
 import core/user.{User}
 import envoy
 import gleam/bit_array
@@ -11,7 +12,6 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
-import http_api/http_init
 import mist
 import youid/uuid
 

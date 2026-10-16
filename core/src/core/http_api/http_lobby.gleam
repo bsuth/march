@@ -1,5 +1,5 @@
+import core/engine/settings.{type Settings as EngineSettings} as engine_settings
 import core/lobby.{type Lobby}
-import engine/settings.{type Settings as EngineSettings} as engine_settings
 import gleam/dynamic/decode
 import gleam/json
 

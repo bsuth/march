@@ -1,5 +1,5 @@
-import engine/card.{type Card}
-import engine/settings.{type Settings}
+import core/engine/card.{type Card}
+import core/engine/settings.{type Settings}
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json

@@ -1,3 +1,4 @@
+import core/ws_api
 import lustre/effect
 import lustre/element
 import main/app.{type App}
@@ -9,7 +10,6 @@ import routes/home/model.{type Model as RouteModel, Model as RouteModel}
 import routes/home/update
 import routes/home/update_ws
 import routes/home/view
-import ws_api
 
 pub fn init(app: App) {
   let #(route_model, route_effect) = init.init(app)

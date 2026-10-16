@@ -1,5 +1,7 @@
+import core/engine/settings.{Settings as EngineSettings}
 import core/lobby.{Lobby}
-import engine/settings.{Settings as EngineSettings}
+import core/ws_api
+import core/ws_api/ws_lobby
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/list
@@ -7,8 +9,6 @@ import gleam/option
 import lustre/effect
 import modem
 import routes/lobby/model.{type Model, Model}
-import ws_api
-import ws_api/ws_lobby
 import yuzu
 
 pub fn update_ws(model: Model, ws_message: ws_api.Message) {

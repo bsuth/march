@@ -1,8 +1,8 @@
-import engine/card
-import engine/player.{type Player}
-import engine/position.{type Position}
-import engine/settings.{type Settings}
-import engine/turn.{type Turn}
+import core/engine/card
+import core/engine/player.{type Player}
+import core/engine/position.{type Position}
+import core/engine/settings.{type Settings}
+import core/engine/turn.{type Turn}
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/int

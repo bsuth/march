@@ -1,9 +1,9 @@
-import engine/board
-import engine/card
-import engine/player.{type Player}
-import engine/position.{type Position}
-import engine/settings.{type Settings}
-import engine/trait
+import core/engine/board
+import core/engine/card
+import core/engine/player.{type Player}
+import core/engine/position.{type Position}
+import core/engine/settings.{type Settings}
+import core/engine/trait
 import gleam/dict
 import gleam/list
 import gleam/option

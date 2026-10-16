@@ -1,8 +1,8 @@
 import components/field
 import components/single_select
 import components/toggle
+import core/engine/board
 import core/lobby.{type Lobby}
-import engine/board
 import gleam/int
 import gleam/list
 import lustre/attribute

@@ -1,8 +1,8 @@
 import actors/match_registry
+import core/engine
+import core/engine/settings.{type Settings}
 import core/match.{type Match, Match}
 import core/user.{type User}
-import engine
-import engine/settings.{type Settings}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}

@@ -1,4 +1,4 @@
-import engine/board.{type Board}
+import core/engine/board.{type Board}
 import gleam/dynamic/decode
 import gleam/json
 import yuzu

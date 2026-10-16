@@ -1,5 +1,5 @@
-import engine/face.{type Face}
-import engine/suit.{type Suit}
+import core/engine/face.{type Face}
+import core/engine/suit.{type Suit}
 import gleam/dynamic/decode
 import gleam/json
 import yuzu

@@ -1,4 +1,5 @@
 import core/user.{type User}
+import core/ws_api
 import gleam/erlang/process
 import gleam/json
 import gleam/option
@@ -11,7 +12,6 @@ import router/ws_router/lobby_router
 import router/ws_router/match_router
 import router/ws_router/matchmaking_router
 import router/ws_state.{type WebsocketState}
-import ws_api
 
 // -----------------------------------------------------------------------------
 // Hooks

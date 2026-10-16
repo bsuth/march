@@ -1,4 +1,5 @@
 import actors/match_registry
+import core/http_api/http_match
 import core/match
 import gleam/bytes_tree
 import gleam/erlang/process
@@ -6,7 +7,6 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/json
-import http_api/http_match
 import ipc
 import mist
 import names.{type Names}

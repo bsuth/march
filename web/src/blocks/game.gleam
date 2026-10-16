@@ -1,13 +1,13 @@
 import blocks/board as ui_board
 import blocks/card as ui_card
 import components/button
-import engine.{type Engine}
-import engine/board
-import engine/card.{type Card}
-import engine/player
-import engine/position
-import engine/settings.{Settings}
-import engine/turn
+import core/engine.{type Engine}
+import core/engine/board
+import core/engine/card.{type Card}
+import core/engine/player
+import core/engine/position
+import core/engine/settings.{Settings}
+import core/engine/turn
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int

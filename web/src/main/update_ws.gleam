@@ -1,10 +1,10 @@
+import core/ws_api
 import gleam/json
 import lustre/effect
 import main/model.{type Model}
 import routes/home
 import routes/learn
 import routes/lobby
-import ws_api
 import yuzu
 
 pub fn update_ws(model: Model, message: String) {

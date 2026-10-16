@@ -1,4 +1,5 @@
 import actors/lobby_registry
+import core/ws_api/ws_lobby
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/erlang/process
@@ -6,7 +7,6 @@ import ipc
 import logging
 import mist
 import router/ws_state.{type WebsocketState}
-import ws_api/ws_lobby
 import yuzu
 
 // -----------------------------------------------------------------------------

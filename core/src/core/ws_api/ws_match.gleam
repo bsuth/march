@@ -1,7 +1,7 @@
 import core/user.{type User}
+import core/ws_api
 import gleam/dynamic/decode
 import gleam/json
-import ws_api
 
 // -----------------------------------------------------------------------------
 // ENTER

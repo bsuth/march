@@ -1,12 +1,12 @@
+import core/http_api/http_match
+import core/ws_api/ws_match
 import gleam/json
 import gleam/option
-import http_api/http_match
 import lib/websocket
 import main/app.{type App}
 import routes/match/message
 import routes/match/model.{type Model, Model}
 import rsvp
-import ws_api/ws_match
 
 pub fn init(app: App, match_id: String) {
   #(

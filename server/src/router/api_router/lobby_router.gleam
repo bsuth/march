@@ -1,5 +1,6 @@
 import actors/lobby
 import actors/lobby_registry
+import core/http_api/http_lobby
 import gleam/bytes_tree
 import gleam/erlang/process
 import gleam/http
@@ -7,7 +8,6 @@ import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/json
 import gleam/otp/actor
-import http_api/http_lobby
 import ipc
 import mist
 import names.{type Names}

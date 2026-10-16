@@ -1,7 +1,7 @@
+import core/engine/board.{type Board}
+import core/engine/face.{type Face}
+import core/engine/trait.{type Trait}
 import core/lobby.{type Lobby}
-import engine/board.{type Board}
-import engine/face.{type Face}
-import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 import rsvp

@@ -1,4 +1,5 @@
 import core/match.{type Match}
+import core/ws_api/ws_match
 import gleam/json
 import gleam/option
 import lib/websocket
@@ -6,7 +7,6 @@ import lustre/effect
 import routes/match/message.{type Message}
 import routes/match/model.{type Model, Model}
 import rsvp
-import ws_api/ws_match
 import yuzu
 
 pub fn update(model: Model, message: Message) {

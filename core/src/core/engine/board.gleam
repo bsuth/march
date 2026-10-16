@@ -1,4 +1,4 @@
-import engine/tile.{type Tile}
+import core/engine/tile.{type Tile}
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/int

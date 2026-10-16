@@ -1,8 +1,9 @@
+import core/engine/board.{type Board}
+import core/engine/face.{type Face}
+import core/engine/settings.{Settings as EngineSettings}
+import core/engine/trait.{type Trait}
 import core/lobby.{type Lobby, Lobby}
-import engine/board.{type Board}
-import engine/face.{type Face}
-import engine/settings.{Settings as EngineSettings}
-import engine/trait.{type Trait}
+import core/ws_api/ws_lobby
 import gleam/dict.{type Dict}
 import gleam/json
 import gleam/option.{type Option}
@@ -12,7 +13,6 @@ import modem
 import routes/lobby/message.{type Message}
 import routes/lobby/model.{type Model, Model}
 import rsvp
-import ws_api/ws_lobby
 import yuzu
 
 pub fn update(model: Model, message: Message) {

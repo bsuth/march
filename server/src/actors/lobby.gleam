@@ -1,13 +1,14 @@
 import actors/lobby_registry
 import actors/match
-import core/lobby.{type Lobby, Lobby}
-import core/user.{type User, User}
-import engine/board.{type Board}
-import engine/face.{type Face}
-import engine/settings.{
+import core/engine/board.{type Board}
+import core/engine/face.{type Face}
+import core/engine/settings.{
   type Settings as EngineSettings, Settings as EngineSettings,
 }
-import engine/trait.{type Trait}
+import core/engine/trait.{type Trait}
+import core/lobby.{type Lobby, Lobby}
+import core/user.{type User, User}
+import core/ws_api/ws_lobby
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
@@ -17,7 +18,6 @@ import gleam/otp/actor
 import ipc
 import lib/guest
 import names.{type Names}
-import ws_api/ws_lobby
 import yuzu
 
 // TODO: auto terminate lobby after X seconds when the owner leaves

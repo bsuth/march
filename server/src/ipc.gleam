@@ -1,9 +1,9 @@
+import core/engine/board.{type Board}
+import core/engine/face.{type Face}
+import core/engine/trait.{type Trait}
 import core/lobby.{type Lobby as LobbyState}
 import core/match.{type Match as MatchState}
 import core/user.{type User}
-import engine/board.{type Board}
-import engine/face.{type Face}
-import engine/trait.{type Trait}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}

@@ -1,6 +1,6 @@
-import engine/settings
-import http_api/http_lobby
-import http_api/http_lobby_list
+import core/engine/settings
+import core/http_api/http_lobby
+import core/http_api/http_lobby_list
 import main/app.{type App}
 import routes/home/message
 import routes/home/model.{type Model, Model}

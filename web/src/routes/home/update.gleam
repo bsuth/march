@@ -1,7 +1,7 @@
+import core/http_api/http_lobby
+import core/http_api/http_lobby_list
 import core/lobby.{type Lobby}
 import gleam/option
-import http_api/http_lobby
-import http_api/http_lobby_list
 import lustre/effect
 import modem
 import routes/home/message.{type Message}

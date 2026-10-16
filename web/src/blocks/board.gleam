@@ -1,7 +1,7 @@
 import blocks/base_icon
 import blocks/card
-import engine/position.{type Position}
-import engine/settings.{type Settings}
+import core/engine/position.{type Position}
+import core/engine/settings.{type Settings}
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int

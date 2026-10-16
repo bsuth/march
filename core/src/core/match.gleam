@@ -1,6 +1,6 @@
+import core/engine.{type Engine, Engine}
+import core/engine/player
 import core/user.{type User}
-import engine.{type Engine, Engine}
-import engine/player
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/json

@@ -1,12 +1,12 @@
+import core/engine/board.{type Board}
+import core/engine/face.{type Face}
+import core/engine/trait.{type Trait}
 import core/user.{type User}
-import engine/board.{type Board}
-import engine/face.{type Face}
-import engine/trait.{type Trait}
+import core/ws_api
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/option.{type Option}
-import ws_api
 
 // -----------------------------------------------------------------------------
 // ENTER

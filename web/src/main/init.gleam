@@ -1,7 +1,7 @@
+import core/http_api/http_init
 import core/user.{User}
 import gleam/result
 import gleam/uri
-import http_api/http_init
 import lib/theme
 import lib/websocket
 import lustre/effect

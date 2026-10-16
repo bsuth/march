@@ -1,5 +1,5 @@
-import engine/board.{type Board}
-import engine/card.{type Card}
+import core/engine/board.{type Board}
+import core/engine/card.{type Card}
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/int
