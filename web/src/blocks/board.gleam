@@ -222,7 +222,7 @@ fn cell_content_view(model: Model, cell_index: Int) {
     Ok(option.Some(card)) ->
       card.element([
         attribute.class("w-full h-full"),
-        card.prop_value(card),
+        card.prop_card(card),
       ])
 
     _ if cell_index == 0 ->

@@ -13,12 +13,14 @@ import yuzu
 
 pub type Turn {
   Controlled(
+    capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
     deploy: Option(Card),
     draw: Option(Card),
   )
   Observed(
+    capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
     deploy: Option(Card),
@@ -36,6 +38,7 @@ pub type Request {
 
 pub fn json(turn: Turn) {
   json.object([
+    #("capture", json.nullable(turn.capture, card.json)),
     #(
       "lead",
       json.nullable(turn.lead, fn(lead) {
@@ -48,13 +51,15 @@ pub fn json(turn: Turn) {
     #("marches", json.array(turn.marches, json.int)),
     #("deploy", json.nullable(turn.deploy, card.json)),
     #("draw", case turn {
-      Controlled(_, _, _, draw) -> json.nullable(draw, card.json)
-      Observed(_, _, _, draw) -> json.bool(draw)
+      Controlled(_, _, _, _, draw) -> json.nullable(draw, card.json)
+      Observed(_, _, _, _, draw) -> json.bool(draw)
     }),
   ])
 }
 
 pub fn decoder() {
+  use capture <- decode.field("capture", decode.optional(card.decoder()))
+
   use lead <- decode.field(
     "lead",
     decode.optional({
@@ -69,12 +74,12 @@ pub fn decoder() {
 
   let controlled_decoder = {
     use draw <- decode.field("draw", decode.optional(card.decoder()))
-    decode.success(Controlled(lead:, marches:, deploy:, draw:))
+    decode.success(Controlled(capture:, lead:, marches:, deploy:, draw:))
   }
 
   let observed_decoder = {
     use draw <- decode.field("draw", decode.bool)
-    decode.success(Observed(lead:, marches:, deploy:, draw:))
+    decode.success(Observed(capture:, lead:, marches:, deploy:, draw:))
   }
 
   decode.one_of(controlled_decoder, [observed_decoder])
@@ -134,56 +139,4 @@ pub fn validate(
     option.Some(card) -> is_base_empty && player.is_holding(player, card)
     option.None -> !is_base_empty
   }
-}
-
-pub fn apply(
-  turn: Turn,
-  player: Player,
-  position: Position,
-  settings: Settings,
-) {
-  let position = case turn.lead {
-    option.Some(lead) ->
-      turn.marches
-      |> list.prepend(lead.0)
-      |> list.prepend(lead.1)
-      |> list.window_by_2()
-      |> position.move_many(position, _)
-
-    option.None -> position
-  }
-
-  let position = case turn.deploy {
-    option.Some(card) ->
-      position.insert_one(position, #(
-        settings.get_base_index(settings, player.index),
-        option.Some(card),
-      ))
-
-    _ -> position
-  }
-
-  let player = case turn {
-    Controlled(_, _, _, option.Some(card)) -> {
-      case player {
-        player.Managed(color, deck, hand) ->
-          player.Managed(color, deck, list.prepend(hand, card))
-
-        player.Controlled(color, deck, hand) ->
-          player.Controlled(color, deck, list.prepend(hand, card))
-
-        player.Observed(color, deck, hand) ->
-          player.Observed(color, deck, hand + 1)
-      }
-    }
-
-    Observed(_, _, _, True) -> {
-      let assert player.Observed(color, deck, hand) = player
-      player.Observed(color, deck, hand + 1)
-    }
-
-    _ -> player
-  }
-
-  #(player, position)
 }

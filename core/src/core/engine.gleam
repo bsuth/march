@@ -3,19 +3,21 @@ import core/engine/player.{type Player}
 import core/engine/position.{type Position}
 import core/engine/settings.{type Settings}
 import core/engine/turn.{type Turn}
-import gleam/dict.{type Dict}
+import core/util
+import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import yuzu
 
 pub type Engine {
   Engine(
     active_player_index: Int,
-    players: Dict(Int, Player),
+    players: List(Player),
     position: Position,
-    seeds: Dict(Int, Player),
+    seeds: List(Player),
     settings: Settings,
     turns: List(Turn),
   )
@@ -28,13 +30,12 @@ pub fn new(settings: Settings) {
   }
 
   let seeds =
-    int.range(0, num_players, dict.new(), fn(players, index) {
-      let #(hand, deck) =
-        card.deck(index)
-        |> list.shuffle()
-        |> list.split(settings.hand_size)
-
-      dict.insert(players, index, player.Managed(index, deck, hand))
+    int.range(num_players - 1, -1, [], fn(players, index) {
+      card.deck(index)
+      |> list.shuffle()
+      |> list.split(settings.hand_size)
+      |> fn(split) { player.Managed(index, split.1, split.0, []) }
+      |> list.prepend(players, _)
     })
 
   let position =
@@ -62,21 +63,9 @@ pub fn new(settings: Settings) {
 pub fn json(engine: Engine) {
   json.object([
     #("active_player_index", json.int(engine.active_player_index)),
-    #(
-      "players",
-      dict.to_list(engine.players)
-        |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
-        |> list.map(fn(entry) { entry.1 })
-        |> json.array(player.json),
-    ),
+    #("players", json.array(engine.players, player.json)),
     #("position", position.json(engine.position)),
-    #(
-      "seeds",
-      dict.to_list(engine.seeds)
-        |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
-        |> list.map(fn(entry) { entry.1 })
-        |> json.array(player.json),
-    ),
+    #("seeds", json.array(engine.seeds, player.json)),
     #("settings", settings.json(engine.settings)),
     #("turns", json.array(engine.turns, turn.json)),
   ])
@@ -84,31 +73,9 @@ pub fn json(engine: Engine) {
 
 pub fn decoder() {
   use active_player_index <- decode.field("active_player_index", decode.int)
-
-  use players <- decode.field(
-    "players",
-    player.decoder()
-      |> decode.list()
-      |> decode.map(fn(positions) {
-        positions
-        |> list.index_map(fn(position, index) { #(index, position) })
-        |> dict.from_list()
-      }),
-  )
-
+  use players <- decode.field("players", decode.list(player.decoder()))
   use position <- decode.field("position", position.decoder())
-
-  use seeds <- decode.field(
-    "seeds",
-    player.decoder()
-      |> decode.list()
-      |> decode.map(fn(positions) {
-        positions
-        |> list.index_map(fn(position, index) { #(index, position) })
-        |> dict.from_list()
-      }),
-  )
-
+  use seeds <- decode.field("seeds", decode.list(player.decoder()))
   use settings <- decode.field("settings", settings.decoder())
   use turns <- decode.field("turns", decode.list(turn.decoder()))
 
@@ -126,15 +93,104 @@ pub fn decoder() {
 // Lib
 // -----------------------------------------------------------------------------
 
-pub fn turn(engine: Engine, turn: Turn) {
+pub fn apply_turn(engine: Engine, turn: Turn) {
   let assert Ok(active_player) =
-    dict.get(engine.players, engine.active_player_index)
+    util.get_list_index(engine.players, engine.active_player_index)
 
-  let #(active_player, position) =
-    turn.apply(turn, active_player, engine.position, engine.settings)
+  let assert Ok(players) = {
+    use capture_card <- yuzu.some(turn.capture, Ok(engine.players))
 
-  let players =
-    dict.insert(engine.players, engine.active_player_index, active_player)
+    let assert Ok(capture_player) =
+      util.get_list_index(engine.players, capture_card.player_index)
+
+    let capture_player_discard =
+      list.prepend(capture_player.discard, capture_card)
+
+    let capture_player = case capture_player {
+      player.Managed(index, deck, hand, _) ->
+        player.Managed(index, deck, hand, capture_player_discard)
+      player.Controlled(index, deck, hand, _) ->
+        player.Controlled(index, deck, hand, capture_player_discard)
+      player.Observed(index, deck, hand, _) ->
+        player.Observed(index, deck, hand, capture_player_discard)
+    }
+
+    util.set_list_index(
+      engine.players,
+      capture_card.player_index,
+      capture_player,
+    )
+  }
+
+  let position = case turn.lead {
+    option.Some(lead) ->
+      turn.marches
+      |> list.prepend(lead.0)
+      |> list.prepend(lead.1)
+      |> list.window_by_2()
+      |> position.move_many(engine.position, _)
+
+    option.None -> engine.position
+  }
+
+  let position = case turn.deploy {
+    option.Some(card) ->
+      position.insert_one(position, #(
+        settings.get_base_index(engine.settings, active_player.index),
+        option.Some(card),
+      ))
+
+    _ -> position
+  }
+
+  let active_player = case turn {
+    turn.Controlled(_, _, _, _, option.Some(card)) -> {
+      case active_player {
+        player.Managed(color, deck, hand, discard) ->
+          player.Managed(color, deck, list.prepend(hand, card), discard)
+
+        player.Controlled(color, deck, hand, discard) ->
+          player.Controlled(color, deck, list.prepend(hand, card), discard)
+
+        player.Observed(color, deck, hand, discard) ->
+          player.Observed(color, deck, hand + 1, discard)
+      }
+    }
+
+    turn.Observed(_, _, _, _, True) -> {
+      let assert player.Observed(color, deck, hand, discard) = active_player
+      player.Observed(color, deck, hand + 1, discard)
+    }
+
+    _ -> active_player
+  }
+
+  let assert Ok(players) =
+    util.set_list_index(players, engine.active_player_index, active_player)
 
   Engine(..engine, players:, position:)
+}
+
+pub fn apply_turn_request(engine: Engine, request: turn.Request) {
+  let assert Ok(capture) = {
+    use #(capture_board_index, _) <- yuzu.some(request.lead, Ok(option.None))
+    dict.get(engine.position, capture_board_index)
+  }
+
+  apply_turn(
+    engine,
+    turn.Observed(capture, request.lead, request.marches, request.deploy, False),
+  )
+}
+
+pub fn undo_turn(engine: Engine) {
+  // TODO
+  // TODO: handle captures!
+  engine
+}
+
+pub fn undo_turn_action(engine: Engine) {
+  // TODO
+  // TODO: handle captures!
+  engine
 }

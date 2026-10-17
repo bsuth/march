@@ -8,13 +8,14 @@ import core/engine/player
 import core/engine/position
 import core/engine/settings.{Settings}
 import core/engine/turn
+import core/util
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{type Option}
-import lib/player_color
+import lib/player_color.{type PlayerColor}
 import lib/theme.{type Theme}
 import lustre
 import lustre/attribute.{type Attribute}
@@ -131,7 +132,10 @@ fn update(model: Model, msg: Message) {
         Model(
           ..model,
           engine:,
-          turn_request_engine: apply_turn_request(engine, model.turn_request),
+          turn_request_engine: engine.apply_turn_request(
+            engine,
+            model.turn_request,
+          ),
         ),
         effect.none(),
       )
@@ -156,7 +160,10 @@ fn update_deploy(model: Model, card: Card) {
   let turn_request =
     turn.Request(..model.turn_request, deploy: option.Some(card))
 
-  let turn_request_engine = apply_turn_request(model.engine, turn_request)
+  let turn_request_engine =
+    engine.apply_turn_request(model.engine, turn_request)
+
+  echo turn_request_engine
 
   #(Model(..model, turn_request:, turn_request_engine:), effect.none())
 }
@@ -180,6 +187,8 @@ fn update_undo(model: Model) {
 // -----------------------------------------------------------------------------
 
 fn view(model: Model) {
+  let engine = model.turn_request_engine
+
   html.div(
     [
       attribute.class("h-full"),
@@ -192,16 +201,36 @@ fn view(model: Model) {
           attribute.class("flex flex-col justify-center items-center gap-8"),
         ],
         [
-          // TODO: handle doubles
-          player_hand_view(model, 0),
-          ui_board.element([
-            attribute.class("w-full h-full max-w-96 max-h-96"),
-            ui_board.prop_player_index(model.player_index),
-            ui_board.prop_position(model.engine.position),
-            ui_board.prop_settings(model.engine.settings),
-            ui_board.prop_theme(model.theme),
-          ]),
-          player_hand_view(model, 1),
+          player_hand_view(engine, False, case engine.settings.doubles {
+            True -> { model.player_index + 2 } % 4
+            False -> { model.player_index + 1 } % 2
+          }),
+          html.div(
+            [
+              attribute.class("w-full h-full"),
+              attribute.class("flex justify-center items-center gap-8"),
+            ],
+            [
+              case engine.settings.doubles {
+                False -> element.none()
+                True ->
+                  player_hand_view(engine, True, { model.player_index + 1 } % 4)
+              },
+              ui_board.element([
+                attribute.class("w-full h-full max-w-96 max-h-96"),
+                ui_board.prop_player_index(model.player_index),
+                ui_board.prop_position(engine.position),
+                ui_board.prop_settings(engine.settings),
+                ui_board.prop_theme(model.theme),
+              ]),
+              case engine.settings.doubles {
+                False -> element.none()
+                True ->
+                  player_hand_view(engine, True, { model.player_index + 3 } % 4)
+              },
+            ],
+          ),
+          player_hand_view(engine, False, model.player_index),
         ],
       ),
       html.div(
@@ -210,15 +239,18 @@ fn view(model: Model) {
           attribute.class("flex flex-col items-center gap-4"),
           attribute.class("border rounded"),
         ],
-        [end_turn_view(model)],
+        [end_turn_view(engine)],
       ),
     ],
   )
 }
 
-fn player_hand_view(model: Model, player_index: Int) {
-  let engine = model.engine
-  let assert Ok(player) = dict.get(model.engine.players, player_index)
+fn player_hand_view(engine: Engine, vertical: Bool, player_index: Int) {
+  let assert Ok(player) = util.get_list_index(engine.players, player_index)
+
+  let player_color =
+    player_color.from_player_index(player_index, engine.settings.doubles)
+
   let player_base_index = settings.get_base_index(engine.settings, player_index)
 
   let can_deploy = {
@@ -228,10 +260,11 @@ fn player_hand_view(model: Model, player_index: Int) {
   }
 
   let children = case player {
-    player.Managed(_, _, hand) | player.Controlled(_, _, hand) ->
+    player.Managed(_, _, hand, _) | player.Controlled(_, _, hand, _) ->
       list.map(hand, fn(card) {
         ui_card.element([
-          ui_card.prop_value(card),
+          ui_card.prop_card(card),
+          ui_card.prop_player_color(player_color),
           case can_deploy {
             True -> attribute.class("cursor-pointer")
             False -> attribute.none()
@@ -243,24 +276,28 @@ fn player_hand_view(model: Model, player_index: Int) {
         ])
       })
 
-    player.Observed(_, _, hand) ->
+    player.Observed(_, _, hand, _) ->
       int.range(0, hand, [], fn(children, _) {
-        list.prepend(children, unknown_card_view(model, player_index))
+        list.prepend(children, unknown_card_view(player_color))
       })
   }
 
   html.div(
-    [attribute.class("flex gap-4")],
+    [
+      attribute.class("flex gap-4"),
+      case vertical {
+        True -> attribute.class("flex-col")
+        False -> attribute.none()
+      },
+    ],
     list.map(children, fn(child) {
       html.div([attribute.class("w-24 h-24 rounded overflow-hidden")], [child])
     }),
   )
 }
 
-fn unknown_card_view(model: Model, player_index: Int) {
+fn unknown_card_view(player_color: PlayerColor) {
   let suit_class = attribute.class("size-6 -rotate-45")
-  let player_color =
-    player_color.from_player_index(player_index, model.engine.settings.doubles)
 
   html.div(
     [
@@ -283,11 +320,9 @@ fn unknown_card_view(model: Model, player_index: Int) {
   )
 }
 
-fn end_turn_view(model: Model) {
-  let engine = model.engine
-
+fn end_turn_view(engine: Engine) {
   let assert Ok(active_player) =
-    dict.get(engine.players, engine.active_player_index)
+    util.get_list_index(engine.players, engine.active_player_index)
 
   let active_player_base_index =
     settings.get_base_index(engine.settings, engine.active_player_index)
@@ -309,15 +344,4 @@ fn end_turn_view(model: Model) {
       )
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-// Lib
-// -----------------------------------------------------------------------------
-
-pub fn apply_turn_request(engine: Engine, request: turn.Request) {
-  engine.turn(
-    engine,
-    turn.Observed(request.lead, request.marches, request.deploy, False),
-  )
 }

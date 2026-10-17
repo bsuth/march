@@ -1,7 +1,6 @@
 import core/engine.{type Engine, Engine}
 import core/engine/player
 import core/user.{type User}
-import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
@@ -39,7 +38,7 @@ pub fn mask(match: Match, user: User) {
     })
 
   let engine_players =
-    dict.map_values(match.engine.players, fn(index, player) {
+    list.index_map(match.engine.players, fn(player, index) {
       case user_player_index {
         Ok(user_player_index) if user_player_index == index -> {
           let assert Ok(user_player) = player.to_controlled(player)

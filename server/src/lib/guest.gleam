@@ -255,7 +255,7 @@ const animals = [
   "Cheetah",
   "Chihuahua",
   "Chimpanzee",
-  "Chinchillas",
+  "Chinchilla",
   "Cobra",
   "Cobra",
   "Cow",

@@ -15,7 +15,7 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_value(card: Card) {
+pub fn prop_card(card: Card) {
   attribute.property("card", card.json(card))
 }
 
