@@ -4,17 +4,20 @@ import components/button
 import core/engine.{type Engine}
 import core/engine/board
 import core/engine/card.{type Card}
+import core/engine/move
 import core/engine/player
 import core/engine/position
 import core/engine/settings.{Settings}
 import core/engine/turn
 import core/util
+import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{type Option}
+import gleam/result
 import lib/player_color.{type PlayerColor}
 import lib/theme.{type Theme}
 import lustre
@@ -26,6 +29,11 @@ import lustre/element/html
 import lustre/event
 import phosphor
 import yuzu
+
+// TODO: refactor click code...
+// TODO: prevent other players from controlling the board (introduce actor prop?)
+// TODO: game history
+// TODO: UI/UX improvements (hover_index indicator, drag cards, etc)
 
 // -----------------------------------------------------------------------------
 // Props / Events
@@ -41,6 +49,13 @@ pub fn prop_player_index(player_index: Int) {
 
 pub fn prop_theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
+}
+
+pub fn on_turn_end(handler: fn(turn.Request) -> message) {
+  event.on(
+    "turn_end",
+    ["detail"] |> decode.at(turn.request_decoder()) |> decode.map(handler),
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -116,10 +131,9 @@ type Message {
   PropsChangedPlayerIndex(Int)
   PropsChangedTheme(Theme)
 
+  BoardClick(Int)
   Deploy(Card)
   EndTurn
-  Hover(Int)
-  Unhover
   Move(Int, Int)
   March(Int)
   Undo
@@ -127,32 +141,151 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
-    PropsChangedEngine(engine) -> {
-      #(
-        Model(
-          ..model,
-          engine:,
-          turn_request_engine: engine.apply_turn_request(
-            engine,
-            model.turn_request,
-          ),
-        ),
-        effect.none(),
-      )
-    }
+    PropsChangedEngine(engine) -> #(
+      Model(
+        ..model,
+        engine:,
+        turn_request: turn.Request(option.None, [], option.None),
+        turn_request_engine: engine,
+      ),
+      effect.none(),
+    )
     PropsChangedPlayerIndex(player_index) -> #(
       Model(..model, player_index:),
       effect.none(),
     )
     PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
+    BoardClick(index) -> update_board_click(model, index)
     Deploy(card) -> update_deploy(model, card)
     EndTurn -> update_end_turn(model)
-    Hover(index) -> update_hover(model, index)
     March(_index) -> #(model, effect.none())
     Move(_source_index, _dest_index) -> #(model, effect.none())
     Undo -> update_undo(model)
-    Unhover -> #(Model(..model, hover_index: option.None), effect.none())
+  }
+}
+
+fn update_board_click(model: Model, click_index: Int) {
+  case model.turn_request {
+    turn.Request(option.Some(lead), ..) ->
+      update_board_click_march(model, click_index, lead)
+    _ -> update_board_click_lead(model, click_index)
+  }
+}
+
+fn update_board_click_lead(model: Model, click_index: Int) {
+  use click_card <- yuzu.ok(
+    dict.get(model.turn_request_engine.position, click_index),
+    #(model, effect.none()),
+  )
+
+  case click_card, model.hover_index {
+    option.None, option.None -> #(model, effect.none())
+
+    option.Some(_), option.None -> #(
+      Model(..model, hover_index: option.Some(click_index)),
+      effect.none(),
+    )
+
+    option.None, option.Some(hover_index) -> {
+      let valid_dest_indices =
+        move.list_valid_dest_indices(
+          hover_index,
+          model.turn_request_engine.active_player_index,
+          model.turn_request_engine.position,
+          model.turn_request_engine.settings,
+        )
+
+      case list.contains(valid_dest_indices, click_index) {
+        False -> #(Model(..model, hover_index: option.None), effect.none())
+        True -> {
+          let lead = option.Some(#(hover_index, click_index))
+          let turn_request = turn.Request(..model.turn_request, lead:)
+          let turn_request_engine =
+            engine.preview_turn_request(model.engine, turn_request)
+
+          #(
+            Model(
+              ..model,
+              hover_index: option.None,
+              turn_request:,
+              turn_request_engine:,
+            ),
+            effect.none(),
+          )
+        }
+      }
+    }
+
+    option.Some(click_card), option.Some(hover_index) -> {
+      use hover_card <- yuzu.some(
+        model.turn_request_engine.position
+          |> dict.get(hover_index)
+          |> result.unwrap(option.None),
+        #(model, effect.none()),
+      )
+
+      let valid_dest_indices =
+        move.list_valid_dest_indices(
+          hover_index,
+          model.turn_request_engine.active_player_index,
+          model.turn_request_engine.position,
+          model.turn_request_engine.settings,
+        )
+
+      let is_valid_lead =
+        list.contains(valid_dest_indices, click_index)
+        && card.can_capture(hover_card, click_card)
+
+      let turn_request = case is_valid_lead {
+        False -> model.turn_request
+        True -> {
+          let lead = option.Some(#(click_index, hover_index))
+          turn.Request(..model.turn_request, lead:)
+        }
+      }
+
+      #(Model(..model, hover_index: option.None, turn_request:), effect.none())
+    }
+  }
+}
+
+fn update_board_click_march(model: Model, click_index: Int, lead: #(Int, Int)) {
+  let engine = model.turn_request_engine
+
+  use click_card <- yuzu.ok(
+    dict.get(model.turn_request_engine.position, click_index),
+    #(model, effect.none()),
+  )
+
+  use click_card <- yuzu.some(click_card, #(model, effect.none()))
+
+  let assert [dest_index, ..] =
+    model.turn_request.marches
+    |> list.prepend(lead.0)
+    |> list.reverse()
+
+  let is_valid_march =
+    click_card.player_index == engine.active_player_index
+    && move.is_march_index(
+      click_index,
+      dest_index,
+      engine.active_player_index,
+      engine.position,
+      engine.settings,
+    )
+    && move.list_raw_dest_indices(click_index, engine.position, engine.settings)
+    |> list.contains(dest_index)
+
+  case is_valid_march {
+    False -> #(model, effect.none())
+    True -> {
+      let marches = list.append(model.turn_request.marches, [click_index])
+      let turn_request = turn.Request(..model.turn_request, marches:)
+      let turn_request_engine =
+        engine.preview_turn_request(model.engine, turn_request)
+      #(Model(..model, turn_request:, turn_request_engine:), effect.none())
+    }
   }
 }
 
@@ -161,20 +294,13 @@ fn update_deploy(model: Model, card: Card) {
     turn.Request(..model.turn_request, deploy: option.Some(card))
 
   let turn_request_engine =
-    engine.apply_turn_request(model.engine, turn_request)
-
-  echo turn_request_engine
+    engine.preview_turn_request(model.engine, turn_request)
 
   #(Model(..model, turn_request:, turn_request_engine:), effect.none())
 }
 
 fn update_end_turn(model: Model) {
-  // TODO: validate active_turn and send to server
-  #(model, effect.none())
-}
-
-fn update_hover(model: Model, index: Int) {
-  #(Model(..model, hover_index: option.Some(index)), effect.none())
+  #(model, event.emit("turn_end", turn.request_json(model.turn_request)))
 }
 
 fn update_undo(model: Model) {
@@ -201,7 +327,7 @@ fn view(model: Model) {
           attribute.class("flex flex-col justify-center items-center gap-8"),
         ],
         [
-          player_hand_view(engine, False, case engine.settings.doubles {
+          player_hand_view(model, False, case engine.settings.doubles {
             True -> { model.player_index + 2 } % 4
             False -> { model.player_index + 1 } % 2
           }),
@@ -214,7 +340,7 @@ fn view(model: Model) {
               case engine.settings.doubles {
                 False -> element.none()
                 True ->
-                  player_hand_view(engine, True, { model.player_index + 1 } % 4)
+                  player_hand_view(model, True, { model.player_index + 1 } % 4)
               },
               ui_board.element([
                 attribute.class("w-full h-full max-w-96 max-h-96"),
@@ -222,15 +348,16 @@ fn view(model: Model) {
                 ui_board.prop_position(engine.position),
                 ui_board.prop_settings(engine.settings),
                 ui_board.prop_theme(model.theme),
+                ui_board.on_index_click(BoardClick),
               ]),
               case engine.settings.doubles {
                 False -> element.none()
                 True ->
-                  player_hand_view(engine, True, { model.player_index + 3 } % 4)
+                  player_hand_view(model, True, { model.player_index + 3 } % 4)
               },
             ],
           ),
-          player_hand_view(engine, False, model.player_index),
+          player_hand_view(model, False, model.player_index),
         ],
       ),
       html.div(
@@ -239,13 +366,15 @@ fn view(model: Model) {
           attribute.class("flex flex-col items-center gap-4"),
           attribute.class("border rounded"),
         ],
-        [end_turn_view(engine)],
+        [end_turn_view(model)],
       ),
     ],
   )
 }
 
-fn player_hand_view(engine: Engine, vertical: Bool, player_index: Int) {
+fn player_hand_view(model: Model, vertical: Bool, player_index: Int) {
+  let engine = model.turn_request_engine
+
   let assert Ok(player) = util.get_list_index(engine.players, player_index)
 
   let player_color =
@@ -257,6 +386,7 @@ fn player_hand_view(engine: Engine, vertical: Bool, player_index: Int) {
     use <- yuzu.true(engine.active_player_index == player_index, False)
     use <- yuzu.true(!player.has_empty_hand(player), False)
     position.is_none(engine.position, player_base_index)
+    || option.is_some(model.turn_request.deploy)
   }
 
   let children = case player {
@@ -320,28 +450,22 @@ fn unknown_card_view(player_color: PlayerColor) {
   )
 }
 
-fn end_turn_view(engine: Engine) {
+fn end_turn_view(model: Model) {
+  let engine = model.engine
+
   let assert Ok(active_player) =
     util.get_list_index(engine.players, engine.active_player_index)
 
-  let active_player_base_index =
-    settings.get_base_index(engine.settings, engine.active_player_index)
+  use <- yuzu.false(player.is_observed(active_player), element.none())
 
-  case active_player {
-    player.Observed(..) -> element.none()
-
-    _ -> {
-      let needs_player_deployment =
-        position.is_none(engine.position, active_player_base_index)
-        && !player.has_empty_hand(active_player)
-
-      // TODO: check if has moved (when possible)
-      let can_end_turn = !needs_player_deployment
-
-      button.element(
-        [button.prop_disabled(!can_end_turn), event.on_click(EndTurn)],
-        [html.text("End Turn")],
-      )
-    }
-  }
+  button.element(
+    [
+      engine
+        |> engine.validate_turn_request(model.turn_request)
+        |> bool.negate()
+        |> button.prop_disabled(),
+      event.on_click(EndTurn),
+    ],
+    [html.text("End Turn")],
+  )
 }

@@ -38,8 +38,11 @@ pub fn prop_theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 
-pub fn on_click(handler: fn(Int) -> message) {
-  event.on("click", ["detail"] |> decode.at(decode.int) |> decode.map(handler))
+pub fn on_index_click(handler: fn(Int) -> message) {
+  event.on(
+    "index_click",
+    ["detail"] |> decode.at(decode.int) |> decode.map(handler),
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -102,7 +105,7 @@ pub type Message {
   PropsChangedSettings(Settings)
   PropsChangedTheme(Theme)
 
-  OnClick(Int)
+  OnIndexClick(Int)
 }
 
 fn update(model: Model, message: Message) {
@@ -121,7 +124,7 @@ fn update(model: Model, message: Message) {
     )
     PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
-    OnClick(index) -> #(model, event.emit("click", json.int(index)))
+    OnIndexClick(index) -> #(model, event.emit("index_click", json.int(index)))
   }
 }
 
@@ -194,7 +197,7 @@ fn cell_view(model: Model, cell_index: Int) {
         0 -> attribute.class("border-l")
         _ -> attribute.none()
       },
-      event.on_click(OnClick(cell_index)),
+      event.on_click(OnIndexClick(cell_index)),
     ],
     [
       html.div(
@@ -223,6 +226,10 @@ fn cell_content_view(model: Model, cell_index: Int) {
       card.element([
         attribute.class("w-full h-full"),
         card.prop_card(card),
+        card.prop_player_color(player_color.from_player_index(
+          card.player_index,
+          model.settings.doubles,
+        )),
       ])
 
     _ if cell_index == 0 ->

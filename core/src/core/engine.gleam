@@ -1,4 +1,5 @@
 import core/engine/card
+import core/engine/move
 import core/engine/player.{type Player}
 import core/engine/position.{type Position}
 import core/engine/settings.{type Settings}
@@ -10,6 +11,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/result
 import yuzu
 
 pub type Engine {
@@ -93,6 +95,163 @@ pub fn decoder() {
 // Lib
 // -----------------------------------------------------------------------------
 
+pub fn validate_turn_request(engine: Engine, turn_request: turn.Request) {
+  let assert Ok(active_player) =
+    util.get_list_index(engine.players, engine.active_player_index)
+
+  use <- yuzu.true_(case turn_request.lead {
+    option.Some(lead) ->
+      move.list_valid_dest_indices(
+        lead.0,
+        engine.active_player_index,
+        engine.position,
+        engine.settings,
+      )
+      |> list.contains(lead.1)
+
+    option.None ->
+      list.all(dict.keys(engine.position), fn(index) {
+        move.list_valid_dest_indices(
+          index,
+          engine.active_player_index,
+          engine.position,
+          engine.settings,
+        )
+        |> list.is_empty()
+      })
+  })
+
+  use _ <- yuzu.ok(
+    case turn_request.lead {
+      option.None -> Ok(dict.new())
+      option.Some(lead) ->
+        turn_request.marches
+        |> list.prepend(lead.0)
+        |> list.prepend(lead.1)
+        |> list.try_fold(dict.new(), fn(indices, index) {
+          case dict.has_key(indices, index) {
+            True -> Error(Nil)
+            False -> Ok(dict.insert(indices, index, True))
+          }
+        })
+    },
+    False,
+  )
+
+  use <- yuzu.true_(case turn_request.lead {
+    option.Some(lead) ->
+      turn_request.marches
+      |> list.prepend(lead.0)
+      |> list.window_by_2()
+      |> list.all(fn(move) {
+        position.is_occupied(engine.position, move.1, active_player.index)
+        && move.is_march_index(
+          move.1,
+          move.0,
+          engine.active_player_index,
+          engine.position,
+          engine.settings,
+        )
+        && move.list_raw_dest_indices(move.1, engine.position, engine.settings)
+        |> list.contains(move.0)
+      })
+
+    option.None -> list.is_empty(turn_request.marches)
+  })
+
+  let player_base_index =
+    settings.get_base_index(engine.settings, active_player.index)
+
+  let is_base_empty = case turn_request.lead {
+    option.Some(lead) ->
+      turn_request.marches
+      |> list.reverse()
+      |> list.first()
+      |> result.unwrap(lead.0)
+      |> fn(final_source_index) { final_source_index == player_base_index }
+
+    option.None -> position.is_none(engine.position, player_base_index)
+  }
+
+  case turn_request.deploy {
+    option.Some(card) -> is_base_empty && player.is_holding(active_player, card)
+    option.None -> !is_base_empty
+  }
+}
+
+pub fn preview_turn_request(engine: Engine, turn_request: turn.Request) {
+  let assert Ok(capture) = {
+    case turn_request.lead {
+      option.Some(#(capture_board_index, _)) ->
+        dict.get(engine.position, capture_board_index)
+      _ -> Ok(option.None)
+    }
+  }
+
+  apply_turn(
+    engine,
+    turn.Observed(
+      capture,
+      turn_request.lead,
+      turn_request.marches,
+      turn_request.deploy,
+      False,
+    ),
+  )
+}
+
+pub fn resolve_turn_request(engine: Engine, turn_request: turn.Request) {
+  let assert Ok(active_player) =
+    util.get_list_index(engine.players, engine.active_player_index)
+
+  let assert Ok(capture) = {
+    case turn_request.lead {
+      option.Some(#(capture_board_index, _)) ->
+        dict.get(engine.position, capture_board_index)
+      _ -> Ok(option.None)
+    }
+  }
+
+  case active_player {
+    player.Managed(_, deck, _, _) -> {
+      turn.Controlled(
+        capture,
+        turn_request.lead,
+        turn_request.marches,
+        turn_request.deploy,
+        case deck {
+          [head, ..] -> option.Some(head)
+          _ -> option.None
+        },
+      )
+    }
+
+    player.Controlled(_, deck, _, _) | player.Observed(_, deck, _, _) ->
+      turn.Observed(
+        capture,
+        turn_request.lead,
+        turn_request.marches,
+        turn_request.deploy,
+        deck > 0,
+      )
+  }
+}
+
+pub fn apply_turn_request(engine: Engine, turn_request: turn.Request) {
+  engine
+  |> resolve_turn_request(turn_request)
+  |> apply_turn(engine, _)
+}
+
+pub fn commit_turn_request(engine: Engine, turn_request: turn.Request) {
+  use <- yuzu.true(validate_turn_request(engine, turn_request), Error(Nil))
+
+  engine
+  |> resolve_turn_request(turn_request)
+  |> commit_turn(engine, _)
+  |> Ok()
+}
+
 pub fn apply_turn(engine: Engine, turn: Turn) {
   let assert Ok(active_player) =
     util.get_list_index(engine.players, engine.active_player_index)
@@ -127,39 +286,33 @@ pub fn apply_turn(engine: Engine, turn: Turn) {
       turn.marches
       |> list.prepend(lead.0)
       |> list.prepend(lead.1)
+      |> list.reverse()
       |> list.window_by_2()
+      |> list.reverse()
       |> position.move_many(engine.position, _)
 
     option.None -> engine.position
   }
 
-  let position = case turn.deploy {
-    option.Some(card) ->
+  let #(active_player, position) = {
+    use deploy_card <- yuzu.some(turn.deploy, #(active_player, position))
+
+    #(
+      player.deploy(active_player, deploy_card),
       position.insert_one(position, #(
         settings.get_base_index(engine.settings, active_player.index),
-        option.Some(card),
-      ))
-
-    _ -> position
+        option.Some(deploy_card),
+      )),
+    )
   }
 
   let active_player = case turn {
-    turn.Controlled(_, _, _, _, option.Some(card)) -> {
-      case active_player {
-        player.Managed(color, deck, hand, discard) ->
-          player.Managed(color, deck, list.prepend(hand, card), discard)
-
-        player.Controlled(color, deck, hand, discard) ->
-          player.Controlled(color, deck, list.prepend(hand, card), discard)
-
-        player.Observed(color, deck, hand, discard) ->
-          player.Observed(color, deck, hand + 1, discard)
-      }
-    }
+    turn.Controlled(_, _, _, _, option.Some(draw_card)) ->
+      player.draw(active_player, draw_card)
 
     turn.Observed(_, _, _, _, True) -> {
       let assert player.Observed(color, deck, hand, discard) = active_player
-      player.Observed(color, deck, hand + 1, discard)
+      player.Observed(color, deck - 1, hand + 1, discard)
     }
 
     _ -> active_player
@@ -171,16 +324,17 @@ pub fn apply_turn(engine: Engine, turn: Turn) {
   Engine(..engine, players:, position:)
 }
 
-pub fn apply_turn_request(engine: Engine, request: turn.Request) {
-  let assert Ok(capture) = {
-    use #(capture_board_index, _) <- yuzu.some(request.lead, Ok(option.None))
-    dict.get(engine.position, capture_board_index)
-  }
+pub fn commit_turn(engine: Engine, turn: Turn) {
+  Engine(..engine, turns: list.prepend(engine.turns, turn))
+  |> apply_turn(turn)
+  |> end_turn()
+}
 
-  apply_turn(
-    engine,
-    turn.Observed(capture, request.lead, request.marches, request.deploy, False),
-  )
+pub fn end_turn(engine: Engine) {
+  Engine(..engine, active_player_index: case engine.settings.doubles {
+    True -> { engine.active_player_index + 1 } % 4
+    False -> { engine.active_player_index + 1 } % 2
+  })
 }
 
 pub fn undo_turn(engine: Engine) {

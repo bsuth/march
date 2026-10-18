@@ -5,6 +5,7 @@ import main/model.{type Model}
 import routes/home
 import routes/learn
 import routes/lobby
+import routes/match
 import yuzu
 
 pub fn update_ws(model: Model, message: String) {
@@ -18,6 +19,7 @@ pub fn update_ws(model: Model, message: String) {
     model.Home(route_model) -> home.update_ws(route_model, ws_message)
     model.Learn(route_model) -> learn.update_ws(route_model, ws_message)
     model.Lobby(route_model) -> lobby.update_ws(route_model, ws_message)
+    model.Match(route_model) -> match.update_ws(route_model, ws_message)
     _ -> #(model, effect.none())
   }
 }

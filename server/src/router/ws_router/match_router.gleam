@@ -22,6 +22,7 @@ pub fn handler(
   case path {
     "enter" -> enter(state, conn, payload)
     "exit" -> exit(state, conn, payload)
+    "request_turn" -> request_turn(state, conn, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws path: match." <> path)
@@ -54,6 +55,23 @@ fn exit(
   )
 
   send_to_match(state, match_id, ipc.MatchExit(state.user.id))
+}
+
+fn request_turn(
+  state: WebsocketState,
+  _conn: mist.WebsocketConnection,
+  payload: Dynamic,
+) {
+  use payload <- yuzu.ok(
+    decode.run(payload, ws_match.request_turn_decoder()),
+    mist.continue(state),
+  )
+
+  send_to_match(
+    state,
+    payload.match_id,
+    ipc.MatchRequestTurn(state.user.id, payload.turn_request),
+  )
 }
 
 // -----------------------------------------------------------------------------

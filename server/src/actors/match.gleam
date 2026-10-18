@@ -1,8 +1,11 @@
 import actors/match_registry
 import core/engine
 import core/engine/settings.{type Settings}
+import core/engine/turn
 import core/match.{type Match, Match}
 import core/user.{type User}
+import core/util
+import core/ws_api/ws_match
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
@@ -66,6 +69,8 @@ fn handler(state: MatchActor, message: ipc.Match) {
     ipc.MatchEnter(user, subject) -> enter_handler(state, user, subject)
     ipc.MatchExit(id) -> exit_handler(state, id)
     ipc.MatchGet(requester) -> get_handler(state, requester)
+    ipc.MatchRequestTurn(id, turn_request) ->
+      request_turn_handler(state, id, turn_request)
   }
 }
 
@@ -131,6 +136,39 @@ fn exit_handler(state: MatchActor, exit_user_id: String) {
 fn get_handler(state: MatchActor, requester: Subject(Match)) {
   process.send(requester, state.match)
   actor.continue(state)
+}
+
+fn request_turn_handler(
+  state: MatchActor,
+  request_user_id: String,
+  turn_request: turn.Request,
+) {
+  use request_player_index <- yuzu.ok(
+    state.match.players
+      |> list.map(fn(user) { user.id })
+      |> util.find_list_index(request_user_id),
+    actor.continue(state),
+  )
+
+  use <- yuzu.true(
+    state.match.engine.active_player_index == request_player_index,
+    actor.continue(state),
+  )
+
+  use engine <- yuzu.ok(
+    engine.commit_turn_request(state.match.engine, turn_request),
+    actor.continue(state),
+  )
+
+  let assert [turn, ..] = engine.turns
+
+  ws_match.TurnEndedPayload(state.match.id, turn)
+  |> ws_match.turn_ended_json()
+  |> broadcast_json(state.meta, _)
+
+  let match = Match(..state.match, engine:)
+
+  MatchActor(..state, match:) |> actor.continue()
 }
 
 // -----------------------------------------------------------------------------

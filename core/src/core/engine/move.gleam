@@ -1,6 +1,5 @@
 import core/engine/board
 import core/engine/card
-import core/engine/player.{type Player}
 import core/engine/position.{type Position}
 import core/engine/settings.{type Settings}
 import core/engine/trait
@@ -22,7 +21,7 @@ pub fn list_raw_source_indices(
 
 pub fn list_valid_source_indices(
   dest_index: Int,
-  player: Player,
+  player_index: Int,
   position: Position,
   settings: Settings,
 ) {
@@ -31,7 +30,7 @@ pub fn list_valid_source_indices(
   list_trait_source_indices(dest_index, position, settings)
   |> list.filter(fn(entry) {
     use source_card <- position.use_some(position, entry.0, False)
-    use <- yuzu.true_(source_card.player_index == player.index)
+    use <- yuzu.true_(source_card.player_index == player_index)
 
     case dest {
       option.Some(dest_card) -> card.can_capture(source_card, dest_card)
@@ -80,18 +79,18 @@ pub fn list_raw_dest_indices(
 
 pub fn list_valid_dest_indices(
   source_index: Int,
-  player: Player,
+  player_index: Int,
   position: Position,
   settings: Settings,
 ) {
   use source_card <- position.use_some(position, source_index, [])
-  use <- yuzu.true(source_card.player_index == player.index, [])
+  use <- yuzu.true(source_card.player_index == player_index, [])
 
   list_trait_dest_indices(source_index, position, settings)
   |> list.filter(fn(entry) {
     case entry.1 {
       trait.Adjacent | trait.Diagonal -> {
-        use dest_card <- position.use_some(position, entry.0, False)
+        use dest_card <- position.use_some(position, entry.0, True)
         card.can_capture(source_card, dest_card)
       }
 
@@ -131,7 +130,7 @@ fn list_trait_dest_indices(
         board.get_mobius_indices(settings.board, source_index)
         |> list.map(fn(dest_index) { #(dest_index, trait.Mobius) })
 
-      _ -> []
+      trait.AnyMarch -> []
     }
   })
 }
@@ -139,7 +138,7 @@ fn list_trait_dest_indices(
 pub fn is_march_index(
   source_index: Int,
   dest_index: Int,
-  player: Player,
+  player_index: Int,
   position: Position,
   settings: Settings,
 ) {
@@ -157,7 +156,7 @@ pub fn is_march_index(
   let dest_column = dest_index % settings.board.width
   let dest_row = dest_index / settings.board.width
 
-  case player.index, settings.doubles {
+  case player_index, settings.doubles {
     0, False -> source_column <= dest_column && source_row <= dest_row
     1, False -> source_column >= dest_column && source_row >= dest_row
 

@@ -4,6 +4,7 @@ import gleam/option
 import lustre/attribute
 import lustre/element/html
 import phosphor
+import routes/match/message
 import routes/match/model.{type Model}
 
 pub fn view(model: Model) {
@@ -42,6 +43,7 @@ fn match_view(model: Model, match: Match) {
     game_ui.element([
       game_ui.prop_engine(match.engine),
       game_ui.prop_theme(model.app.theme),
+      game_ui.on_turn_end(message.UserEndedTurn),
     ]),
   ])
 }

@@ -1,7 +1,6 @@
 import core/engine/card.{type Card}
-import core/engine/settings.{type Settings}
+import core/util
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
 import gleam/list
 
@@ -110,6 +109,30 @@ pub fn use_observed(
 // Lib
 // -----------------------------------------------------------------------------
 
+pub fn is_managed(player: Player) {
+  case player {
+    Managed(..) -> True
+    Controlled(..) -> False
+    Observed(..) -> False
+  }
+}
+
+pub fn is_controlled(player: Player) {
+  case player {
+    Managed(..) -> False
+    Controlled(..) -> True
+    Observed(..) -> False
+  }
+}
+
+pub fn is_observed(player: Player) {
+  case player {
+    Managed(..) -> False
+    Controlled(..) -> False
+    Observed(..) -> True
+  }
+}
+
 pub fn to_managed(player: Player) {
   case player {
     Managed(..) -> Ok(player)
@@ -155,35 +178,27 @@ pub fn is_holding(player: Player, card: Card) {
 
 pub fn deploy(player: Player, deploy_card: Card) {
   case player {
-    Managed(_, _, hand, _) -> {
-      let hand = list.filter(hand, fn(hand_card) { hand_card != deploy_card })
-      Ok(Managed(..player, hand:))
-    }
-
-    Controlled(_, _, hand, _) -> {
-      let hand = list.filter(hand, fn(hand_card) { hand_card != deploy_card })
-      Ok(Controlled(..player, hand:))
-    }
-
-    Observed(..) -> Error(Nil)
+    Managed(_, _, hand, _) ->
+      Managed(..player, hand: list.filter(hand, util.neq(_, deploy_card)))
+    Controlled(_, _, hand, _) ->
+      Controlled(..player, hand: list.filter(hand, util.neq(_, deploy_card)))
+    Observed(_, _, hand, _) -> Observed(..player, hand: hand - 1)
   }
 }
 
-pub fn draw(player: Player, settings: Settings) {
-  use index, deck, hand, discard <- use_managed(player, Error(Nil))
+pub fn draw(player: Player, card: Card) {
+  case player {
+    Managed(_, deck, hand, _) ->
+      Managed(
+        ..player,
+        deck: list.drop(deck, 1),
+        hand: list.prepend(hand, card),
+      )
 
-  let #(deck, hand) =
-    int.range(
-      0,
-      settings.hand_size - list.length(hand),
-      #(deck, hand),
-      fn(acc, _) {
-        case acc.0 {
-          [] -> acc
-          [card, ..deck] -> #(list.prepend(acc.1, card), deck)
-        }
-      },
-    )
+    Controlled(_, deck, hand, _) ->
+      Controlled(..player, deck: deck - 1, hand: list.prepend(hand, card))
 
-  Ok(Managed(index:, deck:, hand:, discard:))
+    Observed(_, deck, hand, _) ->
+      Observed(..player, deck: deck - 1, hand: hand + 1)
+  }
 }

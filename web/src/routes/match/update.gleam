@@ -1,3 +1,4 @@
+import core/engine/turn
 import core/match.{type Match}
 import core/ws_api/ws_match
 import gleam/json
@@ -13,7 +14,7 @@ pub fn update(model: Model, message: Message) {
   case message {
     message.ApiMatchGetResponse(response) ->
       api_match_get_response(model, response)
-    message.UserEndedTurn -> #(model, effect.none())
+    message.UserEndedTurn(turn_request) -> user_ended_turn(model, turn_request)
   }
 }
 
@@ -34,4 +35,15 @@ fn api_match_get_response(
     Model(..model, loading_match: False, match: option.Some(match)),
     effect.none(),
   )
+}
+
+fn user_ended_turn(model: Model, turn_request: turn.Request) {
+  ws_match.request_turn_json(ws_match.RequestTurnPayload(
+    model.match_id,
+    turn_request,
+  ))
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
+
+  #(model, effect.none())
 }
