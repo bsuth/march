@@ -11,8 +11,8 @@ pub type Position =
   Dict(Int, Option(Card))
 
 pub fn new(board: Board) {
-  int.range(0, board.width * board.height, dict.new(), fn(cards, index) {
-    dict.insert(cards, index, option.None)
+  int.range(0, board.width * board.height, dict.new(), fn(position, index) {
+    dict.insert(position, index, option.None)
   })
 }
 

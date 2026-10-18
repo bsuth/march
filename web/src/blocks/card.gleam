@@ -94,8 +94,8 @@ fn view(model: Model) {
       attribute.class("text-4xl font-bold"),
       attribute.class("select-none"),
       case model.card.suit, model.player_color {
-        suit.Diamonds, _ -> attribute.class("text-red-400")
-        suit.Hearts, _ -> attribute.class("text-red-400")
+        suit.Diamonds, _ -> attribute.class("text-(--march-suit-red)")
+        suit.Hearts, _ -> attribute.class("text-(--march-suit-red)")
         _, player_color.White -> attribute.class("text-black")
         _, _ -> attribute.class("text-white")
       },
@@ -150,8 +150,8 @@ fn suit_view(
   player_color: PlayerColor,
 ) {
   let text_attribute = case suit, player_color {
-    suit.Diamonds, _ -> attribute.class("text-red-400")
-    suit.Hearts, _ -> attribute.class("text-red-400")
+    suit.Diamonds, _ -> attribute.class("text-(--march-suit-red)")
+    suit.Hearts, _ -> attribute.class("text-(--march-suit-red)")
     _, player_color.Black -> attribute.class("text-white")
     _, _ -> attribute.class("text-black")
   }

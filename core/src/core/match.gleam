@@ -1,18 +1,24 @@
-import core/engine.{type Engine, Engine}
+import core/engine
 import core/engine/player
+import core/engine/turn
 import core/user.{type User}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 
 pub type Match {
-  Match(id: String, engine: Engine, players: List(User), visible: Bool)
+  Match(
+    id: String,
+    engine_kernel: engine.Kernel,
+    players: List(User),
+    visible: Bool,
+  )
 }
 
 pub fn json(match: Match) {
   json.object([
     #("id", json.string(match.id)),
-    #("engine", engine.json(match.engine)),
+    #("engine_kernel", engine.kernel_json(match.engine_kernel)),
     #("players", json.array(match.players, user.json)),
     #("visible", json.bool(match.visible)),
   ])
@@ -20,10 +26,10 @@ pub fn json(match: Match) {
 
 pub fn decoder() {
   use id <- decode.field("id", decode.string)
-  use engine <- decode.field("engine", engine.decoder())
+  use engine_kernel <- decode.field("engine_kernel", engine.kernel_decoder())
   use players <- decode.field("players", decode.list(user.decoder()))
   use visible <- decode.field("visible", decode.bool)
-  decode.success(Match(id:, engine:, players:, visible:))
+  decode.success(Match(id:, engine_kernel:, players:, visible:))
 }
 
 pub fn mask(match: Match, user: User) {
@@ -37,17 +43,28 @@ pub fn mask(match: Match, user: User) {
       }
     })
 
-  let engine_players =
-    list.index_map(match.engine.players, fn(player, index) {
-      case user_player_index {
-        Ok(user_player_index) if user_player_index == index -> {
+  let player_seeds =
+    list.index_map(match.engine_kernel.player_seeds, fn(player, index) {
+      case user_player_index == Ok(index) {
+        True -> {
           let assert Ok(user_player) = player.to_controlled(player)
           user_player
         }
 
-        _ -> player.to_observed(player)
+        False -> player.to_observed(player)
       }
     })
 
-  Match(..match, engine: Engine(..match.engine, players: engine_players))
+  let turns =
+    list.map(match.engine_kernel.turns, fn(turn) {
+      case user_player_index == Ok(turn.player_index) {
+        True -> turn
+        False -> turn.to_observed(turn)
+      }
+    })
+
+  Match(
+    ..match,
+    engine_kernel: engine.Kernel(..match.engine_kernel, player_seeds:, turns:),
+  )
 }

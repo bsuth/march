@@ -7,7 +7,7 @@ import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
-import gleam/option
+import gleam/option.{type Option}
 import lib/player_color
 import lib/theme.{type Theme}
 import lustre
@@ -22,8 +22,15 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_player_index(player_index: Int) {
-  attribute.property("player_index", json.int(player_index))
+pub fn prop_flipped(flipped: Bool) {
+  attribute.property("flipped", json.bool(flipped))
+}
+
+pub fn prop_highlight_index(highlight_index: Option(Int)) {
+  attribute.property(
+    "highlight_index",
+    json.nullable(highlight_index, json.int),
+  )
 }
 
 pub fn prop_position(position: Position) {
@@ -38,8 +45,15 @@ pub fn prop_theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 
-pub fn on_click(handler: fn(Int) -> message) {
-  event.on("click", ["detail"] |> decode.at(decode.int) |> decode.map(handler))
+pub fn on_board_focusout(message: message) {
+  event.on("board_focusout", decode.success(message))
+}
+
+pub fn on_cell_click(handler: fn(Int) -> message) {
+  event.on(
+    "cell_click",
+    ["detail"] |> decode.at(decode.int) |> decode.map(handler),
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -54,8 +68,11 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
-    component.on_property_change("player_index", {
-      decode.int |> decode.map(PropsChangedPlayerIndex)
+    component.on_property_change("flipped", {
+      decode.bool |> decode.map(PropsChangedFlipped)
+    }),
+    component.on_property_change("highlight_index", {
+      decode.optional(decode.int) |> decode.map(PropsChangedHighlightIndex)
     }),
     component.on_property_change("position", {
       position.decoder() |> decode.map(PropsChangedPosition)
@@ -75,7 +92,13 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(player_index: Int, position: Position, settings: Settings, theme: Theme)
+  Model(
+    flipped: Bool,
+    highlight_index: Option(Int),
+    position: Position,
+    settings: Settings,
+    theme: Theme,
+  )
 }
 
 fn init(_) {
@@ -83,7 +106,8 @@ fn init(_) {
 
   #(
     Model(
-      player_index: 0,
+      flipped: False,
+      highlight_index: option.None,
       position: position.new(settings.board),
       settings: settings,
       theme: theme.Light,
@@ -97,18 +121,22 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 pub type Message {
-  PropsChangedPlayerIndex(Int)
+  PropsChangedFlipped(Bool)
+  PropsChangedHighlightIndex(Option(Int))
   PropsChangedPosition(Position)
   PropsChangedSettings(Settings)
   PropsChangedTheme(Theme)
 
-  OnClick(Int)
+  OnCellClick(Int)
+  OnDragStart
+  OnFocusOut
 }
 
 fn update(model: Model, message: Message) {
   case message {
-    PropsChangedPlayerIndex(player_index) -> #(
-      Model(..model, player_index:),
+    PropsChangedFlipped(flipped) -> #(Model(..model, flipped:), effect.none())
+    PropsChangedHighlightIndex(highlight_index) -> #(
+      Model(..model, highlight_index:),
       effect.none(),
     )
     PropsChangedPosition(position) -> #(
@@ -121,7 +149,15 @@ fn update(model: Model, message: Message) {
     )
     PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
-    OnClick(index) -> #(model, event.emit("click", json.int(index)))
+    OnCellClick(cell_index) -> #(
+      model,
+      event.emit("cell_click", json.int(cell_index)),
+    )
+    OnDragStart -> {
+      echo "dragstart"
+      #(model, effect.none())
+    }
+    OnFocusOut -> #(model, event.emit("board_focusout", json.null()))
   }
 }
 
@@ -133,16 +169,12 @@ fn view(model: Model) {
   let width = model.settings.board.width
   let height = model.settings.board.height
 
-  // TODO: allow updating player_index
-
   html.div(
     [
       attribute.class("w-full h-full relative"),
-      case model.player_index, model.settings.doubles {
-        0, _ -> attribute.class("rotate-180")
-        1, True -> attribute.class("rotate-90")
-        3, True -> attribute.class("rotate-270")
-        _, _ -> attribute.none()
+      case model.flipped {
+        True -> attribute.none()
+        False -> attribute.class("rotate-180")
       },
     ],
     [
@@ -153,13 +185,16 @@ fn view(model: Model) {
             attribute.class("relative top-1/2 left-1/2 -translate-1/2"),
             attribute.style(
               "aspect-ratio",
-              int.to_string(width) <> "/" <> int.to_string(height),
+              int.to_string(5 * width) <> "/" <> int.to_string(7 * height),
             ),
+            attribute.tabindex(-1),
+            event.on("focusout", decode.success(OnFocusOut)),
           ],
           [
             html.div(
               [
                 attribute.class("grid gap-0"),
+                attribute.class("border"),
                 attribute.style(
                   "grid-template-columns",
                   "repeat(" <> int.to_string(width) <> ", 1fr)",
@@ -183,29 +218,20 @@ fn view(model: Model) {
 fn cell_view(model: Model, cell_index: Int) {
   html.div(
     [
-      attribute.class("aspect-square"),
-      attribute.class("border-b border-r"),
+      attribute.style("aspect-ratio", "5 / 7"),
+      attribute.class("border"),
       attribute.class("cursor-pointer"),
-      case cell_index / model.settings.board.width {
-        0 -> attribute.class("border-t")
-        _ -> attribute.none()
-      },
-      case cell_index % model.settings.board.width {
-        0 -> attribute.class("border-l")
-        _ -> attribute.none()
-      },
-      event.on_click(OnClick(cell_index)),
+      event.on("dragstart", decode.success(OnDragStart)),
+      event.on_click(OnCellClick(cell_index)),
     ],
     [
       html.div(
         [
           attribute.class("w-full h-full"),
           attribute.class("flex justify-center items-center"),
-          case model.player_index, model.settings.doubles {
-            0, _ -> attribute.class("-rotate-180")
-            1, True -> attribute.class("-rotate-90")
-            3, True -> attribute.class("-rotate-270")
-            _, _ -> attribute.none()
+          case model.flipped {
+            True -> attribute.none()
+            False -> attribute.class("-rotate-180")
           },
         ],
         [cell_content_view(model, cell_index)],
@@ -222,7 +248,16 @@ fn cell_content_view(model: Model, cell_index: Int) {
     Ok(option.Some(card)) ->
       card.element([
         attribute.class("w-full h-full"),
+        case option.Some(cell_index) == model.highlight_index {
+          True ->
+            attribute.style("box-shadow", "0 0 4px 4px var(--march-primary)")
+          False -> attribute.none()
+        },
         card.prop_card(card),
+        card.prop_player_color(player_color.from_player_index(
+          card.player_index,
+          model.settings.doubles,
+        )),
       ])
 
     _ if cell_index == 0 ->

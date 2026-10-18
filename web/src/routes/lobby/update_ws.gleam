@@ -37,6 +37,7 @@ fn lobby_entered(model: Model, payload: Dynamic) {
   ))
 
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
 
   let users =
     lobby.users
@@ -55,6 +56,7 @@ fn lobby_exited(model: Model, payload: Dynamic) {
   ))
 
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
 
   let lobby = lobby.remove_user(lobby, payload.user_id)
 

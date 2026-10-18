@@ -1,24 +1,15 @@
-import core/engine/tile.{type Tile}
-import gleam/dict.{type Dict}
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
 import yuzu
 
 pub type Board {
-  Board(width: Int, height: Int, tiles: Dict(Int, Tile))
+  Board(width: Int, height: Int)
 }
 
 pub fn normal(width: Int, height: Int) {
-  Board(
-    width:,
-    height:,
-    tiles: int.range(0, width * height, dict.new(), fn(cards, index) {
-      dict.insert(cards, index, tile.Normal)
-    }),
-  )
+  Board(width:, height:)
 }
 
 // -----------------------------------------------------------------------------
@@ -29,31 +20,13 @@ pub fn json(board: Board) {
   json.object([
     #("width", json.int(board.width)),
     #("height", json.int(board.height)),
-    #(
-      "tiles",
-      dict.to_list(board.tiles)
-        |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
-        |> list.map(fn(entry) { entry.1 })
-        |> json.array(tile.json),
-    ),
   ])
 }
 
 pub fn decoder() {
   use width <- decode.field("width", decode.int)
   use height <- decode.field("height", decode.int)
-
-  use tiles <- decode.field("tiles", {
-    tile.decoder()
-    |> decode.list()
-    |> decode.map(fn(positions) {
-      positions
-      |> list.index_map(fn(position, index) { #(index, position) })
-      |> dict.from_list()
-    })
-  })
-
-  decode.success(Board(width:, height:, tiles:))
+  decode.success(Board(width:, height:))
 }
 
 // -----------------------------------------------------------------------------

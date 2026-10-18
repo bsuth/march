@@ -10,19 +10,19 @@ pub type Face {
 
 pub fn to_string(face: Face) {
   case face {
-    Jack -> "jack"
-    Queen -> "queen"
-    King -> "king"
-    Ace -> "ace"
+    Jack -> "J"
+    Queen -> "Q"
+    King -> "K"
+    Ace -> "A"
   }
 }
 
 pub fn from_string(face_string: String) {
   case face_string {
-    "jack" -> Ok(Jack)
-    "queen" -> Ok(Queen)
-    "king" -> Ok(King)
-    "ace" -> Ok(Ace)
+    "J" -> Ok(Jack)
+    "Q" -> Ok(Queen)
+    "K" -> Ok(King)
+    "A" -> Ok(Ace)
     _ -> Error(Nil)
   }
 }

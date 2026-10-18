@@ -28,6 +28,7 @@ pub fn view(model: Model) {
             navbar_item_view("Home", "/"),
             navbar_item_view("Learn", "/learn"),
             navbar_item_view("About", "/about"),
+            navbar_item_view("Playground", "/playground"),
           ]),
           icon_button.element([event.on_click(message.ToggleTheme)], [
             case app.theme {

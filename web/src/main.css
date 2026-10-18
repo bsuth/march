@@ -24,6 +24,8 @@
   --march-warning: var(--color-amber-600);
   --march-error: var(--color-red-600);
 
+  --march-suit-red: var(--color-red-400);
+
   [data-theme=light] {
     color-scheme: light;
 

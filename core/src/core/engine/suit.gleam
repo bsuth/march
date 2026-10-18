@@ -15,19 +15,19 @@ pub type Suit {
 
 pub fn to_string(suit: Suit) {
   case suit {
-    Spades -> "spades"
-    Diamonds -> "diamonds"
-    Clubs -> "clubs"
-    Hearts -> "hearts"
+    Spades -> "S"
+    Diamonds -> "D"
+    Clubs -> "C"
+    Hearts -> "H"
   }
 }
 
 pub fn from_string(suit_string: String) {
   case suit_string {
-    "spades" -> Ok(Spades)
-    "diamonds" -> Ok(Diamonds)
-    "clubs" -> Ok(Clubs)
-    "hearts" -> Ok(Hearts)
+    "S" -> Ok(Spades)
+    "D" -> Ok(Diamonds)
+    "C" -> Ok(Clubs)
+    "H" -> Ok(Hearts)
     _ -> Error(Nil)
   }
 }

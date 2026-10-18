@@ -1,6 +1,7 @@
 import core/engine/board.{type Board}
 import core/engine/face.{type Face}
 import core/engine/trait.{type Trait}
+import core/engine/turn
 import core/lobby.{type Lobby as LobbyState}
 import core/match.{type Match as MatchState}
 import core/user.{type User}
@@ -33,6 +34,7 @@ pub type Match {
   MatchEnter(User, Subject(Websocket))
   MatchExit(String)
   MatchGet(Subject(MatchState))
+  MatchRequestTurn(String, turn.Request)
 }
 
 pub type Matchmaker {

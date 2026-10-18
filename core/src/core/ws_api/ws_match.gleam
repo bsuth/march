@@ -1,3 +1,4 @@
+import core/engine/turn.{type Turn}
 import core/user.{type User}
 import core/ws_api
 import gleam/dynamic/decode
@@ -76,6 +77,30 @@ pub fn exited_decoder() {
 }
 
 // -----------------------------------------------------------------------------
+// REQUEST_TURN
+// -----------------------------------------------------------------------------
+
+pub type RequestTurnPayload {
+  RequestTurnPayload(match_id: String, turn_request: turn.Request)
+}
+
+pub fn request_turn_json(payload: RequestTurnPayload) {
+  ws_api.json(
+    "match.request_turn",
+    json.object([
+      #("match_id", json.string(payload.match_id)),
+      #("turn_request", turn.request_json(payload.turn_request)),
+    ]),
+  )
+}
+
+pub fn request_turn_decoder() {
+  use match_id <- decode.field("match_id", decode.string)
+  use turn_request <- decode.field("turn_request", turn.request_decoder())
+  decode.success(RequestTurnPayload(match_id, turn_request))
+}
+
+// -----------------------------------------------------------------------------
 // TERMINATED
 // -----------------------------------------------------------------------------
 
@@ -85,4 +110,28 @@ pub fn terminated_json(match_id: String) {
 
 pub fn terminated_decoder() {
   decode.string
+}
+
+// -----------------------------------------------------------------------------
+// TURN_ENDED
+// -----------------------------------------------------------------------------
+
+pub type TurnEndedPayload {
+  TurnEndedPayload(match_id: String, turn: Turn)
+}
+
+pub fn turn_ended_json(payload: TurnEndedPayload) {
+  ws_api.json(
+    "match.turn_ended",
+    json.object([
+      #("match_id", json.string(payload.match_id)),
+      #("turn", turn.json(payload.turn)),
+    ]),
+  )
+}
+
+pub fn turn_ended_decoder() {
+  use match_id <- decode.field("match_id", decode.string)
+  use turn <- decode.field("turn", turn.decoder())
+  decode.success(TurnEndedPayload(match_id, turn))
 }

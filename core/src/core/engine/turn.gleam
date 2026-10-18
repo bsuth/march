@@ -1,18 +1,11 @@
 import core/engine/card.{type Card}
-import core/engine/move
-import core/engine/player.{type Player}
-import core/engine/position.{type Position}
-import core/engine/settings.{type Settings}
-import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
-import gleam/list
 import gleam/option.{type Option}
-import gleam/result
-import yuzu
 
 pub type Turn {
   Controlled(
+    player_index: Int,
     capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
@@ -20,6 +13,7 @@ pub type Turn {
     draw: Option(Card),
   )
   Observed(
+    player_index: Int,
     capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
@@ -38,6 +32,7 @@ pub type Request {
 
 pub fn json(turn: Turn) {
   json.object([
+    #("player_index", json.int(turn.player_index)),
     #("capture", json.nullable(turn.capture, card.json)),
     #(
       "lead",
@@ -51,13 +46,14 @@ pub fn json(turn: Turn) {
     #("marches", json.array(turn.marches, json.int)),
     #("deploy", json.nullable(turn.deploy, card.json)),
     #("draw", case turn {
-      Controlled(_, _, _, _, draw) -> json.nullable(draw, card.json)
-      Observed(_, _, _, _, draw) -> json.bool(draw)
+      Controlled(_, _, _, _, _, draw) -> json.nullable(draw, card.json)
+      Observed(_, _, _, _, _, draw) -> json.bool(draw)
     }),
   ])
 }
 
 pub fn decoder() {
+  use player_index <- decode.field("player_index", decode.int)
   use capture <- decode.field("capture", decode.optional(card.decoder()))
 
   use lead <- decode.field(
@@ -74,69 +70,87 @@ pub fn decoder() {
 
   let controlled_decoder = {
     use draw <- decode.field("draw", decode.optional(card.decoder()))
-    decode.success(Controlled(capture:, lead:, marches:, deploy:, draw:))
+    decode.success(Controlled(
+      player_index:,
+      capture:,
+      lead:,
+      marches:,
+      deploy:,
+      draw:,
+    ))
   }
 
   let observed_decoder = {
     use draw <- decode.field("draw", decode.bool)
-    decode.success(Observed(capture:, lead:, marches:, deploy:, draw:))
+    decode.success(Observed(
+      player_index:,
+      capture:,
+      lead:,
+      marches:,
+      deploy:,
+      draw:,
+    ))
   }
 
   decode.one_of(controlled_decoder, [observed_decoder])
+}
+
+pub fn request_json(request: Request) {
+  json.object([
+    #(
+      "lead",
+      json.nullable(request.lead, fn(lead) {
+        json.object([
+          #("source", json.int(lead.0)),
+          #("dest", json.int(lead.1)),
+        ])
+      }),
+    ),
+    #("marches", json.array(request.marches, json.int)),
+    #("deploy", json.nullable(request.deploy, card.json)),
+  ])
+}
+
+pub fn request_decoder() {
+  use lead <- decode.field(
+    "lead",
+    decode.optional({
+      use source <- decode.field("source", decode.int)
+      use dest <- decode.field("dest", decode.int)
+      decode.success(#(source, dest))
+    }),
+  )
+
+  use marches <- decode.field("marches", decode.list(decode.int))
+  use deploy <- decode.field("deploy", decode.optional(card.decoder()))
+
+  decode.success(Request(lead:, marches:, deploy:))
 }
 
 // -----------------------------------------------------------------------------
 // Lib
 // -----------------------------------------------------------------------------
 
-pub fn validate(
-  request: Request,
-  player: Player,
-  position: Position,
-  settings: Settings,
-) {
-  use <- yuzu.true_(case request.lead {
-    option.Some(lead) ->
-      move.list_valid_dest_indices(lead.0, player, position, settings)
-      |> list.contains(lead.1)
-
-    option.None ->
-      list.all(dict.keys(position), fn(index) {
-        move.list_valid_dest_indices(index, player, position, settings)
-        |> list.is_empty()
-      })
-  })
-
-  use <- yuzu.true_(case request.lead {
-    option.Some(lead) ->
-      request.marches
-      |> list.prepend(lead.0)
-      |> list.window_by_2()
-      |> list.all(fn(move) {
-        position.is_occupied(position, move.1, player.index)
-        && move.is_march_index(move.1, move.0, player, position, settings)
-        && move.list_raw_dest_indices(move.1, position, settings)
-        |> list.contains(move.0)
-      })
-
-    option.None -> list.is_empty(request.marches)
-  })
-
-  let player_base_index = settings.get_base_index(settings, player.index)
-
-  let is_base_empty = case request.lead {
-    option.Some(lead) ->
-      request.marches
-      |> list.reverse()
-      |> list.first()
-      |> result.unwrap(lead.0)
-      |> fn(final_source_index) { final_source_index == player_base_index }
-
-    option.None -> position.is_none(position, player_base_index)
+pub fn to_observed(turn: Turn) {
+  case turn {
+    Controlled(player_index, capture, lead, marches, deploy, draw) ->
+      Observed(
+        player_index,
+        capture,
+        lead,
+        marches,
+        deploy,
+        option.is_some(draw),
+      )
+    Observed(..) -> turn
   }
+}
 
-  case request.deploy {
-    option.Some(card) -> is_base_empty && player.is_holding(player, card)
-    option.None -> !is_base_empty
+pub fn undo(request: Request) {
+  case request {
+    Request(lead, marches, option.Some(_)) ->
+      Request(lead, marches, option.None)
+    Request(lead, [_, ..marches], _) -> Request(lead, marches, option.None)
+    _ -> Request(option.None, [], option.None)
   }
 }

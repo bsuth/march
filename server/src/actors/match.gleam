@@ -1,8 +1,11 @@
 import actors/match_registry
-import core/engine
+import core/engine.{type Engine}
 import core/engine/settings.{type Settings}
+import core/engine/turn
 import core/match.{type Match, Match}
 import core/user.{type User}
+import core/util
+import core/ws_api/ws_match
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
@@ -13,7 +16,8 @@ import names.{type Names}
 import yuzu
 
 // TODO: auto terminate game after X seconds when players leave
-// If only 1 player leaves, other wins. otherwise draw
+//    If only 1 player leaves, other wins. otherwise draw
+// TODO: auto terminate game after X seconds when game ends
 // TODO: enforce maximum number of users in a match
 
 pub type StartArgs {
@@ -22,6 +26,7 @@ pub type StartArgs {
 
 pub type MatchActor {
   MatchActor(
+    engine: Engine,
     match: Match,
     meta: Dict(String, MatchActorUserMeta),
     selector: process.Selector(ipc.Match),
@@ -39,13 +44,14 @@ pub fn start(names: Names, args: StartArgs) {
     let match =
       Match(
         id:,
-        engine: engine.new(args.engine_settings),
+        engine_kernel: engine.new_kernel(args.engine_settings),
         players: args.players,
         visible: args.visible,
       )
 
+    let engine = engine.new(match.engine_kernel)
     let selector = list.fold(subjects, process.new_selector(), process.select)
-    let state = MatchActor(match:, meta: dict.new(), selector:)
+    let state = MatchActor(engine:, match:, meta: dict.new(), selector:)
 
     state
     |> actor.initialised()
@@ -66,6 +72,8 @@ fn handler(state: MatchActor, message: ipc.Match) {
     ipc.MatchEnter(user, subject) -> enter_handler(state, user, subject)
     ipc.MatchExit(id) -> exit_handler(state, id)
     ipc.MatchGet(requester) -> get_handler(state, requester)
+    ipc.MatchRequestTurn(id, turn_request) ->
+      request_turn_handler(state, id, turn_request)
   }
 }
 
@@ -131,6 +139,46 @@ fn exit_handler(state: MatchActor, exit_user_id: String) {
 fn get_handler(state: MatchActor, requester: Subject(Match)) {
   process.send(requester, state.match)
   actor.continue(state)
+}
+
+fn request_turn_handler(
+  state: MatchActor,
+  request_user_id: String,
+  turn_request: turn.Request,
+) {
+  use request_player_index <- yuzu.ok(
+    state.match.players
+      |> list.map(fn(user) { user.id })
+      |> util.find_list_index(request_user_id),
+    actor.continue(state),
+  )
+
+  use <- yuzu.true(
+    state.engine.active_player_index == request_player_index,
+    actor.continue(state),
+  )
+
+  use engine <- yuzu.ok(
+    engine.commit_turn_request(state.engine, turn_request),
+    actor.continue(state),
+  )
+
+  let assert [turn, ..] = engine.kernel.turns
+
+  dict.each(state.meta, fn(user_id, user_meta) {
+    case user_id == request_user_id {
+      True -> turn
+      False -> turn.to_observed(turn)
+    }
+    |> ws_match.TurnEndedPayload(state.match.id, _)
+    |> ws_match.turn_ended_json()
+    |> ipc.WebsocketJson()
+    |> process.send(user_meta.subject, _)
+  })
+
+  let match = Match(..state.match, engine_kernel: engine.kernel)
+
+  MatchActor(..state, engine:, match:) |> actor.continue()
 }
 
 // -----------------------------------------------------------------------------
