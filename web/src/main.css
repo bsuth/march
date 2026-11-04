@@ -65,6 +65,11 @@
     font-weight: 400;
   }
 
+  body {
+    background-color: var(--march-100);
+    color: var(--march-950);
+  }
+
   h1 {
     @apply font-bold;
     @apply text-4xl;

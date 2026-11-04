@@ -1,7 +1,5 @@
 import gleam/uri.{type Uri}
-import lustre/attribute.{type Attribute}
 import lustre/effect
-import main/message.{type Message}
 import main/model.{type Model}
 import routes/about
 import routes/home
@@ -34,14 +32,14 @@ pub fn init(model: Model, uri: Uri) {
   }
 }
 
-pub fn view(model: Model, attrs: List(Attribute(Message))) {
+pub fn view(model: Model) {
   case model {
-    model.About(_) -> about.view(attrs)
+    model.About(_) -> about.view()
     model.Home(route) -> home.view(route)
     model.Learn(route) -> learn.view(route)
     model.Lobby(route) -> lobby.view(route)
     model.Match(route) -> match.view(route)
     model.Playground(route) -> playground.view(route)
-    _ -> not_found.view(attrs)
+    _ -> not_found.view()
   }
 }

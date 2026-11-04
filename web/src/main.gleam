@@ -10,5 +10,5 @@ pub fn main() {
   let assert Ok(_) = blocks.register()
 
   let assert Ok(_) =
-    lustre.application(init, update, view) |> lustre.start("#app", Nil)
+    lustre.application(init, update, view) |> lustre.start("body", Nil)
 }

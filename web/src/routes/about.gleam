@@ -1,17 +1,16 @@
 import components/text_link
 import gleam/string
-import lustre/attribute.{type Attribute}
+import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import main/message.{type Message}
 import phosphor
 
-pub fn view(attrs: List(Attribute(Message))) {
+pub fn view() {
   html.div(
     [
       attribute.class("max-w-3xl m-auto px-4 py-8"),
       attribute.class("flex flex-col gap-12"),
-      ..attrs
     ],
     [
       html.div([attribute.class("flex flex-col items-center gap-4")], [
