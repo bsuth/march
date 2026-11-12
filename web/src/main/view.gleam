@@ -18,7 +18,7 @@ pub fn view(model: Model) {
         attribute.class("flex justify-between items-center gap-2"),
       ],
       [
-        html.ul([attribute.class("flex justify-center")], [
+        html.ul([attribute.class("flex")], [
           navbar_item_view("Home", "/"),
           navbar_item_view("Learn", "/learn"),
           navbar_item_view("About", "/about"),

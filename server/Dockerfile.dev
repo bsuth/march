@@ -1,0 +1,4 @@
+FROM ghcr.io/gleam-lang/gleam:v1.19.2-erlang-alpine
+RUN apk add --no-cache watchexec
+WORKDIR /march/server
+CMD ["watchexec", "-r", "--", "gleam run"]

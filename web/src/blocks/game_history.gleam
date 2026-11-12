@@ -107,29 +107,12 @@ fn view(model: Model) {
   }
 
   html.ul(
-    [attribute.class("flex flex-col overflow-auto")],
-    list.flatten([
-      model.turns
-        |> list.reverse()
-        |> list.index_map(fn(turn, turn_index) {
-          turn_view(turn, turn_index, num_players)
-        }),
-      model.turns
-        |> list.reverse()
-        |> list.index_map(fn(turn, turn_index) {
-          turn_view(turn, turn_index, num_players)
-        }),
-      model.turns
-        |> list.reverse()
-        |> list.index_map(fn(turn, turn_index) {
-          turn_view(turn, turn_index, num_players)
-        }),
-      model.turns
-        |> list.reverse()
-        |> list.index_map(fn(turn, turn_index) {
-          turn_view(turn, turn_index, num_players)
-        }),
-    ]),
+    [],
+    model.turns
+      |> list.reverse()
+      |> list.index_map(fn(turn, turn_index) {
+        turn_view(turn, turn_index, num_players)
+      }),
   )
 }
 

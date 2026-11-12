@@ -26,7 +26,7 @@ pub fn supervised(names: Names) {
   |> mist.new()
   // TODO: Read this from env variables.
   // In particular, needs to be "0.0.0.0" when running inside docker.
-  |> mist.bind("127.0.0.1")
+  |> mist.bind("0.0.0.0")
   |> mist.port(8000)
   |> mist.supervised()
 }

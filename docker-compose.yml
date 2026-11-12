@@ -1,12 +1,12 @@
 services:
   server:
-    image: ghcr.io/gleam-lang/gleam:nightly-erlang
-    command: gleam run
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile.dev
     ports: [ 8000:8000 ]
     volumes:
       - .:/march
       - server_build:/march/server/build
-    working_dir: /march/server
 
   web:
     image: ghcr.io/gleam-lang/gleam:nightly-erlang

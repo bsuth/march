@@ -25,4 +25,5 @@ title = "March"
 links = [{ rel = "icon", href = "/logo.svg" }]
 
 [tools.lustre.dev]
-proxy = { from = "/api", to = "http://localhost:8000/api" }
+host = "0.0.0.0"
+proxy = { from = "/api", to = "http://server:8000/api" }

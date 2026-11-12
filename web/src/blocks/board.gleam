@@ -128,7 +128,6 @@ pub type Message {
   PropsChangedTheme(Theme)
 
   OnCellClick(Int)
-  OnDragStart
   OnFocusOut
 }
 
@@ -153,10 +152,6 @@ fn update(model: Model, message: Message) {
       model,
       event.emit("cell_click", json.int(cell_index)),
     )
-    OnDragStart -> {
-      echo "dragstart"
-      #(model, effect.none())
-    }
     OnFocusOut -> #(model, event.emit("board_focusout", json.null()))
   }
 }
@@ -221,7 +216,6 @@ fn cell_view(model: Model, cell_index: Int) {
       attribute.style("aspect-ratio", "5 / 7"),
       attribute.class("border"),
       attribute.class("cursor-pointer"),
-      event.on("dragstart", decode.success(OnDragStart)),
       event.on_click(OnCellClick(cell_index)),
     ],
     [

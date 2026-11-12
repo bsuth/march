@@ -295,30 +295,32 @@ fn view(model: Model) {
             game_history.prop_settings(model.engine.kernel.settings),
             game_history.prop_turns(model.engine.kernel.turns),
             game_history.on_turn_click(PreviewTurn),
-            attribute.class("w-full"),
+            attribute.class("w-full min-h-0 overflow-auto"),
           ]),
-          case engine.loser {
-            option.Some(loser_player_index) ->
-              html.div([], [
-                html.text("LOSER: " <> int.to_string(loser_player_index)),
-              ])
-            option.None -> element.none()
-          },
-          html.div(
-            [attribute.class("mt-auto pb-2 flex gap-2")],
-            case model.preview_engine {
-              option.Some(_) -> [
-                button.element(
-                  [button.prop_disabled(False), event.on_click(ClearPreview)],
-                  [html.text("Back to Live")],
-                ),
-              ]
-              option.None -> [
-                undo_button_view(model),
-                end_turn_button_view(model),
-              ]
+          html.div([attribute.class("mt-auto")], [
+            case engine.loser {
+              option.Some(loser_player_index) ->
+                html.div([], [
+                  html.text("LOSER: " <> int.to_string(loser_player_index)),
+                ])
+              option.None -> element.none()
             },
-          ),
+            html.div(
+              [attribute.class("pb-2 flex gap-2")],
+              case model.preview_engine {
+                option.Some(_) -> [
+                  button.element(
+                    [button.prop_disabled(False), event.on_click(ClearPreview)],
+                    [html.text("Back to Live")],
+                  ),
+                ]
+                option.None -> [
+                  undo_button_view(model),
+                  end_turn_button_view(model),
+                ]
+              },
+            ),
+          ]),
         ],
       ),
     ],
