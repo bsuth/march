@@ -3,7 +3,7 @@ import gleam/erlang/process
 import ipc
 import logging
 import mist
-import router/ws_state.{type WebsocketState}
+import supervisor/router/ws_state.{type WebsocketState}
 
 pub fn handler(
   state: WebsocketState,

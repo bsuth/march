@@ -7,9 +7,9 @@ import gleam/http/response
 import gleam/string
 import mist
 import names.{type Names}
-import router/api_router
-import router/middleware
-import router/ws_router
+import supervisor/router/api_router
+import supervisor/router/middleware
+import supervisor/router/ws_router
 
 pub fn supervised(names: Names) {
   // TODO: For now, we generate a new `SESSION_COOKIE_SECRET` whenever the

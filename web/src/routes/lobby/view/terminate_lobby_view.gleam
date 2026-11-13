@@ -10,7 +10,7 @@ import yuzu
 // TODO: add confirmation modal
 
 pub fn terminate_lobby_view(model: Model, lobby: Lobby) {
-  use <- yuzu.true(model.app.user.id == lobby.owner.id, element.none())
+  use <- yuzu.true(model.app.user.id == lobby.owner_user_id, element.none())
 
   icon_button.element(
     [

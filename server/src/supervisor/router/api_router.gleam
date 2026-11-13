@@ -3,10 +3,10 @@ import gleam/http/request.{type Request}
 import gleam/http/response
 import mist
 import names.{type Names}
-import router/api_router/init_router
-import router/api_router/lobby_router
-import router/api_router/match_router
-import router/middleware
+import supervisor/router/api_router/init_router
+import supervisor/router/api_router/lobby_router
+import supervisor/router/api_router/match_router
+import supervisor/router/middleware
 
 pub fn handler(
   names: Names,

@@ -1,4 +1,3 @@
-import actors/lobby_registry
 import core/ws_api/ws_lobby
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
@@ -6,12 +5,8 @@ import gleam/erlang/process
 import ipc
 import logging
 import mist
-import router/ws_state.{type WebsocketState}
+import supervisor/router/ws_state.{type WebsocketState}
 import yuzu
-
-// -----------------------------------------------------------------------------
-// Handler
-// -----------------------------------------------------------------------------
 
 pub fn handler(
   state: WebsocketState,
@@ -27,10 +22,8 @@ pub fn handler(
     "update.board" -> update_board(state, conn, payload)
     "update.doubles" -> update_doubles(state, conn, payload)
     "update.hand_size" -> update_hand_size(state, conn, payload)
-    "update.name" -> update_name(state, conn, payload)
-    "update.player" -> update_player(state, conn, payload)
+    "update.player" -> update_player_user_id(state, conn, payload)
     "update.traits" -> update_traits(state, conn, payload)
-    "update.visibility" -> update_visibility(state, conn, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws path: lobby." <> path)
@@ -49,7 +42,14 @@ fn enter(
     mist.continue(state),
   )
 
-  send_to_lobby(state, lobby_id, ipc.LobbyEnter(state.user, state.subject))
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
+    lobby_id,
+    ipc.LobbyEnter(state.user, state.subject),
+  ))
+
+  mist.continue(state)
 }
 
 fn exit(
@@ -62,7 +62,14 @@ fn exit(
     mist.continue(state),
   )
 
-  send_to_lobby(state, lobby_id, ipc.LobbyExit(state.user.id))
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
+    lobby_id,
+    ipc.LobbyExit(state.user.id),
+  ))
+
+  mist.continue(state)
 }
 
 fn start(
@@ -75,7 +82,14 @@ fn start(
     mist.continue(state),
   )
 
-  send_to_lobby(state, lobby_id, ipc.LobbyStart(state.user.id))
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
+    lobby_id,
+    ipc.LobbyStart(state.user.id),
+  ))
+
+  mist.continue(state)
 }
 
 fn terminate(
@@ -88,7 +102,14 @@ fn terminate(
     mist.continue(state),
   )
 
-  send_to_lobby(state, lobby_id, ipc.LobbyTerminate(state.user.id))
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
+    lobby_id,
+    ipc.LobbyTerminate(state.user.id),
+  ))
+
+  mist.continue(state)
 }
 
 fn update_board(
@@ -101,11 +122,14 @@ fn update_board(
     mist.continue(state),
   )
 
-  send_to_lobby(
-    state,
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
     payload.lobby_id,
     ipc.LobbyUpdateBoard(state.user.id, payload.board),
-  )
+  ))
+
+  mist.continue(state)
 }
 
 fn update_doubles(
@@ -118,11 +142,14 @@ fn update_doubles(
     mist.continue(state),
   )
 
-  send_to_lobby(
-    state,
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
     payload.lobby_id,
     ipc.LobbyUpdateDoubles(state.user.id, payload.doubles),
-  )
+  ))
+
+  mist.continue(state)
 }
 
 fn update_hand_size(
@@ -135,45 +162,38 @@ fn update_hand_size(
     mist.continue(state),
   )
 
-  send_to_lobby(
-    state,
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
     payload.lobby_id,
     ipc.LobbyUpdateHandSize(state.user.id, payload.hand_size),
-  )
+  ))
+
+  mist.continue(state)
 }
 
-fn update_name(
+fn update_player_user_id(
   state: WebsocketState,
   _conn: mist.WebsocketConnection,
   payload: Dynamic,
 ) {
   use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_name_decoder()),
+    decode.run(payload, ws_lobby.update_player_user_id_decoder()),
     mist.continue(state),
   )
 
-  send_to_lobby(
-    state,
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
     payload.lobby_id,
-    ipc.LobbyUpdateName(state.user.id, payload.lobby_name),
-  )
-}
+    ipc.LobbyUpdatePlayerUserId(
+      state.user.id,
+      payload.player_index,
+      payload.user_id,
+    ),
+  ))
 
-fn update_player(
-  state: WebsocketState,
-  _conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_player_decoder()),
-    mist.continue(state),
-  )
-
-  send_to_lobby(
-    state,
-    payload.lobby_id,
-    ipc.LobbyUpdatePlayer(state.user.id, payload.player_index, payload.user_id),
-  )
+  mist.continue(state)
 }
 
 fn update_traits(
@@ -186,40 +206,12 @@ fn update_traits(
     mist.continue(state),
   )
 
-  send_to_lobby(
-    state,
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
     payload.lobby_id,
     ipc.LobbyUpdateTraits(state.user.id, payload.traits),
-  )
-}
+  ))
 
-fn update_visibility(
-  state: WebsocketState,
-  _conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_visibility_decoder()),
-    mist.continue(state),
-  )
-
-  send_to_lobby(
-    state,
-    payload.lobby_id,
-    ipc.LobbyUpdateVisibility(state.user.id, payload.visible),
-  )
-}
-
-// -----------------------------------------------------------------------------
-// Lib
-// -----------------------------------------------------------------------------
-
-fn send_to_lobby(state: WebsocketState, lobby_id: String, message: ipc.Lobby) {
-  use lobby_subject <- yuzu.ok(
-    lobby_registry.get(state.names, lobby_id),
-    mist.continue(state),
-  )
-
-  process.send(lobby_subject, message)
   mist.continue(state)
 }

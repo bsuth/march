@@ -9,7 +9,6 @@ import gleam/json
 import gleam/option.{type Option}
 import lib/websocket
 import lustre/effect
-import modem
 import routes/lobby/message.{type Message}
 import routes/lobby/model.{type Model, Model}
 import rsvp
@@ -21,18 +20,11 @@ pub fn update(model: Model, message: Message) {
       api_lobby_get_response(model, response)
     message.UserChangedBoard(board) -> user_changed_board(model, board)
     message.UserChangedDoubles(doubles) -> user_changed_doubles(model, doubles)
-    message.UserChangedEditName(edit_name) ->
-      user_changed_edit_name(model, edit_name)
     message.UserChangedHandSize(hand_size) ->
       user_changed_hand_size(model, hand_size)
-    message.UserChangedPlayer(player_index, user_id) ->
-      user_changed_player(model, player_index, user_id)
+    message.UserChangedPlayerUserId(player_index, user_id) ->
+      user_changed_player_user_id(model, player_index, user_id)
     message.UserChangedTraits(traits) -> user_changed_traits(model, traits)
-    message.UserChangedVisibility(visible) ->
-      user_changed_visibility(model, visible)
-    message.UserDiscardedEditName -> user_discarded_edit_name(model)
-    message.UserEnabledEditName -> user_enabled_edit_name(model)
-    message.UserSavedEditName -> user_saved_edit_name(model)
     message.UserStartedGame -> user_started_game(model)
     message.UserTerminatedLobby -> user_terminated_lobby(model)
   }
@@ -47,23 +39,14 @@ fn api_lobby_get_response(
     effect.none(),
   ))
 
-  case lobby.match_id {
-    option.Some(match_id) -> #(
-      model,
-      modem.push("/match/" <> match_id, option.None, option.None),
-    )
+  ws_lobby.enter_json(lobby.id)
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
 
-    option.None -> {
-      ws_lobby.enter_json(lobby.id)
-      |> json.to_string()
-      |> websocket.send(model.app.ws, _)
-
-      #(
-        Model(..model, lobby: option.Some(lobby), lobby_loading: False),
-        effect.none(),
-      )
-    }
-  }
+  #(
+    Model(..model, lobby: option.Some(lobby), lobby_loading: False),
+    effect.none(),
+  )
 }
 
 fn user_changed_board(model: Model, board: Board) {
@@ -93,10 +76,6 @@ fn user_changed_doubles(model: Model, doubles: Bool) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
-fn user_changed_edit_name(model: Model, new_edit_name: String) {
-  #(Model(..model, edit_name: option.Some(new_edit_name)), effect.none())
-}
-
 fn user_changed_hand_size(model: Model, hand_size: Int) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
 
@@ -111,20 +90,20 @@ fn user_changed_hand_size(model: Model, hand_size: Int) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
-fn user_changed_player(
+fn user_changed_player_user_id(
   model: Model,
   player_index: Int,
   user_id: Option(String),
 ) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
 
-  use lobby <- yuzu.ok(lobby.set_player_index(lobby, player_index, user_id), #(
-    model,
-    effect.none(),
-  ))
+  use lobby <- yuzu.ok(
+    lobby.set_player_user_id(lobby, player_index, user_id),
+    #(model, effect.none()),
+  )
 
-  ws_lobby.UpdatePlayerPayload(model.lobby_id, player_index, user_id)
-  |> ws_lobby.update_player_json()
+  ws_lobby.UpdatePlayerUserIdPayload(model.lobby_id, player_index, user_id)
+  |> ws_lobby.update_player_user_id_json()
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
@@ -143,49 +122,6 @@ fn user_changed_traits(model: Model, traits: Dict(Face, List(Trait))) {
   let lobby = Lobby(..lobby, engine_settings:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn user_changed_visibility(model: Model, visible: Bool) {
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-
-  ws_lobby.UpdateVisibilityPayload(model.lobby_id, visible)
-  |> ws_lobby.update_visibility_json()
-  |> json.to_string()
-  |> websocket.send(model.app.ws, _)
-
-  let lobby = Lobby(..lobby, visible:)
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn user_discarded_edit_name(model: Model) {
-  #(Model(..model, edit_name: option.None), effect.none())
-}
-
-fn user_enabled_edit_name(model: Model) {
-  let edit_name = case model.lobby {
-    option.Some(lobby) -> lobby.name
-    option.None -> ""
-  }
-
-  #(Model(..model, edit_name: option.Some(edit_name)), effect.none())
-}
-
-fn user_saved_edit_name(model: Model) {
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-  use name <- yuzu.some(model.edit_name, #(model, effect.none()))
-
-  let lobby = Lobby(..lobby, name:)
-
-  ws_lobby.UpdateNamePayload(lobby.id, name)
-  |> ws_lobby.update_name_json()
-  |> json.to_string()
-  |> websocket.send(model.app.ws, _)
-
-  #(
-    Model(..model, lobby: option.Some(lobby), edit_name: option.None),
-    effect.none(),
-  )
 }
 
 fn user_started_game(model: Model) {

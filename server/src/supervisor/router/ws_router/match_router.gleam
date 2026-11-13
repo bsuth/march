@@ -1,4 +1,3 @@
-import actors/match_registry
 import core/ws_api/ws_match
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
@@ -6,12 +5,8 @@ import gleam/erlang/process
 import ipc
 import logging
 import mist
-import router/ws_state.{type WebsocketState}
+import supervisor/router/ws_state.{type WebsocketState}
 import yuzu
-
-// -----------------------------------------------------------------------------
-// Handler
-// -----------------------------------------------------------------------------
 
 pub fn handler(
   state: WebsocketState,
@@ -41,7 +36,14 @@ fn enter(
     mist.continue(state),
   )
 
-  send_to_match(state, match_id, ipc.MatchEnter(state.user, state.subject))
+  state.names.match_manager
+  |> process.named_subject()
+  |> process.send(ipc.MatchManagerForward(
+    match_id,
+    ipc.MatchEnter(state.user, state.subject),
+  ))
+
+  mist.continue(state)
 }
 
 fn exit(
@@ -54,7 +56,14 @@ fn exit(
     mist.continue(state),
   )
 
-  send_to_match(state, match_id, ipc.MatchExit(state.user.id))
+  state.names.match_manager
+  |> process.named_subject()
+  |> process.send(ipc.MatchManagerForward(
+    match_id,
+    ipc.MatchExit(state.user.id),
+  ))
+
+  mist.continue(state)
 }
 
 fn request_turn(
@@ -67,23 +76,12 @@ fn request_turn(
     mist.continue(state),
   )
 
-  send_to_match(
-    state,
+  state.names.match_manager
+  |> process.named_subject()
+  |> process.send(ipc.MatchManagerForward(
     payload.match_id,
     ipc.MatchRequestTurn(state.user.id, payload.turn_request),
-  )
-}
+  ))
 
-// -----------------------------------------------------------------------------
-// Lib
-// -----------------------------------------------------------------------------
-
-fn send_to_match(state: WebsocketState, match_id: String, message: ipc.Match) {
-  use match_subject <- yuzu.ok(
-    match_registry.get(state.names, match_id),
-    mist.continue(state),
-  )
-
-  process.send(match_subject, message)
   mist.continue(state)
 }

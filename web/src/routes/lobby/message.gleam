@@ -10,14 +10,9 @@ pub type Message {
   ApiLobbyGetResponse(Result(Lobby, rsvp.Error(String)))
   UserChangedBoard(Board)
   UserChangedDoubles(Bool)
-  UserChangedEditName(String)
   UserChangedHandSize(Int)
-  UserChangedPlayer(Int, Option(String))
+  UserChangedPlayerUserId(Int, Option(String))
   UserChangedTraits(Dict(Face, List(Trait)))
-  UserChangedVisibility(Bool)
-  UserDiscardedEditName
-  UserEnabledEditName
-  UserSavedEditName
   UserStartedGame
   UserTerminatedLobby
 }

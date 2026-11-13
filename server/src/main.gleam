@@ -1,26 +1,26 @@
-import actors/lobby_registry
-import actors/match_registry
-import actors/matchmaker
 import gleam/erlang/process
 import gleam/otp/static_supervisor
 import logging
 import names.{Names}
-import router
+import supervisor/lobby_manager
+import supervisor/match_manager
+import supervisor/matchmaker
+import supervisor/router
 
 pub fn main() {
   logging.configure()
 
   let names =
     Names(
-      match_registry: process.new_name("match_registry"),
-      lobby_registry: process.new_name("lobby_registry"),
+      match_manager: process.new_name("match_manager"),
+      lobby_manager: process.new_name("lobby_manager"),
       matchmaker: process.new_name("matchmaker"),
     )
 
   let assert Ok(_) =
     static_supervisor.new(static_supervisor.OneForOne)
-    |> static_supervisor.add(match_registry.supervised(names))
-    |> static_supervisor.add(lobby_registry.supervised(names))
+    |> static_supervisor.add(lobby_manager.supervised(names))
+    |> static_supervisor.add(match_manager.supervised(names))
     |> static_supervisor.add(matchmaker.supervised(names))
     |> static_supervisor.add(router.supervised(names))
     |> static_supervisor.start()

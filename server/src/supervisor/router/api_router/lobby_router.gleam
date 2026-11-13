@@ -1,5 +1,3 @@
-import actors/lobby
-import actors/lobby_registry
 import core/http_api/http_lobby
 import gleam/bytes_tree
 import gleam/erlang/process
@@ -7,13 +5,10 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/json
-import gleam/otp/actor
 import ipc
 import mist
 import names.{type Names}
-import router/api_router/lobby_router/list_router
-import router/middleware
-import yuzu
+import supervisor/router/middleware
 
 pub fn handler(
   names: Names,
@@ -21,9 +16,7 @@ pub fn handler(
   path: List(String),
 ) {
   case req.method, path {
-    _, ["list", ..subpath] -> list_router.handler(names, req, subpath)
-
-    http.Get, [id] -> get(names, req, id)
+    http.Get, [lobby_id] -> get(names, req, lobby_id)
     http.Post, [] -> post(names, req)
 
     _, _ ->
@@ -32,14 +25,13 @@ pub fn handler(
   }
 }
 
-fn get(names: Names, _req: Request(mist.Connection), id: String) {
-  use lobby_subject <- yuzu.ok(
-    lobby_registry.get(names, id),
-    response.new(404)
-      |> response.set_body(mist.Bytes(bytes_tree.new())),
-  )
-
-  let lobby = process.call_forever(lobby_subject, ipc.LobbyGet)
+fn get(names: Names, _req: Request(mist.Connection), lobby_id: String) {
+  let lobby =
+    names.lobby_manager
+    |> process.named_subject()
+    |> process.call_forever(fn(reply_subject) {
+      ipc.LobbyManagerForward(lobby_id, ipc.LobbyGet(reply_subject))
+    })
 
   let response_body =
     lobby
@@ -56,27 +48,15 @@ fn get(names: Names, _req: Request(mist.Connection), id: String) {
 fn post(names: Names, req: Request(mist.Connection)) {
   use user <- middleware.ensure_user(req)
 
-  use request_body <- middleware.json_body(
-    req,
-    http_lobby.post_request_decoder(),
-  )
-
-  let init_args =
-    lobby.StartArgs(
-      engine_settings: request_body.engine_settings,
-      name: request_body.name,
-      owner: user,
-      visible: request_body.visible,
-    )
-
-  use actor.Started(_, lobby_actor_state) <- yuzu.ok(
-    lobby.start(names, init_args),
-    response.new(500)
-      |> response.set_body(mist.Bytes(bytes_tree.new())),
-  )
+  let lobby_id =
+    names.lobby_manager
+    |> process.named_subject()
+    |> process.call_forever(fn(reply_subject) {
+      ipc.LobbyManagerNew(reply_subject, user.id)
+    })
 
   let response_body =
-    lobby_actor_state.lobby
+    lobby_id
     |> http_lobby.post_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()

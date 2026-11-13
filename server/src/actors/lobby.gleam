@@ -1,10 +1,6 @@
-import actors/lobby_registry
-import actors/match
 import core/engine/board.{type Board}
 import core/engine/face.{type Face}
-import core/engine/settings.{
-  type Settings as EngineSettings, Settings as EngineSettings,
-}
+import core/engine/settings.{Settings as EngineSettings}
 import core/engine/trait.{type Trait}
 import core/lobby.{type Lobby, Lobby}
 import core/user.{type User, User}
@@ -21,16 +17,7 @@ import names.{type Names}
 import yuzu
 
 // TODO: auto terminate lobby after X seconds when the owner leaves
-// TODO: enforce maximum number of users in a lobby
-
-pub type StartArgs {
-  StartArgs(
-    engine_settings: EngineSettings,
-    name: String,
-    owner: User,
-    visible: Bool,
-  )
-}
+// TODO: enforce maximum number of users in a lobby?
 
 pub type LobbyActor {
   LobbyActor(
@@ -38,6 +25,7 @@ pub type LobbyActor {
     meta: Dict(String, LobbyActorUserMeta),
     names: Names,
     selector: process.Selector(ipc.Lobby),
+    subject: process.Subject(ipc.Lobby),
   )
 }
 
@@ -45,27 +33,27 @@ pub type LobbyActorUserMeta {
   LobbyActorUserMeta(subject: Subject(ipc.Websocket), monitor: process.Monitor)
 }
 
-pub fn start(names: Names, args: StartArgs) {
-  actor.new_with_initialiser(100, fn(_) {
-    let #(id, subjects) = lobby_registry.register_self(names)
+pub fn start(id: String, names: Names, owner_user_id: String) {
+  actor.new_with_initialiser(100, fn(default_subject) {
+    let selector = process.new_selector() |> process.select(default_subject)
 
     let lobby =
       Lobby(
         id:,
-        engine_settings: args.engine_settings,
-        match_id: option.None,
-        name: args.name,
-        owner: args.owner,
-        players: case args.engine_settings.doubles {
-          True -> [option.None, option.None, option.None, option.None]
-          False -> [option.None, option.None]
-        },
+        engine_settings: settings.standard(),
+        owner_user_id:,
+        player_user_ids: [option.None, option.None],
         users: [],
-        visible: args.visible,
       )
 
-    let selector = list.fold(subjects, process.new_selector(), process.select)
-    let state = LobbyActor(lobby:, meta: dict.new(), names:, selector:)
+    let state =
+      LobbyActor(
+        lobby:,
+        meta: dict.new(),
+        names:,
+        selector:,
+        subject: default_subject,
+      )
 
     state
     |> actor.initialised()
@@ -73,40 +61,36 @@ pub fn start(names: Names, args: StartArgs) {
     |> actor.returning(state)
     |> Ok()
   })
-  |> actor.on_message(handler)
+  |> actor.on_message(on_message)
   |> actor.start()
 }
 
 // -----------------------------------------------------------------------------
-// Handler
+// Messages
 // -----------------------------------------------------------------------------
 
-fn handler(state: LobbyActor, message: ipc.Lobby) {
+fn on_message(state: LobbyActor, message: ipc.Lobby) {
   case message {
-    ipc.LobbyEnter(user, subject) -> enter_handler(state, user, subject)
-    ipc.LobbyExit(id) -> exit_handler(state, id)
-    ipc.LobbyGet(requester) -> get_handler(state, requester)
-    ipc.LobbyStart(id) -> start_handler(state, id)
-    ipc.LobbyTerminate(id) -> terminate_handler(state, id)
+    ipc.LobbyEnter(user, subject) -> on_enter(state, user, subject)
+    ipc.LobbyExit(user_id) -> on_exit(state, user_id)
+    ipc.LobbyGet(requester) -> on_get(state, requester)
+    ipc.LobbyStart(id) -> on_start(state, id)
+    ipc.LobbyTerminate(id) -> on_terminate(state, id)
     ipc.LobbyUpdateBoard(request_user_id, board) ->
-      update_board_handler(state, request_user_id, board)
+      on_update_board(state, request_user_id, board)
     ipc.LobbyUpdateDoubles(request_user_id, doubles) ->
-      update_doubles_handler(state, request_user_id, doubles)
+      on_update_doubles(state, request_user_id, doubles)
     ipc.LobbyUpdateHandSize(request_user_id, hand_size) ->
-      update_hand_size_handler(state, request_user_id, hand_size)
-    ipc.LobbyUpdateName(request_user_id, name) ->
-      update_name_handler(state, request_user_id, name)
-    ipc.LobbyUpdatePlayer(request_user_id, player_index, user_id) ->
-      update_player_handler(state, request_user_id, player_index, user_id)
+      on_update_hand_size(state, request_user_id, hand_size)
+    ipc.LobbyUpdatePlayerUserId(request_user_id, player_index, user_id) ->
+      on_update_player_user_id(state, request_user_id, player_index, user_id)
     ipc.LobbyUpdateTraits(request_user_id, traits) ->
-      update_traits_handler(state, request_user_id, traits)
-    ipc.LobbyUpdateVisibility(request_user_id, visible) ->
-      update_visibility_handler(state, request_user_id, visible)
+      on_update_traits(state, request_user_id, traits)
     ipc.LobbyShutdown -> actor.stop()
   }
 }
 
-fn enter_handler(
+fn on_enter(
   state: LobbyActor,
   enter_user: User,
   enter_user_subject: Subject(ipc.Websocket),
@@ -158,7 +142,7 @@ fn enter_handler(
   |> actor.with_selector(selector)
 }
 
-fn exit_handler(state: LobbyActor, exit_user_id: String) {
+fn on_exit(state: LobbyActor, exit_user_id: String) {
   use exit_user_meta <- yuzu.ok(
     dict.get(state.meta, exit_user_id),
     actor.continue(state),
@@ -185,65 +169,51 @@ fn exit_handler(state: LobbyActor, exit_user_id: String) {
   |> actor.with_selector(selector)
 }
 
-fn get_handler(state: LobbyActor, requester: Subject(Lobby)) {
+fn on_get(state: LobbyActor, requester: Subject(Lobby)) {
   process.send(requester, state.lobby)
   actor.continue(state)
 }
 
-fn start_handler(state: LobbyActor, request_user_id: String) {
+fn on_start(state: LobbyActor, request_user_id: String) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
-  use players <- yuzu.ok(
-    list.try_map(state.lobby.players, fn(player) {
-      case player {
+  use player_user_ids <- yuzu.ok(
+    list.try_map(state.lobby.player_user_ids, fn(player_user_id) {
+      case player_user_id {
         option.None -> Error(Nil)
-        option.Some(player) -> Ok(player)
+        option.Some(player_user_id) -> Ok(player_user_id)
       }
     }),
     actor.continue(state),
   )
 
-  use actor.Started(match_actor_pid, match_actor_state) <- yuzu.ok(
-    match.start(
-      state.names,
-      match.StartArgs(
-        engine_settings: state.lobby.engine_settings,
-        players:,
-        visible: state.lobby.visible,
-      ),
-    ),
-    actor.continue(state),
-  )
+  // TODO: REMOVE `call_forever`
+  // instead, we should timeout and return an error
+  // In fact, this entire message should probably be a REST API endpoint
+  let match_id =
+    state.names.match_manager
+    |> process.named_subject()
+    |> process.call_forever(fn(reply_subject) {
+      ipc.MatchManagerNew(
+        reply_subject,
+        state.lobby.engine_settings,
+        player_user_ids,
+      )
+    })
 
-  ws_lobby.StartedPayload(state.lobby.id, match_actor_state.match.id)
+  ws_lobby.StartedPayload(state.lobby.id, match_id)
   |> ws_lobby.started_json()
   |> broadcast_json(state.meta, _)
 
-  let selector =
-    process.select_specific_monitor(
-      state.selector,
-      process.monitor(match_actor_pid),
-      fn(_) { ipc.LobbyShutdown },
-    )
-
-  LobbyActor(
-    ..state,
-    lobby: Lobby(
-      ..state.lobby,
-      match_id: option.Some(match_actor_state.match.id),
-    ),
-    selector:,
-  )
-  |> actor.continue()
-  |> actor.with_selector(selector)
+  actor.stop()
 }
 
-fn terminate_handler(state: LobbyActor, request_user_id: String) {
+fn on_terminate(state: LobbyActor, request_user_id: String) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
@@ -254,13 +224,9 @@ fn terminate_handler(state: LobbyActor, request_user_id: String) {
   actor.stop()
 }
 
-fn update_board_handler(
-  state: LobbyActor,
-  request_user_id: String,
-  board: Board,
-) {
+fn on_update_board(state: LobbyActor, request_user_id: String, board: Board) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
@@ -274,13 +240,13 @@ fn update_board_handler(
   LobbyActor(..state, lobby:) |> actor.continue()
 }
 
-fn update_doubles_handler(
+fn on_update_doubles(
   state: LobbyActor,
   request_user_id: String,
   doubles: Bool,
 ) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
@@ -293,13 +259,13 @@ fn update_doubles_handler(
   LobbyActor(..state, lobby:) |> actor.continue()
 }
 
-fn update_hand_size_handler(
+fn on_update_hand_size(
   state: LobbyActor,
   request_user_id: String,
   hand_size: Int,
 ) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
@@ -314,54 +280,36 @@ fn update_hand_size_handler(
   LobbyActor(..state, lobby:) |> actor.continue()
 }
 
-fn update_name_handler(
-  state: LobbyActor,
-  request_user_id: String,
-  name: String,
-) {
-  use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
-    actor.continue(state),
-  )
-
-  ws_lobby.UpdateNamePayload(state.lobby.id, name)
-  |> ws_lobby.update_name_json()
-  |> broadcast_json(state.meta, _)
-
-  let lobby = Lobby(..state.lobby, name:)
-  LobbyActor(..state, lobby:) |> actor.continue()
-}
-
-fn update_player_handler(
+fn on_update_player_user_id(
   state: LobbyActor,
   request_user_id: String,
   player_index: Int,
   user_id: Option(String),
 ) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
   use lobby <- yuzu.ok(
-    lobby.set_player_index(state.lobby, player_index, user_id),
+    lobby.set_player_user_id(state.lobby, player_index, user_id),
     actor.continue(state),
   )
 
-  ws_lobby.UpdatePlayerPayload(state.lobby.id, player_index, user_id)
-  |> ws_lobby.update_player_json()
+  ws_lobby.UpdatePlayerUserIdPayload(state.lobby.id, player_index, user_id)
+  |> ws_lobby.update_player_user_id_json()
   |> broadcast_json(state.meta, _)
 
   LobbyActor(..state, lobby:) |> actor.continue()
 }
 
-fn update_traits_handler(
+fn on_update_traits(
   state: LobbyActor,
   request_user_id: String,
   traits: Dict(Face, List(Trait)),
 ) {
   use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
+    request_user_id == state.lobby.owner_user_id,
     actor.continue(state),
   )
 
@@ -373,24 +321,6 @@ fn update_traits_handler(
   let lobby = Lobby(..state.lobby, engine_settings:)
 
   LobbyActor(..state, lobby:) |> actor.continue()
-}
-
-fn update_visibility_handler(
-  state: LobbyActor,
-  request_user_id: String,
-  visible: Bool,
-) {
-  use <- yuzu.true(
-    request_user_id == state.lobby.owner.id,
-    actor.continue(state),
-  )
-
-  ws_lobby.UpdateVisibilityPayload(state.lobby.id, visible)
-  |> ws_lobby.update_visibility_json()
-  |> broadcast_json(state.meta, _)
-
-  LobbyActor(..state, lobby: Lobby(..state.lobby, visible:))
-  |> actor.continue()
 }
 
 // -----------------------------------------------------------------------------

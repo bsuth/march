@@ -21,11 +21,9 @@ pub fn update_ws(model: Model, ws_message: ws_api.Message) {
     "lobby.update.doubles" -> lobby_update_doubles(model, ws_message.payload)
     "lobby.update.hand_size" ->
       lobby_update_hand_size(model, ws_message.payload)
-    "lobby.update.name" -> lobby_update_name(model, ws_message.payload)
-    "lobby.update.player" -> lobby_update_player(model, ws_message.payload)
+    "lobby.update.player_user_id" ->
+      lobby_update_player_user_id(model, ws_message.payload)
     "lobby.update.traits" -> lobby_update_traits(model, ws_message.payload)
-    "lobby.update.visibility" ->
-      lobby_update_visibility(model, ws_message.payload)
     _ -> #(model, effect.none())
   }
 }
@@ -137,23 +135,9 @@ fn lobby_update_hand_size(model: Model, payload: Dynamic) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
-fn lobby_update_name(model: Model, payload: Dynamic) {
-  use payload <- yuzu.ok(decode.run(payload, ws_lobby.update_name_decoder()), #(
-    model,
-    effect.none(),
-  ))
-
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
-
-  let lobby = Lobby(..lobby, name: payload.lobby_name)
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn lobby_update_player(model: Model, payload: Dynamic) {
+fn lobby_update_player_user_id(model: Model, payload: Dynamic) {
   use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_player_decoder()),
+    decode.run(payload, ws_lobby.update_player_user_id_decoder()),
     #(model, effect.none()),
   )
 
@@ -161,7 +145,7 @@ fn lobby_update_player(model: Model, payload: Dynamic) {
   use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
 
   use lobby <- yuzu.ok(
-    lobby.set_player_index(lobby, payload.player_index, payload.user_id),
+    lobby.set_player_user_id(lobby, payload.player_index, payload.user_id),
     #(model, effect.none()),
   )
 
@@ -180,20 +164,6 @@ fn lobby_update_traits(model: Model, payload: Dynamic) {
   let engine_settings =
     EngineSettings(..lobby.engine_settings, traits: payload.traits)
   let lobby = Lobby(..lobby, engine_settings:)
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn lobby_update_visibility(model: Model, payload: Dynamic) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_visibility_decoder()),
-    #(model, effect.none()),
-  )
-
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
-
-  let lobby = Lobby(..lobby, visible: payload.visible)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }

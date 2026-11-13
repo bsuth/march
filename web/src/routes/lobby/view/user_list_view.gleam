@@ -24,13 +24,15 @@ pub fn user_list_view(model: Model, lobby: Lobby) {
 
 fn user_view(model: Model, lobby: Lobby, user: User) {
   let player_color =
-    lobby.players
-    |> list.index_map(fn(user, player_index) { #(user, player_index) })
-    |> list.find_map(fn(lobby_player) {
-      use player_user <- yuzu.some(lobby_player.0, Error(Nil))
-      use <- yuzu.true(player_user == user, Error(Nil))
+    lobby.player_user_ids
+    |> list.index_map(fn(player_user_id, player_index) {
+      #(player_user_id, player_index)
+    })
+    |> list.find_map(fn(player_user_id_and_index) {
+      use player_user_id <- yuzu.some(player_user_id_and_index.0, Error(Nil))
+      use <- yuzu.true(player_user_id == user.id, Error(Nil))
 
-      lobby_player.1
+      player_user_id_and_index.1
       |> player_color.from_player_index(lobby.engine_settings.doubles)
       |> Ok()
     })
@@ -48,7 +50,7 @@ fn user_view(model: Model, lobby: Lobby, user: User) {
       ],
       [html.text(user.name)],
     ),
-    case user.id == lobby.owner.id {
+    case user.id == lobby.owner_user_id {
       False -> element.none()
       True ->
         html.div([attribute.title("Lobby Owner")], [

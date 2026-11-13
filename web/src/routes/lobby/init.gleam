@@ -10,13 +10,7 @@ import rsvp
 
 pub fn init(app: App, lobby_id: String) {
   #(
-    Model(
-      app:,
-      edit_name: option.None,
-      lobby: option.None,
-      lobby_id:,
-      lobby_loading: True,
-    ),
+    Model(app:, lobby: option.None, lobby_id:, lobby_loading: True),
     http_lobby.get_response_decoder()
       |> rsvp.expect_json(message.ApiLobbyGetResponse)
       |> rsvp.get("/api/lobby/" <> lobby_id, _),

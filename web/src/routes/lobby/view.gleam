@@ -5,8 +5,6 @@ import lustre/element/html
 import phosphor
 import routes/lobby/model.{type Model}
 import routes/lobby/view/engine_settings_view.{engine_settings_view}
-import routes/lobby/view/lobby_name_view.{lobby_name_view}
-import routes/lobby/view/lobby_visibility_view.{lobby_visibility_view}
 import routes/lobby/view/player_settings_view.{player_settings_view}
 import routes/lobby/view/start_game_view.{start_game_view}
 import routes/lobby/view/terminate_lobby_view.{terminate_lobby_view}
@@ -59,8 +57,6 @@ fn lobby_view(model: Model, lobby: Lobby) {
         [
           html.div([attribute.class("grow flex flex-col gap-4")], [
             html.div([attribute.class("flex items-center justify-between")], [
-              lobby_name_view(model, lobby),
-              lobby_visibility_view(model, lobby),
               terminate_lobby_view(model, lobby),
             ]),
             engine_settings_view(model, lobby),

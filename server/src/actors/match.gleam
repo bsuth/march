@@ -1,4 +1,3 @@
-import actors/match_registry
 import core/engine.{type Engine}
 import core/engine/settings.{type Settings}
 import core/engine/turn
@@ -9,27 +8,26 @@ import core/ws_api/ws_match
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/json.{type Json}
-import gleam/list
 import gleam/otp/actor
 import ipc
 import names.{type Names}
 import yuzu
 
+// TODO: properly handle user enter + exit broadcast
+// TODO: save to db when finished
 // TODO: auto terminate game after X seconds when players leave
 //    If only 1 player leaves, other wins. otherwise draw
 // TODO: auto terminate game after X seconds when game ends
-// TODO: enforce maximum number of users in a match
-
-pub type StartArgs {
-  StartArgs(engine_settings: Settings, players: List(User), visible: Bool)
-}
+// TODO: enforce maximum number of spectators in a match?
 
 pub type MatchActor {
   MatchActor(
     engine: Engine,
     match: Match,
     meta: Dict(String, MatchActorUserMeta),
+    names: Names,
     selector: process.Selector(ipc.Match),
+    subject: process.Subject(ipc.Match),
   )
 }
 
@@ -37,21 +35,31 @@ pub type MatchActorUserMeta {
   MatchActorUserMeta(subject: Subject(ipc.Websocket), monitor: process.Monitor)
 }
 
-pub fn start(names: Names, args: StartArgs) {
-  actor.new_with_initialiser(100, fn(_) {
-    let #(id, subjects) = match_registry.register_self(names)
+pub fn start(
+  id: String,
+  names: Names,
+  engine_settings: Settings,
+  player_user_ids: List(String),
+) {
+  actor.new_with_initialiser(100, fn(default_subject) {
+    let selector = process.new_selector() |> process.select(default_subject)
 
     let match =
       Match(
         id:,
-        engine_kernel: engine.new_kernel(args.engine_settings),
-        players: args.players,
-        visible: args.visible,
+        engine_kernel: engine.new_kernel(engine_settings),
+        player_user_ids:,
       )
 
-    let engine = engine.new(match.engine_kernel)
-    let selector = list.fold(subjects, process.new_selector(), process.select)
-    let state = MatchActor(engine:, match:, meta: dict.new(), selector:)
+    let state =
+      MatchActor(
+        engine: engine.new(match.engine_kernel),
+        match:,
+        meta: dict.new(),
+        names:,
+        selector:,
+        subject: default_subject,
+      )
 
     state
     |> actor.initialised()
@@ -59,25 +67,25 @@ pub fn start(names: Names, args: StartArgs) {
     |> actor.returning(state)
     |> Ok()
   })
-  |> actor.on_message(handler)
+  |> actor.on_message(on_message)
   |> actor.start()
 }
 
 // -----------------------------------------------------------------------------
-// Handler
+// Messages
 // -----------------------------------------------------------------------------
 
-fn handler(state: MatchActor, message: ipc.Match) {
+fn on_message(state: MatchActor, message: ipc.Match) {
   case message {
-    ipc.MatchEnter(user, subject) -> enter_handler(state, user, subject)
-    ipc.MatchExit(id) -> exit_handler(state, id)
-    ipc.MatchGet(requester) -> get_handler(state, requester)
+    ipc.MatchEnter(user, subject) -> on_enter(state, user, subject)
+    ipc.MatchExit(id) -> on_exit(state, id)
+    ipc.MatchGet(requester) -> on_get(state, requester)
     ipc.MatchRequestTurn(id, turn_request) ->
-      request_turn_handler(state, id, turn_request)
+      on_request_turn(state, id, turn_request)
   }
 }
 
-fn enter_handler(
+fn on_enter(
   state: MatchActor,
   enter_user: User,
   enter_user_subject: Subject(ipc.Websocket),
@@ -112,7 +120,7 @@ fn enter_handler(
   |> actor.with_selector(selector)
 }
 
-fn exit_handler(state: MatchActor, exit_user_id: String) {
+fn on_exit(state: MatchActor, exit_user_id: String) {
   use exit_user_meta <- yuzu.ok(
     dict.get(state.meta, exit_user_id),
     actor.continue(state),
@@ -136,20 +144,18 @@ fn exit_handler(state: MatchActor, exit_user_id: String) {
   |> actor.with_selector(selector)
 }
 
-fn get_handler(state: MatchActor, requester: Subject(Match)) {
+fn on_get(state: MatchActor, requester: Subject(Match)) {
   process.send(requester, state.match)
   actor.continue(state)
 }
 
-fn request_turn_handler(
+fn on_request_turn(
   state: MatchActor,
   request_user_id: String,
   turn_request: turn.Request,
 ) {
   use request_player_index <- yuzu.ok(
-    state.match.players
-      |> list.map(fn(user) { user.id })
-      |> util.find_list_index(request_user_id),
+    util.find_list_index(state.match.player_user_ids, request_user_id),
     actor.continue(state),
   )
 

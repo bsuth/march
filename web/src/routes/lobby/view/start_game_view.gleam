@@ -10,12 +10,12 @@ import routes/lobby/model.{type Model}
 import yuzu
 
 pub fn start_game_view(model: Model, lobby: Lobby) {
-  use <- yuzu.true(model.app.user.id == lobby.owner.id, element.none())
+  use <- yuzu.true(model.app.user.id == lobby.owner_user_id, element.none())
 
   button.element(
     [
       attribute.class("m-auto"),
-      button.prop_disabled(list.any(lobby.players, option.is_none)),
+      button.prop_disabled(list.any(lobby.player_user_ids, option.is_none)),
       button.on_click(message.UserStartedGame),
     ],
     [

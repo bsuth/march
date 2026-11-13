@@ -56,30 +56,27 @@ fn player_color_view(
   let player_index =
     player_color.to_player_index(player_color, lobby.engine_settings.doubles)
 
-  let assert Ok(player) = lobby.get_player_by_index(lobby, player_index)
+  let assert Ok(player_user_id) = lobby.get_player_user_id(lobby, player_index)
 
   field.element([field.prop_label(player_color.label(player_color))], [
-    case model.app.user.id == lobby.owner.id {
+    case model.app.user.id == lobby.owner_user_id {
       False ->
-        html.text(case player {
-          option.Some(player_user) -> player_user.name
+        html.text(case player_user_id {
+          // TODO: fix me
+          option.Some(player_user_id) -> player_user_id
           _ -> "-"
         })
 
       True ->
         single_select.element([
           attribute.class("w-48"),
-          single_select.prop_value(case player {
-            option.Some(player_user) -> player_user.id
-            _ -> ""
-          }),
+          single_select.prop_value(option.unwrap(player_user_id, "")),
           single_select.prop_options(player_options),
           single_select.on_change(fn(new_value) {
-            case new_value {
-              "" -> message.UserChangedPlayer(player_index, option.None)
-              _ ->
-                message.UserChangedPlayer(player_index, option.Some(new_value))
-            }
+            message.UserChangedPlayerUserId(player_index, case new_value {
+              "" -> option.None
+              _ -> option.Some(new_value)
+            })
           }),
         ])
     },

@@ -1,4 +1,3 @@
-import actors/match_registry
 import core/http_api/http_match
 import core/match
 import gleam/bytes_tree
@@ -10,8 +9,7 @@ import gleam/json
 import ipc
 import mist
 import names.{type Names}
-import router/middleware
-import yuzu
+import supervisor/router/middleware
 
 pub fn handler(
   names: Names,
@@ -27,21 +25,18 @@ pub fn handler(
   }
 }
 
-fn get(names: Names, req: Request(mist.Connection), id: String) {
+fn get(names: Names, req: Request(mist.Connection), match_id: String) {
   use user <- middleware.ensure_user(req)
 
-  use match_subject <- yuzu.ok(
-    match_registry.get(names, id),
-    response.new(404)
-      |> response.set_body(mist.Bytes(bytes_tree.new())),
-  )
-
   let match =
-    process.call_forever(match_subject, ipc.MatchGet)
-    |> match.mask(user)
+    names.match_manager
+    |> process.named_subject()
+    |> process.call_forever(fn(reply) {
+      ipc.MatchManagerForward(match_id, ipc.MatchGet(reply))
+    })
 
   let response_body =
-    match
+    match.mask(match, user)
     |> http_match.get_response_json()
     |> json.to_string_tree()
     |> bytes_tree.from_string_tree()

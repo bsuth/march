@@ -213,44 +213,20 @@ pub fn update_hand_size_decoder() {
 }
 
 // -----------------------------------------------------------------------------
-// UPDATE.NAME
-// -----------------------------------------------------------------------------
-
-pub type UpdateNamePayload {
-  UpdateNamePayload(lobby_id: String, lobby_name: String)
-}
-
-pub fn update_name_json(payload: UpdateNamePayload) {
-  ws_api.json(
-    "lobby.update.name",
-    json.object([
-      #("lobby_id", json.string(payload.lobby_id)),
-      #("lobby_name", json.string(payload.lobby_name)),
-    ]),
-  )
-}
-
-pub fn update_name_decoder() {
-  use lobby_id <- decode.field("lobby_id", decode.string)
-  use lobby_name <- decode.field("lobby_name", decode.string)
-  decode.success(UpdateNamePayload(lobby_id, lobby_name))
-}
-
-// -----------------------------------------------------------------------------
 // UPDATE.PLAYER
 // -----------------------------------------------------------------------------
 
-pub type UpdatePlayerPayload {
-  UpdatePlayerPayload(
+pub type UpdatePlayerUserIdPayload {
+  UpdatePlayerUserIdPayload(
     lobby_id: String,
     player_index: Int,
     user_id: Option(String),
   )
 }
 
-pub fn update_player_json(payload: UpdatePlayerPayload) {
+pub fn update_player_user_id_json(payload: UpdatePlayerUserIdPayload) {
   ws_api.json(
-    "lobby.update.player",
+    "lobby.update.player_user_id",
     json.object([
       #("lobby_id", json.string(payload.lobby_id)),
       #("player_index", json.int(payload.player_index)),
@@ -259,11 +235,11 @@ pub fn update_player_json(payload: UpdatePlayerPayload) {
   )
 }
 
-pub fn update_player_decoder() {
+pub fn update_player_user_id_decoder() {
   use lobby_id <- decode.field("lobby_id", decode.string)
   use player_index <- decode.field("player_index", decode.int)
   use user_id <- decode.field("user_id", decode.optional(decode.string))
-  decode.success(UpdatePlayerPayload(lobby_id, player_index, user_id))
+  decode.success(UpdatePlayerUserIdPayload(lobby_id, player_index, user_id))
 }
 
 // -----------------------------------------------------------------------------
@@ -296,28 +272,4 @@ pub fn update_traits_decoder() {
   )
 
   decode.success(UpdateTraitsPayload(lobby_id, traits))
-}
-
-// -----------------------------------------------------------------------------
-// UPDATE.VISIBILITY
-// -----------------------------------------------------------------------------
-
-pub type UpdateVisibilityPayload {
-  UpdateVisibilityPayload(lobby_id: String, visible: Bool)
-}
-
-pub fn update_visibility_json(payload: UpdateVisibilityPayload) {
-  ws_api.json(
-    "lobby.update.visibility",
-    json.object([
-      #("lobby_id", json.string(payload.lobby_id)),
-      #("visible", json.bool(payload.visible)),
-    ]),
-  )
-}
-
-pub fn update_visibility_decoder() {
-  use lobby_id <- decode.field("lobby_id", decode.string)
-  use visible <- decode.field("visible", decode.bool)
-  decode.success(UpdateVisibilityPayload(lobby_id, visible))
 }

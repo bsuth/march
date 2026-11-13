@@ -24,7 +24,7 @@ fn board_view(model: Model, lobby: Lobby) {
   let height = lobby.engine_settings.board.height
 
   field.element([field.prop_label("Board")], [
-    case model.app.user.id == lobby.owner.id {
+    case model.app.user.id == lobby.owner_user_id {
       False ->
         html.div([attribute.class("flex items-center gap-2")], [
           html.p([], [html.text(int.to_string(width))]),
@@ -74,7 +74,10 @@ fn board_view(model: Model, lobby: Lobby) {
 
 fn doubles_view(model: Model, lobby: Lobby) {
   field.element([field.prop_label("Doubles")], [
-    case model.app.user.id == lobby.owner.id, lobby.engine_settings.doubles {
+    case
+      model.app.user.id == lobby.owner_user_id,
+      lobby.engine_settings.doubles
+    {
       False, True ->
         phosphor.check_circle_regular([
           attribute.class("text-(--march-success) size-6"),
@@ -96,7 +99,7 @@ fn doubles_view(model: Model, lobby: Lobby) {
 
 fn hand_size_view(model: Model, lobby: Lobby) {
   field.element([field.prop_label("Hand Size")], [
-    case model.app.user.id == lobby.owner.id {
+    case model.app.user.id == lobby.owner_user_id {
       False -> html.text(int.to_string(lobby.engine_settings.hand_size))
 
       True ->

@@ -14,23 +14,23 @@ pub fn supervised(names: Names) {
     []
     |> actor.new()
     |> actor.named(names.matchmaker)
-    |> actor.on_message(handler)
+    |> actor.on_message(on_message)
     |> actor.start()
   })
 }
 
 // -----------------------------------------------------------------------------
-// Handler
+// Messages
 // -----------------------------------------------------------------------------
 
-fn handler(state: State, message: ipc.Matchmaker) {
+fn on_message(state: State, message: ipc.Matchmaker) {
   case message {
-    ipc.MatchmakerEnter(player) -> enter_handler(state, player)
-    ipc.MatchmakerExit(player) -> exit_handler(state, player)
+    ipc.MatchmakerEnter(player) -> on_enter(state, player)
+    ipc.MatchmakerExit(player) -> on_exit(state, player)
   }
 }
 
-fn enter_handler(state: State, player: process.Subject(ipc.Websocket)) {
+fn on_enter(state: State, player: process.Subject(ipc.Websocket)) {
   use <- yuzu.false(list.contains(state, player), actor.continue(state))
 
   case list.find(state, check_match(_, player)) {
@@ -51,7 +51,7 @@ fn enter_handler(state: State, player: process.Subject(ipc.Websocket)) {
   }
 }
 
-fn exit_handler(state: State, player: process.Subject(ipc.Websocket)) {
+fn on_exit(state: State, player: process.Subject(ipc.Websocket)) {
   state
   |> list.filter(fn(element) { element != player })
   |> actor.continue()

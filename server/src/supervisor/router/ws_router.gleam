@@ -8,10 +8,10 @@ import ipc
 import logging
 import mist
 import names.{type Names}
-import router/ws_router/lobby_router
-import router/ws_router/match_router
-import router/ws_router/matchmaking_router
-import router/ws_state.{type WebsocketState}
+import supervisor/router/ws_router/lobby_router
+import supervisor/router/ws_router/match_router
+import supervisor/router/ws_router/matchmaking_router
+import supervisor/router/ws_state.{type WebsocketState}
 
 // -----------------------------------------------------------------------------
 // Hooks

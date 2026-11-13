@@ -12,12 +12,9 @@ pub type Lobby {
   Lobby(
     id: String,
     engine_settings: EngineSettings,
-    match_id: Option(String),
-    name: String,
-    owner: User,
-    players: List(Option(User)),
+    owner_user_id: String,
+    player_user_ids: List(Option(String)),
     users: List(User),
-    visible: Bool,
   )
 }
 
@@ -29,46 +26,34 @@ pub fn json(lobby: Lobby) {
   json.object([
     #("id", json.string(lobby.id)),
     #("engine_settings", engine_settings.json(lobby.engine_settings)),
-    #("match_id", json.nullable(lobby.match_id, json.string)),
-    #("name", json.string(lobby.name)),
-    #("owner", user.json(lobby.owner)),
-    #("players", json.array(lobby.players, json.nullable(_, user.json))),
+    #("owner_user_id", json.string(lobby.owner_user_id)),
+    #(
+      "player_user_ids",
+      json.array(lobby.player_user_ids, json.nullable(_, json.string)),
+    ),
     #("users", json.array(lobby.users, user.json)),
-    #("visible", json.bool(lobby.visible)),
   ])
 }
 
 pub fn decoder() {
-  let user_decoder = user.decoder()
-
   use id <- decode.field("id", decode.string)
-
   use engine_settings <- decode.field(
     "engine_settings",
     engine_settings.decoder(),
   )
-
-  use match_id <- decode.field("match_id", decode.optional(decode.string))
-  use name <- decode.field("name", decode.string)
-  use owner <- decode.field("owner", user_decoder)
-
-  use players <- decode.field(
-    "players",
-    decode.list(decode.optional(user.decoder())),
+  use owner_user_id <- decode.field("owner_user_id", decode.string)
+  use player_user_ids <- decode.field(
+    "player_user_ids",
+    decode.list(decode.optional(decode.string)),
   )
-
-  use users <- decode.field("users", decode.list(user_decoder))
-  use visible <- decode.field("visible", decode.bool)
+  use users <- decode.field("users", decode.list(user.decoder()))
 
   decode.success(Lobby(
     id:,
     engine_settings:,
-    match_id:,
-    name:,
-    owner:,
-    players:,
+    owner_user_id:,
+    player_user_ids:,
     users:,
-    visible:,
   ))
 }
 
@@ -76,8 +61,8 @@ pub fn decoder() {
 // Lib
 // -----------------------------------------------------------------------------
 
-pub fn get_player_by_index(lobby: Lobby, player_index: Int) {
-  case lobby.players, player_index {
+pub fn get_player_user_id(lobby: Lobby, player_index: Int) {
+  case lobby.player_user_ids, player_index {
     [p1, ..], 0 -> Ok(p1)
     [_, p2, ..], 1 -> Ok(p2)
     [_, _, p3, ..], 2 -> Ok(p3)
@@ -86,71 +71,66 @@ pub fn get_player_by_index(lobby: Lobby, player_index: Int) {
   }
 }
 
+pub fn remove_user(lobby: Lobby, removed_user_id: String) {
+  let player_user_ids =
+    list.map(lobby.player_user_ids, fn(player_user_id) {
+      case player_user_id {
+        option.Some(player_user_id) if player_user_id == removed_user_id ->
+          option.None
+        _ -> player_user_id
+      }
+    })
+
+  Lobby(
+    ..lobby,
+    player_user_ids:,
+    users: list.filter(lobby.users, fn(user) { user.id != removed_user_id }),
+  )
+}
+
 pub fn set_doubles(lobby: Lobby, doubles: Bool) {
   let engine_settings = EngineSettings(..lobby.engine_settings, doubles:)
 
-  let players = case doubles, lobby.players {
+  let player_user_ids = case doubles, lobby.player_user_ids {
     True, [p1, p2] -> [p1, option.None, p2, option.None]
     False, [p1, _, p3, _] -> [p1, p3]
-    _, _ -> lobby.players
+    _, _ -> lobby.player_user_ids
   }
 
-  Lobby(..lobby, engine_settings:, players:)
+  Lobby(..lobby, engine_settings:, player_user_ids:)
 }
 
-pub fn set_player_index(
+pub fn set_player_user_id(
   lobby: Lobby,
   player_index: Int,
   user_id: Option(String),
 ) {
   case user_id {
     option.None -> {
-      let players =
-        list.index_map(lobby.players, fn(player_user, index) {
+      let player_user_ids =
+        list.index_map(lobby.player_user_ids, fn(player_user_id, index) {
           case index == player_index {
             True -> option.None
-            False -> player_user
+            False -> player_user_id
           }
         })
 
-      Ok(Lobby(..lobby, players:))
+      Ok(Lobby(..lobby, player_user_ids:))
     }
 
     option.Some(user_id) -> {
-      use user <- yuzu.ok(
-        list.find(lobby.users, fn(user) { user.id == user_id }),
-        Error(Nil),
-      )
+      let player_user_ids =
+        list.index_map(lobby.player_user_ids, fn(player_user_id, index) {
+          use <- yuzu.false(index == player_index, option.Some(user_id))
+          use player_user_id <- yuzu.some_(player_user_id)
 
-      let players =
-        list.index_map(lobby.players, fn(player_user, index) {
-          use <- yuzu.false(index == player_index, option.Some(user))
-          use player_user <- yuzu.some_(player_user)
-
-          case player_user.id == user.id {
+          case player_user_id == user_id {
             True -> option.None
-            False -> option.Some(player_user)
+            False -> option.Some(player_user_id)
           }
         })
 
-      Ok(Lobby(..lobby, players:))
+      Ok(Lobby(..lobby, player_user_ids:))
     }
   }
-}
-
-pub fn remove_user(lobby: Lobby, removed_user_id: String) {
-  let players =
-    list.map(lobby.players, fn(player_user) {
-      case player_user {
-        option.Some(player_user) if player_user.id == removed_user_id ->
-          option.None
-        _ -> player_user
-      }
-    })
-
-  Lobby(
-    ..lobby,
-    players:,
-    users: list.filter(lobby.users, fn(user) { user.id != removed_user_id }),
-  )
 }

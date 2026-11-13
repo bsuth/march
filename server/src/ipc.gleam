@@ -1,9 +1,10 @@
 import core/engine/board.{type Board}
 import core/engine/face.{type Face}
+import core/engine/settings.{type Settings}
 import core/engine/trait.{type Trait}
 import core/engine/turn
-import core/lobby.{type Lobby as LobbyState}
-import core/match.{type Match as MatchState}
+import core/lobby.{type Lobby as CoreLobby}
+import core/match.{type Match as CoreMatch}
 import core/user.{type User}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
@@ -13,28 +14,34 @@ import gleam/option.{type Option}
 pub type Lobby {
   LobbyEnter(User, Subject(Websocket))
   LobbyExit(String)
-  LobbyGet(Subject(LobbyState))
+  LobbyGet(Subject(CoreLobby))
   LobbyShutdown
   LobbyStart(String)
   LobbyTerminate(String)
-  LobbyUpdateBoard(request_user_id: String, board: Board)
-  LobbyUpdateDoubles(request_user_id: String, doubles: Bool)
-  LobbyUpdateHandSize(request_user_id: String, hand_size: Int)
-  LobbyUpdateName(request_user_id: String, name: String)
-  LobbyUpdatePlayer(
-    request_user_id: String,
-    player_index: Int,
-    user_id: Option(String),
-  )
-  LobbyUpdateTraits(request_user_id: String, traits: Dict(Face, List(Trait)))
-  LobbyUpdateVisibility(request_user_id: String, visible: Bool)
+  LobbyUpdateBoard(String, Board)
+  LobbyUpdateDoubles(String, Bool)
+  LobbyUpdateHandSize(String, Int)
+  LobbyUpdatePlayerUserId(String, Int, Option(String))
+  LobbyUpdateTraits(String, Dict(Face, List(Trait)))
+}
+
+pub type LobbyManager {
+  LobbyManagerDelete(String)
+  LobbyManagerForward(String, Lobby)
+  LobbyManagerNew(Subject(String), String)
 }
 
 pub type Match {
   MatchEnter(User, Subject(Websocket))
   MatchExit(String)
-  MatchGet(Subject(MatchState))
+  MatchGet(Subject(CoreMatch))
   MatchRequestTurn(String, turn.Request)
+}
+
+pub type MatchManager {
+  MatchManagerDelete(String)
+  MatchManagerForward(String, Match)
+  MatchManagerNew(Subject(String), Settings, List(String))
 }
 
 pub type Matchmaker {

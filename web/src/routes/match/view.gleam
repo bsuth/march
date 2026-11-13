@@ -34,11 +34,11 @@ pub fn view(model: Model) {
 
 fn match_view(model: Model, match: Match) {
   let user_player_index =
-    match.players
-    |> list.index_map(fn(player, index) { #(player, index) })
-    |> list.find_map(fn(player_and_index) {
-      case player_and_index.0.id == model.app.user.id {
-        True -> Ok(player_and_index.1)
+    match.player_user_ids
+    |> list.index_map(fn(player_user_id, index) { #(player_user_id, index) })
+    |> list.find_map(fn(player_user_id_and_index) {
+      case player_user_id_and_index.0 == model.app.user.id {
+        True -> Ok(player_user_id_and_index.1)
         False -> Error(Nil)
       }
     })
