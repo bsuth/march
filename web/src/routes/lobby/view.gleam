@@ -7,7 +7,6 @@ import routes/lobby/model.{type Model}
 import routes/lobby/view/engine_settings_view.{engine_settings_view}
 import routes/lobby/view/player_settings_view.{player_settings_view}
 import routes/lobby/view/start_game_view.{start_game_view}
-import routes/lobby/view/terminate_lobby_view.{terminate_lobby_view}
 import routes/lobby/view/user_list_view.{user_list_view}
 
 pub fn view(model: Model) {
@@ -56,9 +55,6 @@ fn lobby_view(model: Model, lobby: Lobby) {
         ],
         [
           html.div([attribute.class("grow flex flex-col gap-4")], [
-            html.div([attribute.class("flex items-center justify-between")], [
-              terminate_lobby_view(model, lobby),
-            ]),
             engine_settings_view(model, lobby),
             player_settings_view(model, lobby),
             start_game_view(model, lobby),

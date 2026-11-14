@@ -1,4 +1,5 @@
 import components/button
+import components/clipboard_copy
 import components/field
 import components/float_input
 import components/icon_button
@@ -16,6 +17,7 @@ import components/toggle
 
 pub fn register() {
   let assert Ok(_) = button.register()
+  let assert Ok(_) = clipboard_copy.register()
   let assert Ok(_) = field.register()
   let assert Ok(_) = float_input.register()
   let assert Ok(_) = icon_button.register()

@@ -57,7 +57,12 @@ fn user_changed_board(model: Model, board: Board) {
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
 
-  let engine_settings = EngineSettings(..lobby.engine_settings, board:)
+  let doubles = case board.height < 2 {
+    True -> False
+    False -> lobby.engine_settings.doubles
+  }
+  let engine_settings =
+    EngineSettings(..lobby.engine_settings, board:, doubles:)
   let lobby = Lobby(..lobby, engine_settings:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())

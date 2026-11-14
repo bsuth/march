@@ -7,7 +7,6 @@ import lustre/component
 import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
 
 // -----------------------------------------------------------------------------
 // Props / Events
@@ -15,10 +14,6 @@ import lustre/event
 
 pub fn prop_disabled(value: Bool) {
   attribute.property("disabled", json.bool(value))
-}
-
-pub fn on_click(message: message) -> Attribute(message) {
-  event.on_click(message)
 }
 
 // -----------------------------------------------------------------------------

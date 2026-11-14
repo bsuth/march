@@ -234,7 +234,12 @@ fn on_update_board(state: LobbyActor, request_user_id: String, board: Board) {
   |> ws_lobby.update_board_json()
   |> broadcast_json(state.meta, _)
 
-  let engine_settings = EngineSettings(..state.lobby.engine_settings, board:)
+  let doubles = case board.height < 2 {
+    True -> False
+    False -> state.lobby.engine_settings.doubles
+  }
+  let engine_settings =
+    EngineSettings(..state.lobby.engine_settings, board:, doubles:)
   let lobby = Lobby(..state.lobby, engine_settings:)
 
   LobbyActor(..state, lobby:) |> actor.continue()

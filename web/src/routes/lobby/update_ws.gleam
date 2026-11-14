@@ -96,8 +96,12 @@ fn lobby_update_board(model: Model, payload: Dynamic) {
   use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
   use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
 
+  let doubles = case payload.board.height < 2 {
+    True -> False
+    False -> lobby.engine_settings.doubles
+  }
   let engine_settings =
-    EngineSettings(..lobby.engine_settings, board: payload.board)
+    EngineSettings(..lobby.engine_settings, board: payload.board, doubles:)
   let lobby = Lobby(..lobby, engine_settings:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())

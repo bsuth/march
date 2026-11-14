@@ -1,21 +1,33 @@
+import components/clipboard_copy
 import components/field
+import components/icon_button
 import components/single_select
 import components/toggle
 import core/engine/board
 import core/lobby.{type Lobby}
 import gleam/int
 import gleam/list
+import lib/js
 import lustre/attribute
+import lustre/element
 import lustre/element/html
+import lustre/event
 import phosphor
 import routes/lobby/message
 import routes/lobby/model.{type Model}
+import yuzu
 
 pub fn engine_settings_view(model: Model, lobby: Lobby) {
   html.div([attribute.class("flex gap-8")], [
     board_view(model, lobby),
     hand_size_view(model, lobby),
     doubles_view(model, lobby),
+    // TODO: variant settings
+    // TODO: copy link button
+    html.div([attribute.class("ml-auto flex items-center")], [
+      copy_link_view(),
+      terminate_lobby_view(model, lobby),
+    ]),
   ])
 }
 
@@ -73,6 +85,8 @@ fn board_view(model: Model, lobby: Lobby) {
 }
 
 fn doubles_view(model: Model, lobby: Lobby) {
+  use <- yuzu.true(lobby.engine_settings.board.height > 1, element.none())
+
   field.element([field.prop_label("Doubles")], [
     case
       model.app.user.id == lobby.owner_user_id,
@@ -122,4 +136,32 @@ fn hand_size_view(model: Model, lobby: Lobby) {
         ])
     },
   ])
+}
+
+pub fn copy_link_view() {
+  clipboard_copy.element(
+    [
+      attribute.title("Copy URL"),
+      clipboard_copy.prop_value(js.window_location_href()),
+    ],
+    [
+      icon_button.element([], [
+        phosphor.link_regular([attribute.class("size-8")]),
+      ]),
+    ],
+  )
+}
+
+pub fn terminate_lobby_view(model: Model, lobby: Lobby) {
+  use <- yuzu.true(model.app.user.id == lobby.owner_user_id, element.none())
+
+  // TODO: add confirmation modal
+
+  icon_button.element(
+    [
+      event.on_click(message.UserTerminatedLobby),
+      attribute.title("Terminate Lobby"),
+    ],
+    [phosphor.trash_regular([attribute.class("size-8")])],
+  )
 }

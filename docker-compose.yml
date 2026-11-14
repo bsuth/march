@@ -7,7 +7,6 @@ services:
     volumes:
       - .:/march
       - server_build:/march/server/build
-      - server_dets:/march/server/dets
 
   web:
     image: ghcr.io/gleam-lang/gleam:nightly-erlang
@@ -20,5 +19,4 @@ services:
 
 volumes:
   server_build:
-  server_dets:
   web_build:

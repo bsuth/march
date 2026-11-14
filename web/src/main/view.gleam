@@ -21,8 +21,8 @@ pub fn view(model: Model) {
         html.ul([attribute.class("flex")], [
           navbar_item_view("Home", "/"),
           navbar_item_view("Learn", "/learn"),
-          navbar_item_view("About", "/about"),
           navbar_item_view("Playground", "/playground"),
+          navbar_item_view("About", "/about"),
         ]),
         icon_button.element([event.on_click(message.ToggleTheme)], [
           case app.theme {
