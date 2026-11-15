@@ -1,8 +1,26 @@
 services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: march
+      POSTGRES_PASSWORD: march
+      POSTGRES_DB: march
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U march"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports: [ 5432:5432 ]
+    volumes: [ postgres_data:/var/lib/postgresql ]
+
   server:
     build:
       context: .
       dockerfile: ./server/Dockerfile.dev
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://march:march@postgres:5432/march
     ports: [ 8000:8000 ]
     volumes:
       - .:/march
@@ -18,5 +36,6 @@ services:
     working_dir: /march/web
 
 volumes:
+  postgres_data:
   server_build:
   web_build:
