@@ -3,6 +3,7 @@ import routes/home/model as home
 import routes/learn/model as learn
 import routes/lobby/model as lobby
 import routes/match/model as match
+import routes/play/model as play
 import routes/playground/model as playground
 
 pub type Model {
@@ -12,6 +13,7 @@ pub type Model {
   Learn(learn.Model)
   Lobby(lobby.Model)
   Match(match.Model)
+  Play(play.Model)
   Playground(playground.Model)
 }
 
@@ -23,6 +25,7 @@ pub fn get_app(model: Model) {
     Learn(route) -> route.app
     Lobby(route) -> route.app
     Match(route) -> route.app
+    Play(route) -> route.app
     Playground(route) -> route.app
   }
 }

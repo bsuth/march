@@ -22,8 +22,8 @@ pub fn handler(
     "update.board" -> update_board(state, conn, payload)
     "update.doubles" -> update_doubles(state, conn, payload)
     "update.hand_size" -> update_hand_size(state, conn, payload)
+    "update.mode" -> update_mode(state, conn, payload)
     "update.player" -> update_player_user_id(state, conn, payload)
-    "update.traits" -> update_traits(state, conn, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws path: lobby." <> path)
@@ -45,8 +45,11 @@ fn enter(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    lobby_id,
-    ipc.LobbyEnter(state.user, state.subject),
+    lobby_id:,
+    message: ipc.LobbyEnter(
+      enter_user: state.user,
+      enter_user_subject: state.subject,
+    ),
   ))
 
   mist.continue(state)
@@ -65,8 +68,8 @@ fn exit(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    lobby_id,
-    ipc.LobbyExit(state.user.id),
+    lobby_id:,
+    message: ipc.LobbyExit(exit_user_id: state.user.id),
   ))
 
   mist.continue(state)
@@ -85,8 +88,8 @@ fn start(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    lobby_id,
-    ipc.LobbyStart(state.user.id),
+    lobby_id:,
+    message: ipc.LobbyStart(request_user_id: state.user.id),
   ))
 
   mist.continue(state)
@@ -105,8 +108,8 @@ fn terminate(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    lobby_id,
-    ipc.LobbyTerminate(state.user.id),
+    lobby_id:,
+    message: ipc.LobbyTerminate(request_user_id: state.user.id),
   ))
 
   mist.continue(state)
@@ -125,8 +128,11 @@ fn update_board(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    payload.lobby_id,
-    ipc.LobbyUpdateBoard(state.user.id, payload.board),
+    lobby_id: payload.lobby_id,
+    message: ipc.LobbyUpdateBoard(
+      request_user_id: state.user.id,
+      board: payload.board,
+    ),
   ))
 
   mist.continue(state)
@@ -145,8 +151,11 @@ fn update_doubles(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    payload.lobby_id,
-    ipc.LobbyUpdateDoubles(state.user.id, payload.doubles),
+    lobby_id: payload.lobby_id,
+    message: ipc.LobbyUpdateDoubles(
+      request_user_id: state.user.id,
+      doubles: payload.doubles,
+    ),
   ))
 
   mist.continue(state)
@@ -165,8 +174,34 @@ fn update_hand_size(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    payload.lobby_id,
-    ipc.LobbyUpdateHandSize(state.user.id, payload.hand_size),
+    lobby_id: payload.lobby_id,
+    message: ipc.LobbyUpdateHandSize(
+      request_user_id: state.user.id,
+      hand_size: payload.hand_size,
+    ),
+  ))
+
+  mist.continue(state)
+}
+
+fn update_mode(
+  state: WebsocketState,
+  _conn: mist.WebsocketConnection,
+  payload: Dynamic,
+) {
+  use payload <- yuzu.ok(
+    decode.run(payload, ws_lobby.update_mode_decoder()),
+    mist.continue(state),
+  )
+
+  state.names.lobby_manager
+  |> process.named_subject()
+  |> process.send(ipc.LobbyManagerForward(
+    lobby_id: payload.lobby_id,
+    message: ipc.LobbyUpdateMode(
+      request_user_id: state.user.id,
+      mode: payload.mode,
+    ),
   ))
 
   mist.continue(state)
@@ -185,32 +220,12 @@ fn update_player_user_id(
   state.names.lobby_manager
   |> process.named_subject()
   |> process.send(ipc.LobbyManagerForward(
-    payload.lobby_id,
-    ipc.LobbyUpdatePlayerUserId(
-      state.user.id,
-      payload.player_index,
-      payload.user_id,
+    lobby_id: payload.lobby_id,
+    message: ipc.LobbyUpdatePlayerUserId(
+      request_user_id: state.user.id,
+      player_index: payload.player_index,
+      user_id: payload.user_id,
     ),
-  ))
-
-  mist.continue(state)
-}
-
-fn update_traits(
-  state: WebsocketState,
-  _conn: mist.WebsocketConnection,
-  payload: Dynamic,
-) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_traits_decoder()),
-    mist.continue(state),
-  )
-
-  state.names.lobby_manager
-  |> process.named_subject()
-  |> process.send(ipc.LobbyManagerForward(
-    payload.lobby_id,
-    ipc.LobbyUpdateTraits(state.user.id, payload.traits),
   ))
 
   mist.continue(state)

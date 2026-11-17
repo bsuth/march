@@ -7,6 +7,7 @@ import routes/learn
 import routes/lobby
 import routes/match
 import routes/not_found
+import routes/play
 import routes/playground
 
 pub fn init(model: Model, uri: Uri) {
@@ -17,6 +18,7 @@ pub fn init(model: Model, uri: Uri) {
     model.Learn(route) -> learn.deinit(route)
     model.Lobby(route) -> lobby.deinit(route)
     model.Match(route) -> match.deinit(route)
+    model.Play(route) -> play.deinit(route)
     model.Playground(route) -> playground.deinit(route)
     _ -> Nil
   }
@@ -27,6 +29,7 @@ pub fn init(model: Model, uri: Uri) {
     ["learn"] -> learn.init(app)
     ["lobby", id] -> lobby.init(app, id)
     ["match", id] -> match.init(app, id)
+    ["play"] -> play.init(app)
     ["playground"] -> playground.init(app)
     _ -> #(model.Model(app), effect.none())
   }
@@ -39,6 +42,7 @@ pub fn view(model: Model) {
     model.Learn(route) -> learn.view(route)
     model.Lobby(route) -> lobby.view(route)
     model.Match(route) -> match.view(route)
+    model.Play(route) -> play.view(route)
     model.Playground(route) -> playground.view(route)
     _ -> not_found.view()
   }

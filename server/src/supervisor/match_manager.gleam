@@ -1,5 +1,5 @@
 import actors/match
-import core/engine/settings.{type Settings}
+import core/engine/settings.{type Settings as EngineSettings}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/otp/actor
@@ -41,11 +41,11 @@ pub fn supervised(names: Names) {
 
 fn on_message(state: State, message: ipc.MatchManager) {
   case message {
-    ipc.MatchManagerDelete(match_id) -> on_delete(state, match_id)
-    ipc.MatchManagerForward(match_id, match_message) ->
-      on_forward(state, match_id, match_message)
-    ipc.MatchManagerNew(sender, settings, player_user_ids) ->
-      on_new(state, sender, settings, player_user_ids)
+    ipc.MatchManagerDelete(match_id:) -> on_delete(state, match_id)
+    ipc.MatchManagerForward(match_id:, message:) ->
+      on_forward(state, match_id, message)
+    ipc.MatchManagerNew(reply_subject:, engine_settings:, player_user_ids:) ->
+      on_new(state, reply_subject, engine_settings, player_user_ids)
   }
 }
 
@@ -66,25 +66,25 @@ fn on_forward(state: State, match_id: String, match_message: ipc.Match) {
 
 fn on_new(
   state: State,
-  sender: Subject(String),
-  settings: Settings,
+  reply_subject: Subject(String),
+  engine_settings: EngineSettings,
   player_user_ids: List(String),
 ) {
   let assert Ok(match_id) = new_match_id(state, 16)
 
   use actor.Started(match_actor_pid, match_actor_state) <- yuzu.ok(
-    match.start(match_id, state.names, settings, player_user_ids),
+    match.start(match_id, state.names, engine_settings, player_user_ids),
     actor.continue(state),
   )
 
-  process.send(sender, match_id)
+  process.send(reply_subject, match_id)
 
   let matches = dict.insert(state.matches, match_id, match_actor_state.subject)
   let selector =
     process.select_specific_monitor(
       state.selector,
       process.monitor(match_actor_pid),
-      fn(_) { ipc.MatchManagerDelete(match_id) },
+      fn(_) { ipc.MatchManagerDelete(match_id:) },
     )
 
   State(..state, matches:, selector:)

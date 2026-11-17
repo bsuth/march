@@ -63,7 +63,6 @@ fn text_handler(
     Ok(ws_api.Message("match." <> subpath, payload)) ->
       match_router.handler(state, conn, subpath, payload)
 
-    // TODO: remove me
     Ok(ws_api.Message("matchmaking." <> subpath, payload)) ->
       matchmaking_router.handler(state, conn, subpath, payload)
 
@@ -80,9 +79,6 @@ fn custom_handler(
   custom: ipc.Websocket,
 ) {
   case custom {
-    // TODO: REMOVE ME
-    ipc.WebsocketMatched -> mist.continue(state)
-
     ipc.WebsocketJson(json) -> {
       case mist.send_text_frame(conn, json.to_string(json)) {
         Ok(_) -> mist.continue(state)

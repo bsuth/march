@@ -35,9 +35,6 @@ fn on_enter(state: State, player: process.Subject(ipc.Websocket)) {
 
   case list.find(state, check_match(_, player)) {
     Ok(opponent) -> {
-      process.send(player, ipc.WebsocketMatched)
-      process.send(opponent, ipc.WebsocketMatched)
-
       state
       |> list.filter(fn(element) { element != opponent })
       |> actor.continue()

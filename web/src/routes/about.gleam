@@ -1,5 +1,3 @@
-import components/text_link
-import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -13,44 +11,38 @@ pub fn view() {
       attribute.class("flex flex-col gap-12"),
     ],
     [
-      html.div([attribute.class("flex flex-col items-center gap-4")], [
-        html.h2([], [
-          html.text("About"),
-        ]),
+      section_view("About", [
         html.p([], [
           html.text(
-            string.concat([
-              "March was created by a software engineer who likes to play ",
-              "games with coworkers after work. It was particular inspired ",
-              "after playing the wonderful ",
-            ]),
+            "March was created by a software engineer who likes to play games
+            with coworkers after work. It was particular inspired after playing
+            the wonderful ",
           ),
-          text_link.element(
-            [text_link.prop_href("https://www.regicidegame.com/")],
+          html.a(
+            [
+              attribute.class("inline-flex items-center gap-1"),
+              attribute.class("text-(--march-primary)"),
+              attribute.href("https://www.regicidegame.com/"),
+              attribute.target("_blank"),
+            ],
             [
               html.text("Regicide"),
+              phosphor.arrow_square_out_fill([]),
             ],
           ),
           html.text(
-            string.concat([
-              " and having a coworker express their desire for more modern ",
-              "card games that utilize the standard deck of playing cards.",
-            ]),
+            " and having a coworker express their desire for more modern card
+            games that utilize the standard deck of playing cards.",
           ),
         ]),
       ]),
-      html.div([attribute.class("flex flex-col gap-4 items-center")], [
-        html.h2([], [
-          html.text("Attributions"),
-        ]),
+      section_view("Attributions", [
         html.p([], [
           html.text(
-            string.concat([
-              "This website would not be possible without standing on the ",
-              "shoulders of giants. If you have enjoyed March, please take ",
-              "the time to check out the following amazing projects and ",
-              "consider supporting them as well.",
-            ]),
+            "This website would not be possible without standing on the
+            shoulders of giants. If you have enjoyed March, please take the time
+            to check out the following amazing projects and consider supporting
+            them as well.",
           ),
         ]),
         html.div([attribute.class("w-full flex flex-col gap-4")], [
@@ -58,45 +50,46 @@ pub fn view() {
             "Gleam",
             "https://gleam.run/",
             html.img([attribute.class("size-8"), attribute.src("/gleam.svg")]),
-            string.concat([
-              "A wonderfully designed type-safe functional programming language ",
-              "that can compile to either Erlang or JavaScript. The vast ",
-              "majority of March is written in Gleam.",
-            ]),
+            "A wonderfully designed type-safe functional programming language
+            that can compile to either Erlang or JavaScript. The vast majority
+            of March is written in Gleam.",
           ),
           attribution_view(
             "Lustre",
             "https://lustre.hexdocs.pm/",
             html.img([attribute.class("size-8"), attribute.src("/lustre.png")]),
-            string.concat([
-              "A simple and elegant frontend framework inspired by Elm and ",
-              "written in Gleam. This page you are reading right now is ",
-              "written using Lustre!",
-            ]),
+            "A simple and elegant frontend framework inspired by Elm and written
+            in Gleam. This page you are reading right now is written using
+            Lustre!",
           ),
           attribution_view(
             "Phosphor Icons",
             "https://phosphoricons.com/",
             phosphor.phosphor_logo_fill([attribute.class("size-8")]),
-            string.concat([
-              "A beautiful, open-source icon family distributed under the ",
-              "permissive MIT license. This is the icon family March uses for ",
-              "all of its icons.",
-            ]),
+            "A beautiful, open-source icon family distributed under the
+            permissive MIT license. This is the icon family March uses for all
+            of its icons.",
           ),
         ]),
         html.p([attribute.class("text-sm")], [
           html.text(
-            string.concat([
-              "* None of the projects above require attribution, but since ",
-              "March relies so heavily on them, I personally feel that it is ",
-              "the least I can do (and they deserve it!).",
-            ]),
+            "* None of the projects above require attribution, but since March
+            relies so heavily on them, I personally feel that it is the least I
+            can do.",
           ),
         ]),
       ]),
     ],
   )
+}
+
+fn section_view(title: String, children: List(Element(Message))) {
+  html.div([attribute.class("flex flex-col items-center gap-4")], [
+    html.h2([], [
+      html.text(title),
+    ]),
+    ..children
+  ])
 }
 
 fn attribution_view(

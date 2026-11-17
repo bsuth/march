@@ -70,7 +70,7 @@ fn update(_model: Model, message: Message) {
 fn view(model: Model) {
   html.a(
     [
-      attribute.class("text-(--color-primary)"),
+      attribute.class("text-(--march-primary)"),
       attribute.href(model.href),
     ],
     [

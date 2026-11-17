@@ -1,9 +1,11 @@
 import gleam/bytes_tree
+import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
 import mist
 import names.{type Names}
 import supervisor/router/api_router/init_router
+import supervisor/router/api_router/lobby_id_router
 import supervisor/router/api_router/lobby_router
 import supervisor/router/api_router/match_router
 import supervisor/router/middleware
@@ -19,12 +21,15 @@ pub fn handler(
   // TODO
   // use _ <- middleware.csrf_known_header_protection(req)
 
-  case path {
-    ["init", ..subpath] -> init_router.handler(req, subpath)
-    ["lobby", ..subpath] -> lobby_router.handler(names, req, subpath)
-    ["match", ..subpath] -> match_router.handler(names, req, subpath)
+  case path, req.method {
+    ["init"], http.Get -> init_router.get(req)
 
-    _ ->
+    ["lobby"], http.Post -> lobby_router.post(names, req)
+    ["lobby", lobby_id], http.Get -> lobby_id_router.get(names, req, lobby_id)
+
+    ["match", match_id], http.Get -> match_router.get(names, req, match_id)
+
+    _, _ ->
       response.new(404)
       |> response.set_body(mist.Bytes(bytes_tree.new()))
   }

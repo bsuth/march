@@ -21,9 +21,9 @@ pub fn update_ws(model: Model, ws_message: ws_api.Message) {
     "lobby.update.doubles" -> lobby_update_doubles(model, ws_message.payload)
     "lobby.update.hand_size" ->
       lobby_update_hand_size(model, ws_message.payload)
+    "lobby.update.mode" -> lobby_update_mode(model, ws_message.payload)
     "lobby.update.player_user_id" ->
       lobby_update_player_user_id(model, ws_message.payload)
-    "lobby.update.traits" -> lobby_update_traits(model, ws_message.payload)
     _ -> #(model, effect.none())
   }
 }
@@ -139,6 +139,22 @@ fn lobby_update_hand_size(model: Model, payload: Dynamic) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
+fn lobby_update_mode(model: Model, payload: Dynamic) {
+  use payload <- yuzu.ok(decode.run(payload, ws_lobby.update_mode_decoder()), #(
+    model,
+    effect.none(),
+  ))
+
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
+
+  let engine_settings =
+    EngineSettings(..lobby.engine_settings, mode: payload.mode)
+  let lobby = Lobby(..lobby, engine_settings:)
+
+  #(Model(..model, lobby: option.Some(lobby)), effect.none())
+}
+
 fn lobby_update_player_user_id(model: Model, payload: Dynamic) {
   use payload <- yuzu.ok(
     decode.run(payload, ws_lobby.update_player_user_id_decoder()),
@@ -152,22 +168,6 @@ fn lobby_update_player_user_id(model: Model, payload: Dynamic) {
     lobby.set_player_user_id(lobby, payload.player_index, payload.user_id),
     #(model, effect.none()),
   )
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn lobby_update_traits(model: Model, payload: Dynamic) {
-  use payload <- yuzu.ok(
-    decode.run(payload, ws_lobby.update_traits_decoder()),
-    #(model, effect.none()),
-  )
-
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-  use <- yuzu.true(lobby.id == payload.lobby_id, #(model, effect.none()))
-
-  let engine_settings =
-    EngineSettings(..lobby.engine_settings, traits: payload.traits)
-  let lobby = Lobby(..lobby, engine_settings:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }

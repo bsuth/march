@@ -1,12 +1,12 @@
 import core/engine/board
 import core/engine/card
+import core/engine/mode
 import core/engine/position.{type Position}
 import core/engine/settings.{type Settings}
 import core/engine/trait
 import gleam/dict
 import gleam/list
 import gleam/option
-import gleam/result
 import yuzu
 
 pub fn list_raw_source_indices(
@@ -60,9 +60,8 @@ fn list_trait_source_indices(
   |> list.filter(fn(entry) {
     use source_card <- position.use_some(position, entry.0, False)
 
-    settings.traits
-    |> dict.get(source_card.face)
-    |> result.unwrap([])
+    settings.mode
+    |> mode.to_traits(source_card.face)
     |> list.contains(entry.1)
   })
 }
@@ -110,8 +109,8 @@ fn list_trait_dest_indices(
 ) {
   use source_card <- position.use_some(position, source_index, [])
 
-  dict.get(settings.traits, source_card.face)
-  |> result.unwrap([])
+  settings.mode
+  |> mode.to_traits(source_card.face)
   |> list.flat_map(fn(trait) {
     case trait {
       trait.Adjacent ->
@@ -144,10 +143,7 @@ pub fn is_march_index(
 ) {
   use source_card <- position.use_some(position, source_index, False)
 
-  let traits =
-    settings.traits
-    |> dict.get(source_card.face)
-    |> result.unwrap([])
+  let traits = mode.to_traits(settings.mode, source_card.face)
 
   use <- yuzu.false_(list.contains(traits, trait.AnyMarch))
 

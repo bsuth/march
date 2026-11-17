@@ -1,9 +1,7 @@
 import core/engine/board.{type Board}
-import core/engine/face.{type Face}
-import core/engine/trait.{type Trait}
+import core/engine/mode.{type Mode}
 import core/user.{type User}
 import core/ws_api
-import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/option.{type Option}
@@ -213,6 +211,30 @@ pub fn update_hand_size_decoder() {
 }
 
 // -----------------------------------------------------------------------------
+// UPDATE.MODE
+// -----------------------------------------------------------------------------
+
+pub type UpdateModePayload {
+  UpdateModePayload(lobby_id: String, mode: Mode)
+}
+
+pub fn update_mode_json(payload: UpdateModePayload) {
+  ws_api.json(
+    "lobby.update.mode",
+    json.object([
+      #("lobby_id", json.string(payload.lobby_id)),
+      #("mode", mode.json(payload.mode)),
+    ]),
+  )
+}
+
+pub fn update_mode_decoder() {
+  use lobby_id <- decode.field("lobby_id", decode.string)
+  use mode <- decode.field("mode", mode.decoder())
+  decode.success(UpdateModePayload(lobby_id, mode))
+}
+
+// -----------------------------------------------------------------------------
 // UPDATE.PLAYER
 // -----------------------------------------------------------------------------
 
@@ -240,36 +262,4 @@ pub fn update_player_user_id_decoder() {
   use player_index <- decode.field("player_index", decode.int)
   use user_id <- decode.field("user_id", decode.optional(decode.string))
   decode.success(UpdatePlayerUserIdPayload(lobby_id, player_index, user_id))
-}
-
-// -----------------------------------------------------------------------------
-// UPDATE.TRAITS
-// -----------------------------------------------------------------------------
-
-pub type UpdateTraitsPayload {
-  UpdateTraitsPayload(lobby_id: String, traits: Dict(Face, List(Trait)))
-}
-
-pub fn update_traits_json(payload: UpdateTraitsPayload) {
-  ws_api.json(
-    "lobby.update.traits",
-    json.object([
-      #("lobby_id", json.string(payload.lobby_id)),
-      #(
-        "traits",
-        json.dict(payload.traits, face.to_string, json.array(_, trait.json)),
-      ),
-    ]),
-  )
-}
-
-pub fn update_traits_decoder() {
-  use lobby_id <- decode.field("lobby_id", decode.string)
-
-  use traits <- decode.field(
-    "traits",
-    decode.dict(face.decoder(), decode.list(trait.decoder())),
-  )
-
-  decode.success(UpdateTraitsPayload(lobby_id, traits))
 }

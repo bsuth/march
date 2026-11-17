@@ -11,6 +11,7 @@ import routes/home
 import routes/learn
 import routes/lobby
 import routes/match
+import routes/play
 import routes/playground
 import rsvp
 
@@ -27,6 +28,9 @@ pub fn update(model: Model, message: Message) {
 
     model.Match(route_model), message.Match(route_message) ->
       match.update(route_model, route_message)
+
+    model.Play(route_model), message.Play(route_message) ->
+      play.update(route_model, route_message)
 
     model.Playground(route_model), message.Playground(route_message) ->
       playground.update(route_model, route_message)
@@ -55,6 +59,7 @@ fn update_app(model: Model, app: App) {
     model.Learn(route) -> model.Learn(learn.update_app(route, app))
     model.Lobby(route) -> model.Lobby(lobby.update_app(route, app))
     model.Match(route) -> model.Match(match.update_app(route, app))
+    model.Play(route) -> model.Play(play.update_app(route, app))
     model.Playground(route) ->
       model.Playground(playground.update_app(route, app))
   }

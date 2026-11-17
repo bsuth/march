@@ -3,8 +3,9 @@ import blocks/game_history
 import blocks/player_hand
 import components/button
 import core/engine.{type Engine}
-import core/engine/board
+import core/engine/board.{Board}
 import core/engine/card.{type Card}
+import core/engine/mode
 import core/engine/player
 import core/engine/settings.{Settings}
 import core/engine/turn
@@ -95,10 +96,10 @@ type Model {
 fn init(_) {
   let settings =
     Settings(
-      board: board.normal(4, 4),
+      board: Board(4, 4),
       doubles: False,
       hand_size: 4,
-      traits: dict.new(),
+      mode: mode.Standard,
     )
 
   let kernel = engine.new_kernel(settings)

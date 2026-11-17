@@ -1,4 +1,4 @@
-import core/http_api/http_lobby
+import core/lobby
 import core/ws_api/ws_lobby
 import gleam/json
 import gleam/option
@@ -11,7 +11,7 @@ import rsvp
 pub fn init(app: App, lobby_id: String) {
   #(
     Model(app:, lobby: option.None, lobby_id:, lobby_loading: True),
-    http_lobby.get_response_decoder()
+    lobby.decoder()
       |> rsvp.expect_json(message.ApiLobbyGetResponse)
       |> rsvp.get("/api/lobby/" <> lobby_id, _),
   )

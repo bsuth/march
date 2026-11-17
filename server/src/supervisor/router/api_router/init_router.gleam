@@ -1,31 +1,18 @@
-import core/http_api/http_init
 import core/user.{User}
 import envoy
 import gleam/bit_array
-import gleam/bytes_tree
 import gleam/crypto
-import gleam/http
 import gleam/http/cookie
 import gleam/http/request.{type Request}
 import gleam/http/response
-import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
 import mist
+import supervisor/router/router_utils
 import youid/uuid
 
-pub fn handler(req: Request(mist.Connection), path: List(String)) {
-  case req.method, path {
-    http.Get, [] -> get(req)
-
-    _, _ ->
-      response.new(404)
-      |> response.set_body(mist.Bytes(bytes_tree.new()))
-  }
-}
-
-fn get(req: Request(mist.Connection)) {
+pub fn get(req: Request(mist.Connection)) {
   let assert Ok(session_cookie_secret) = envoy.get("SESSION_COOKIE_SECRET")
 
   let user_id =
@@ -42,15 +29,9 @@ fn get(req: Request(mist.Connection)) {
     |> result.unwrap(uuid.v7())
     |> uuid.to_string()
 
-  let response_body =
-    // TODO: handle non-guest users
-    User(user_id, "", True)
-    |> http_init.get_response_json()
-    |> json.to_string_tree()
-    |> bytes_tree.from_string_tree()
-    |> mist.Bytes()
-
-  response.new(200)
+  User(user_id, "", True)
+  |> user.json()
+  |> router_utils.json_response()
   |> response.set_cookie(
     "session",
     crypto.sign_message(
@@ -68,6 +49,4 @@ fn get(req: Request(mist.Connection)) {
       same_site: option.Some(cookie.Strict),
     ),
   )
-  |> response.set_header("content-type", "application/json")
-  |> response.set_body(response_body)
 }

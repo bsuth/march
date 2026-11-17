@@ -3,7 +3,7 @@ import components/field
 import components/icon_button
 import components/single_select
 import components/toggle
-import core/engine/board
+import core/engine/board.{Board}
 import core/lobby.{type Lobby}
 import gleam/int
 import gleam/list
@@ -56,9 +56,8 @@ fn board_view(model: Model, lobby: Lobby) {
             ),
             single_select.on_change(fn(width_string) {
               case int.parse(width_string) {
-                Ok(width) ->
-                  message.UserChangedBoard(board.normal(width, height))
-                _ -> message.UserChangedBoard(board.normal(width, height))
+                Ok(width) -> message.UserChangedBoard(Board(width, height))
+                _ -> message.UserChangedBoard(Board(width, height))
               }
             }),
           ]),
@@ -73,9 +72,8 @@ fn board_view(model: Model, lobby: Lobby) {
             ),
             single_select.on_change(fn(height_string) {
               case int.parse(height_string) {
-                Ok(height) ->
-                  message.UserChangedBoard(board.normal(width, height))
-                _ -> message.UserChangedBoard(board.normal(width, height))
+                Ok(height) -> message.UserChangedBoard(Board(width, height))
+                _ -> message.UserChangedBoard(Board(width, height))
               }
             }),
           ]),

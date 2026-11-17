@@ -77,11 +77,12 @@ pub fn start(
 
 fn on_message(state: MatchActor, message: ipc.Match) {
   case message {
-    ipc.MatchEnter(user, subject) -> on_enter(state, user, subject)
-    ipc.MatchExit(id) -> on_exit(state, id)
-    ipc.MatchGet(requester) -> on_get(state, requester)
-    ipc.MatchRequestTurn(id, turn_request) ->
-      on_request_turn(state, id, turn_request)
+    ipc.MatchEnter(enter_user:, enter_user_subject:) ->
+      on_enter(state, enter_user, enter_user_subject)
+    ipc.MatchExit(exit_user_id:) -> on_exit(state, exit_user_id)
+    ipc.MatchGet(reply_subject:) -> on_get(state, reply_subject)
+    ipc.MatchRequestTurn(request_user_id:, turn_request:) ->
+      on_request_turn(state, request_user_id, turn_request)
   }
 }
 
@@ -144,8 +145,8 @@ fn on_exit(state: MatchActor, exit_user_id: String) {
   |> actor.with_selector(selector)
 }
 
-fn on_get(state: MatchActor, requester: Subject(Match)) {
-  process.send(requester, state.match)
+fn on_get(state: MatchActor, reply_subject: Subject(Match)) {
+  process.send(reply_subject, state.match)
   actor.continue(state)
 }
 

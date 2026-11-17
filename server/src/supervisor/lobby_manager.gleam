@@ -1,4 +1,5 @@
 import actors/lobby
+import core/engine/settings.{type Settings as EngineSettings}
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/otp/actor
@@ -40,11 +41,11 @@ pub fn supervised(names: Names) {
 
 fn on_message(state: State, message: ipc.LobbyManager) {
   case message {
-    ipc.LobbyManagerDelete(lobby_id) -> on_delete(state, lobby_id)
-    ipc.LobbyManagerForward(lobby_id, lobby_message) ->
-      on_forward(state, lobby_id, lobby_message)
-    ipc.LobbyManagerNew(sender, owner_user_id) ->
-      on_new(state, sender, owner_user_id)
+    ipc.LobbyManagerDelete(lobby_id:) -> on_delete(state, lobby_id)
+    ipc.LobbyManagerForward(lobby_id:, message:) ->
+      on_forward(state, lobby_id, message)
+    ipc.LobbyManagerNew(reply_subject:, owner_user_id:, engine_settings:) ->
+      on_new(state, reply_subject, owner_user_id, engine_settings)
   }
 }
 
@@ -63,22 +64,27 @@ fn on_forward(state: State, lobby_id: String, lobby_message: ipc.Lobby) {
   actor.continue(state)
 }
 
-fn on_new(state: State, sender: Subject(String), owner_user_id: String) {
+fn on_new(
+  state: State,
+  reply_subject: Subject(String),
+  owner_user_id: String,
+  engine_settings: EngineSettings,
+) {
   let assert Ok(lobby_id) = new_lobby_id(state, 16)
 
   use actor.Started(lobby_actor_pid, lobby_actor_state) <- yuzu.ok(
-    lobby.start(lobby_id, state.names, owner_user_id),
+    lobby.start(lobby_id, state.names, owner_user_id, engine_settings),
     actor.continue(state),
   )
 
-  process.send(sender, lobby_id)
+  process.send(reply_subject, lobby_id)
 
   let lobbies = dict.insert(state.lobbies, lobby_id, lobby_actor_state.subject)
   let selector =
     process.select_specific_monitor(
       state.selector,
       process.monitor(lobby_actor_pid),
-      fn(_) { ipc.LobbyManagerDelete(lobby_id) },
+      fn(_) { ipc.LobbyManagerDelete(lobby_id:) },
     )
 
   State(..state, lobbies:, selector:)

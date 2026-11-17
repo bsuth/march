@@ -39,8 +39,11 @@ fn enter(
   state.names.match_manager
   |> process.named_subject()
   |> process.send(ipc.MatchManagerForward(
-    match_id,
-    ipc.MatchEnter(state.user, state.subject),
+    match_id:,
+    message: ipc.MatchEnter(
+      enter_user: state.user,
+      enter_user_subject: state.subject,
+    ),
   ))
 
   mist.continue(state)
@@ -59,8 +62,8 @@ fn exit(
   state.names.match_manager
   |> process.named_subject()
   |> process.send(ipc.MatchManagerForward(
-    match_id,
-    ipc.MatchExit(state.user.id),
+    match_id:,
+    message: ipc.MatchExit(exit_user_id: state.user.id),
   ))
 
   mist.continue(state)
@@ -79,8 +82,11 @@ fn request_turn(
   state.names.match_manager
   |> process.named_subject()
   |> process.send(ipc.MatchManagerForward(
-    payload.match_id,
-    ipc.MatchRequestTurn(state.user.id, payload.turn_request),
+    match_id: payload.match_id,
+    message: ipc.MatchRequestTurn(
+      request_user_id: state.user.id,
+      turn_request: payload.turn_request,
+    ),
   ))
 
   mist.continue(state)

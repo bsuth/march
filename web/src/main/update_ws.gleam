@@ -6,6 +6,7 @@ import routes/home
 import routes/learn
 import routes/lobby
 import routes/match
+import routes/play
 import routes/playground
 import yuzu
 
@@ -21,6 +22,7 @@ pub fn update_ws(model: Model, message: String) {
     model.Learn(route_model) -> learn.update_ws(route_model, ws_message)
     model.Lobby(route_model) -> lobby.update_ws(route_model, ws_message)
     model.Match(route_model) -> match.update_ws(route_model, ws_message)
+    model.Play(route_model) -> play.update_ws(route_model, ws_message)
     model.Playground(route_model) ->
       playground.update_ws(route_model, ws_message)
     _ -> #(model, effect.none())

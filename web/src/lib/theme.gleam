@@ -39,6 +39,17 @@ pub fn decoder() {
   })
 }
 
+pub fn init() {
+  let theme = case load() {
+    Ok(theme) -> theme
+    Error(_) -> Light
+  }
+
+  apply(theme)
+
+  theme
+}
+
 pub fn load() {
   load_() |> from_string()
 }

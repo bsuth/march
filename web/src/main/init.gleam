@@ -1,4 +1,3 @@
-import core/http_api/http_init
 import core/user.{User}
 import gleam/result
 import gleam/uri
@@ -21,19 +20,12 @@ pub fn init(_) {
       // In particular, needs to be different when running inside docker.
       "ws://localhost:8000/ws",
       fn() { message.WebsocketOpen },
-      fn(msg) { message.WebsocketMessage(msg) },
+      message.WebsocketMessage,
       fn() { message.WebsocketClose },
       fn() { message.WebsocketError },
     )
 
-  let theme = case theme.load() {
-    Ok(theme) -> theme
-    Error(_) -> theme.Light
-  }
-
-  theme.apply(theme)
-
-  let app = App(theme:, user: User("", "", True), ws:)
+  let app = App(theme: theme.init(), user: User("", "", True), ws:)
   let #(model, routes_effect) = routes.init(Model(app), uri)
 
   #(
@@ -42,7 +34,7 @@ pub fn init(_) {
       modem.init(message.RouterChangedUri),
       ws_effect,
       routes_effect,
-      http_init.get_response_decoder()
+      user.decoder()
         |> rsvp.expect_json(message.ApiInitGetResponse)
         |> rsvp.get("/api/init", _),
     ]),

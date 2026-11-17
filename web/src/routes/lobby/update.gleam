@@ -1,10 +1,8 @@
 import core/engine/board.{type Board}
-import core/engine/face.{type Face}
+import core/engine/mode.{type Mode}
 import core/engine/settings.{Settings as EngineSettings}
-import core/engine/trait.{type Trait}
 import core/lobby.{type Lobby, Lobby}
 import core/ws_api/ws_lobby
-import gleam/dict.{type Dict}
 import gleam/json
 import gleam/option.{type Option}
 import lib/websocket
@@ -24,7 +22,7 @@ pub fn update(model: Model, message: Message) {
       user_changed_hand_size(model, hand_size)
     message.UserChangedPlayerUserId(player_index, user_id) ->
       user_changed_player_user_id(model, player_index, user_id)
-    message.UserChangedTraits(traits) -> user_changed_traits(model, traits)
+    message.UserChangedMode(mode) -> user_changed_mode(model, mode)
     message.UserStartedGame -> user_started_game(model)
     message.UserTerminatedLobby -> user_terminated_lobby(model)
   }
@@ -95,6 +93,20 @@ fn user_changed_hand_size(model: Model, hand_size: Int) {
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }
 
+fn user_changed_mode(model: Model, mode: Mode) {
+  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
+
+  ws_lobby.UpdateModePayload(model.lobby_id, mode)
+  |> ws_lobby.update_mode_json()
+  |> json.to_string()
+  |> websocket.send(model.app.ws, _)
+
+  let engine_settings = EngineSettings(..lobby.engine_settings, mode:)
+  let lobby = Lobby(..lobby, engine_settings:)
+
+  #(Model(..model, lobby: option.Some(lobby)), effect.none())
+}
+
 fn user_changed_player_user_id(
   model: Model,
   player_index: Int,
@@ -111,20 +123,6 @@ fn user_changed_player_user_id(
   |> ws_lobby.update_player_user_id_json()
   |> json.to_string()
   |> websocket.send(model.app.ws, _)
-
-  #(Model(..model, lobby: option.Some(lobby)), effect.none())
-}
-
-fn user_changed_traits(model: Model, traits: Dict(Face, List(Trait))) {
-  use lobby <- yuzu.some(model.lobby, #(model, effect.none()))
-
-  ws_lobby.UpdateTraitsPayload(model.lobby_id, traits)
-  |> ws_lobby.update_traits_json()
-  |> json.to_string()
-  |> websocket.send(model.app.ws, _)
-
-  let engine_settings = EngineSettings(..lobby.engine_settings, traits:)
-  let lobby = Lobby(..lobby, engine_settings:)
 
   #(Model(..model, lobby: option.Some(lobby)), effect.none())
 }

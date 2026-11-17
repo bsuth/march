@@ -8,10 +8,6 @@ pub type Board {
   Board(width: Int, height: Int)
 }
 
-pub fn normal(width: Int, height: Int) {
-  Board(width:, height:)
-}
-
 // -----------------------------------------------------------------------------
 // Encoding / Decoding
 // -----------------------------------------------------------------------------

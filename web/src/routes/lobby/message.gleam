@@ -1,8 +1,6 @@
 import core/engine/board.{type Board}
-import core/engine/face.{type Face}
-import core/engine/trait.{type Trait}
+import core/engine/mode.{type Mode}
 import core/lobby.{type Lobby}
-import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 import rsvp
 
@@ -11,8 +9,8 @@ pub type Message {
   UserChangedBoard(Board)
   UserChangedDoubles(Bool)
   UserChangedHandSize(Int)
+  UserChangedMode(Mode)
   UserChangedPlayerUserId(Int, Option(String))
-  UserChangedTraits(Dict(Face, List(Trait)))
   UserStartedGame
   UserTerminatedLobby
 }

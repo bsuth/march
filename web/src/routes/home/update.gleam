@@ -1,7 +1,9 @@
-import core/http_api/http_lobby
+import core/engine/settings
+import gleam/dynamic/decode
 import gleam/option
 import lustre/effect
 import modem
+import routes/home/bindings
 import routes/home/message.{type Message}
 import routes/home/model.{type Model, Model}
 import rsvp
@@ -10,6 +12,13 @@ pub fn update(model: Model, message: Message) {
   case message {
     message.ApiLobbyPostResponse(response) ->
       api_lobby_post_response(model, response)
+
+    message.HeroEngineResolveTimeout -> hero_engine_resolve_timeout(model)
+
+    message.HeroEngineSetTimeout(hero_engine_timeout) -> #(
+      Model(..model, hero_engine_timeout:),
+      effect.none(),
+    )
 
     message.SubmitLobbyPostRequest -> submit_post_lobby_request(model)
   }
@@ -34,16 +43,29 @@ fn api_lobby_post_response(
   }
 }
 
+fn hero_engine_resolve_timeout(model: Model) {
+  // TODO: advance the game
+  echo "timeout"
+
+  #(
+    model,
+    effect.from(fn(dispatch) {
+      fn() { dispatch(message.HeroEngineResolveTimeout) }
+      |> bindings.set_timeout(1000)
+      |> message.HeroEngineSetTimeout()
+      |> dispatch
+    }),
+  )
+}
+
 fn submit_post_lobby_request(model: Model) {
   #(
     Model(..model, post_lobby_request_loading: True),
     rsvp.post(
       "/api/lobby",
-      http_lobby.post_request_json(),
-      rsvp.expect_json(
-        http_lobby.post_response_decoder(),
-        message.ApiLobbyPostResponse,
-      ),
+      // TODO: Allow adjusting settings
+      settings.json(settings.standard()),
+      rsvp.expect_json(decode.string, message.ApiLobbyPostResponse),
     ),
   )
 }

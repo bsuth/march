@@ -1,4 +1,4 @@
-import core/http_api/http_match
+import core/match
 import core/ws_api/ws_match
 import gleam/json
 import gleam/option
@@ -11,7 +11,7 @@ import rsvp
 pub fn init(app: App, match_id: String) {
   #(
     Model(app:, loading_match: True, match: option.None, match_id:),
-    http_match.get_response_decoder()
+    match.decoder()
       |> rsvp.expect_json(message.ApiMatchGetResponse)
       |> rsvp.get("/api/match/" <> match_id, _),
   )

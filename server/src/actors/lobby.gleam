@@ -1,7 +1,8 @@
 import core/engine/board.{type Board}
-import core/engine/face.{type Face}
-import core/engine/settings.{Settings as EngineSettings}
-import core/engine/trait.{type Trait}
+import core/engine/mode.{type Mode}
+import core/engine/settings.{
+  type Settings as EngineSettings, Settings as EngineSettings,
+}
 import core/lobby.{type Lobby, Lobby}
 import core/user.{type User, User}
 import core/ws_api/ws_lobby
@@ -33,14 +34,19 @@ pub type LobbyActorUserMeta {
   LobbyActorUserMeta(subject: Subject(ipc.Websocket), monitor: process.Monitor)
 }
 
-pub fn start(id: String, names: Names, owner_user_id: String) {
+pub fn start(
+  id: String,
+  names: Names,
+  owner_user_id: String,
+  engine_settings: EngineSettings,
+) {
   actor.new_with_initialiser(100, fn(default_subject) {
     let selector = process.new_selector() |> process.select(default_subject)
 
     let lobby =
       Lobby(
         id:,
-        engine_settings: settings.standard(),
+        engine_settings:,
         owner_user_id:,
         player_user_ids: [option.None, option.None],
         users: [],
@@ -71,22 +77,23 @@ pub fn start(id: String, names: Names, owner_user_id: String) {
 
 fn on_message(state: LobbyActor, message: ipc.Lobby) {
   case message {
-    ipc.LobbyEnter(user, subject) -> on_enter(state, user, subject)
-    ipc.LobbyExit(user_id) -> on_exit(state, user_id)
-    ipc.LobbyGet(requester) -> on_get(state, requester)
-    ipc.LobbyStart(id) -> on_start(state, id)
-    ipc.LobbyTerminate(id) -> on_terminate(state, id)
-    ipc.LobbyUpdateBoard(request_user_id, board) ->
+    ipc.LobbyEnter(enter_user:, enter_user_subject:) ->
+      on_enter(state, enter_user, enter_user_subject)
+    ipc.LobbyExit(exit_user_id:) -> on_exit(state, exit_user_id)
+    ipc.LobbyGet(reply_subject:) -> on_get(state, reply_subject)
+    ipc.LobbyKill -> actor.stop()
+    ipc.LobbyUpdateBoard(request_user_id:, board:) ->
       on_update_board(state, request_user_id, board)
-    ipc.LobbyUpdateDoubles(request_user_id, doubles) ->
+    ipc.LobbyUpdateDoubles(request_user_id:, doubles:) ->
       on_update_doubles(state, request_user_id, doubles)
-    ipc.LobbyUpdateHandSize(request_user_id, hand_size) ->
+    ipc.LobbyUpdateHandSize(request_user_id:, hand_size:) ->
       on_update_hand_size(state, request_user_id, hand_size)
-    ipc.LobbyUpdatePlayerUserId(request_user_id, player_index, user_id) ->
+    ipc.LobbyUpdateMode(request_user_id:, mode:) ->
+      on_update_mode(state, request_user_id, mode)
+    ipc.LobbyUpdatePlayerUserId(request_user_id:, player_index:, user_id:) ->
       on_update_player_user_id(state, request_user_id, player_index, user_id)
-    ipc.LobbyUpdateTraits(request_user_id, traits) ->
-      on_update_traits(state, request_user_id, traits)
-    ipc.LobbyShutdown -> actor.stop()
+    ipc.LobbyStart(request_user_id:) -> on_start(state, request_user_id)
+    ipc.LobbyTerminate(request_user_id:) -> on_terminate(state, request_user_id)
   }
 }
 
@@ -169,8 +176,8 @@ fn on_exit(state: LobbyActor, exit_user_id: String) {
   |> actor.with_selector(selector)
 }
 
-fn on_get(state: LobbyActor, requester: Subject(Lobby)) {
-  process.send(requester, state.lobby)
+fn on_get(state: LobbyActor, reply_subject: Subject(Lobby)) {
+  process.send(reply_subject, state.lobby)
   actor.continue(state)
 }
 
@@ -190,9 +197,6 @@ fn on_start(state: LobbyActor, request_user_id: String) {
     actor.continue(state),
   )
 
-  // TODO: REMOVE `call_forever`
-  // instead, we should timeout and return an error
-  // In fact, this entire message should probably be a REST API endpoint
   let match_id =
     state.names.match_manager
     |> process.named_subject()
@@ -285,6 +289,22 @@ fn on_update_hand_size(
   LobbyActor(..state, lobby:) |> actor.continue()
 }
 
+fn on_update_mode(state: LobbyActor, request_user_id: String, mode: Mode) {
+  use <- yuzu.true(
+    request_user_id == state.lobby.owner_user_id,
+    actor.continue(state),
+  )
+
+  ws_lobby.UpdateModePayload(state.lobby.id, mode)
+  |> ws_lobby.update_mode_json()
+  |> broadcast_json(state.meta, _)
+
+  let engine_settings = EngineSettings(..state.lobby.engine_settings, mode:)
+  let lobby = Lobby(..state.lobby, engine_settings:)
+
+  LobbyActor(..state, lobby:) |> actor.continue()
+}
+
 fn on_update_player_user_id(
   state: LobbyActor,
   request_user_id: String,
@@ -304,26 +324,6 @@ fn on_update_player_user_id(
   ws_lobby.UpdatePlayerUserIdPayload(state.lobby.id, player_index, user_id)
   |> ws_lobby.update_player_user_id_json()
   |> broadcast_json(state.meta, _)
-
-  LobbyActor(..state, lobby:) |> actor.continue()
-}
-
-fn on_update_traits(
-  state: LobbyActor,
-  request_user_id: String,
-  traits: Dict(Face, List(Trait)),
-) {
-  use <- yuzu.true(
-    request_user_id == state.lobby.owner_user_id,
-    actor.continue(state),
-  )
-
-  ws_lobby.UpdateTraitsPayload(state.lobby.id, traits)
-  |> ws_lobby.update_traits_json()
-  |> broadcast_json(state.meta, _)
-
-  let engine_settings = EngineSettings(..state.lobby.engine_settings, traits:)
-  let lobby = Lobby(..state.lobby, engine_settings:)
 
   LobbyActor(..state, lobby:) |> actor.continue()
 }
