@@ -1,5 +1,6 @@
-import blocks/card as ui_card
+import blocks/card as blocks_card
 import core/engine/card.{type Card}
+import core/engine/card_art
 import core/engine/player.{type Player}
 import gleam/dynamic/decode
 import gleam/int
@@ -64,7 +65,13 @@ type Model {
 }
 
 fn init(_) {
-  #(Model(player: player.Observed(0, 0, 0, []), vertical: False), effect.none())
+  #(
+    Model(
+      player: player.Observed(0, 0, 0, [], card_art.DefaultBlack),
+      vertical: False,
+    ),
+    effect.none(),
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -96,16 +103,18 @@ fn update(model: Model, msg: Message) {
 
 fn view(model: Model) {
   let children = case model.player {
-    player.Managed(_, _, hand, _) | player.Controlled(_, _, hand, _) ->
+    player.Managed(_, _, hand, ..) | player.Controlled(_, _, hand, ..) ->
       list.map(hand, fn(card) {
-        ui_card.element([
-          ui_card.prop_card(card),
+        blocks_card.element([
+          blocks_card.prop_card_art(model.player.card_art),
+          blocks_card.prop_face(card.face),
+          blocks_card.prop_suit(card.suit),
           attribute.class("cursor-pointer"),
           event.on_click(CardClick(card)),
         ])
       })
 
-    player.Observed(_, _, hand, _) ->
+    player.Observed(_, _, hand, ..) ->
       int.range(0, hand, [], fn(children, _) {
         list.prepend(children, unknown_card_view())
       })

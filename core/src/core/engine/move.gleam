@@ -1,7 +1,7 @@
 import core/engine/board
-import core/engine/card
 import core/engine/mode
 import core/engine/position.{type Position}
+import core/engine/position_card
 import core/engine/settings.{type Settings}
 import core/engine/trait
 import gleam/dict
@@ -33,7 +33,8 @@ pub fn list_valid_source_indices(
     use <- yuzu.true_(source_card.player_index == player_index)
 
     case dest {
-      option.Some(dest_card) -> card.can_capture(source_card, dest_card)
+      option.Some(dest_card) ->
+        position_card.can_capture(source_card, dest_card)
       option.None -> True
     }
   })
@@ -90,7 +91,7 @@ pub fn list_valid_dest_indices(
     case entry.1 {
       trait.Adjacent | trait.Diagonal -> {
         use dest_card <- position.use_some(position, entry.0, True)
-        card.can_capture(source_card, dest_card)
+        position_card.can_capture(source_card, dest_card)
       }
 
       trait.Jump | trait.Mobius -> position.is_none(position, entry.0)

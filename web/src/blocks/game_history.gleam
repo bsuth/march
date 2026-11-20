@@ -132,23 +132,10 @@ fn turn_view(turn: Turn, turn_index: Int, num_players: Int) {
         |> string.join(".")
         |> html.text()
         |> fn(text_node) { html.p([attribute.class("mr-auto")], [text_node]) },
-      turn_capture_view(turn),
       turn_moves_view(turn),
       turn_deploy_view(turn),
       turn_draw_view(turn),
     ],
-  )
-}
-
-fn turn_capture_view(turn: Turn) {
-  use card <- yuzu.some(turn.capture, element.none())
-
-  html.div(
-    [
-      attribute.title("Lead"),
-      attribute.class("flex items-center gap-1"),
-    ],
-    [phosphor.sword_regular([]), turn_card_view(card.face, card.suit)],
   )
 }
 
@@ -185,8 +172,8 @@ fn turn_deploy_view(turn: Turn) {
 fn turn_draw_view(turn: Turn) {
   use <- yuzu.true(
     case turn {
-      turn.Controlled(_, _, _, _, _, option.Some(_)) -> True
-      turn.Observed(_, _, _, _, _, True) -> True
+      turn.Controlled(_, _, _, _, option.Some(_)) -> True
+      turn.Observed(_, _, _, _, True) -> True
       _ -> False
     },
     element.none(),
@@ -200,10 +187,9 @@ fn turn_draw_view(turn: Turn) {
     [
       phosphor.hand_regular([]),
       case turn {
-        turn.Controlled(_, _, _, _, _, option.Some(card)) ->
+        turn.Controlled(_, _, _, _, option.Some(card)) ->
           turn_card_view(card.face, card.suit)
-        turn.Observed(_, _, _, _, _, True) ->
-          1 |> int.to_string() |> html.text()
+        turn.Observed(_, _, _, _, True) -> 1 |> int.to_string() |> html.text()
         _ -> element.none()
       },
     ],

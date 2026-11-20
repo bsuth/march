@@ -1,8 +1,8 @@
 import blocks/board
 import core/engine.{type Engine}
-import core/engine/card
 import core/engine/move
 import core/engine/player
+import core/engine/position_card
 import core/engine/settings
 import core/engine/turn
 import core/util
@@ -215,7 +215,7 @@ fn update_on_cell_click_lead(model: Model, click_index: Int) {
         effect.none(),
       ))
 
-      use <- yuzu.true(card.can_capture(hover_card, click_card), #(
+      use <- yuzu.true(position_card.can_capture(hover_card, click_card), #(
         Model(..model, hover_index: option.None),
         effect.none(),
       ))

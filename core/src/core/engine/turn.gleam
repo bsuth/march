@@ -6,7 +6,6 @@ import gleam/option.{type Option}
 pub type Turn {
   Controlled(
     player_index: Int,
-    capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
     deploy: Option(Card),
@@ -14,7 +13,6 @@ pub type Turn {
   )
   Observed(
     player_index: Int,
-    capture: Option(Card),
     lead: Option(#(Int, Int)),
     marches: List(Int),
     deploy: Option(Card),
@@ -33,7 +31,6 @@ pub type Request {
 pub fn json(turn: Turn) {
   json.object([
     #("player_index", json.int(turn.player_index)),
-    #("capture", json.nullable(turn.capture, card.json)),
     #(
       "lead",
       json.nullable(turn.lead, fn(lead) {
@@ -46,15 +43,14 @@ pub fn json(turn: Turn) {
     #("marches", json.array(turn.marches, json.int)),
     #("deploy", json.nullable(turn.deploy, card.json)),
     #("draw", case turn {
-      Controlled(_, _, _, _, _, draw) -> json.nullable(draw, card.json)
-      Observed(_, _, _, _, _, draw) -> json.bool(draw)
+      Controlled(_, _, _, _, draw) -> json.nullable(draw, card.json)
+      Observed(_, _, _, _, draw) -> json.bool(draw)
     }),
   ])
 }
 
 pub fn decoder() {
   use player_index <- decode.field("player_index", decode.int)
-  use capture <- decode.field("capture", decode.optional(card.decoder()))
 
   use lead <- decode.field(
     "lead",
@@ -70,26 +66,12 @@ pub fn decoder() {
 
   let controlled_decoder = {
     use draw <- decode.field("draw", decode.optional(card.decoder()))
-    decode.success(Controlled(
-      player_index:,
-      capture:,
-      lead:,
-      marches:,
-      deploy:,
-      draw:,
-    ))
+    decode.success(Controlled(player_index:, lead:, marches:, deploy:, draw:))
   }
 
   let observed_decoder = {
     use draw <- decode.field("draw", decode.bool)
-    decode.success(Observed(
-      player_index:,
-      capture:,
-      lead:,
-      marches:,
-      deploy:,
-      draw:,
-    ))
+    decode.success(Observed(player_index:, lead:, marches:, deploy:, draw:))
   }
 
   decode.one_of(controlled_decoder, [observed_decoder])
@@ -133,15 +115,8 @@ pub fn request_decoder() {
 
 pub fn to_observed(turn: Turn) {
   case turn {
-    Controlled(player_index, capture, lead, marches, deploy, draw) ->
-      Observed(
-        player_index,
-        capture,
-        lead,
-        marches,
-        deploy,
-        option.is_some(draw),
-      )
+    Controlled(player_index, lead, marches, deploy, draw) ->
+      Observed(player_index, lead, marches, deploy, option.is_some(draw))
     Observed(..) -> turn
   }
 }

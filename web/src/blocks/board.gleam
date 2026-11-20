@@ -239,19 +239,17 @@ fn cell_content_view(model: Model, cell_index: Int) {
   let height = model.settings.board.height
 
   case dict.get(model.position, cell_index) {
-    Ok(option.Some(card)) ->
+    Ok(option.Some(position_card)) ->
       card.element([
+        card.prop_card_art(position_card.card_art),
+        card.prop_face(position_card.face),
+        card.prop_suit(position_card.suit),
         attribute.class("w-full h-full"),
         case option.Some(cell_index) == model.highlight_index {
           True ->
             attribute.style("box-shadow", "0 0 4px 4px var(--march-primary)")
           False -> attribute.none()
         },
-        card.prop_card(card),
-        card.prop_player_color(player_color.from_player_index(
-          card.player_index,
-          model.settings.doubles,
-        )),
       ])
 
     _ if cell_index == 0 ->
