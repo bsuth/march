@@ -1,53 +1,47 @@
 import blocks/board
 import components/button
 import lustre/attribute
-import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import phosphor
-import routes/learn_classic/message.{type Message}
+import routes/learn_classic/chapter
+import routes/learn_classic/message
 import routes/learn_classic/model.{type Model}
 
 pub fn view(model: Model) {
-  html.div([attribute.class("max-w-4xl mx-auto p-16")], [
-    case model.chapter_index {
-      1 -> setup_view()
-      _ -> introduction_view()
-    },
-
-    html.div([attribute.class("flex items-center gap-2")], [
-      button.element(
-        [
-          button.class("w-32"),
-          event.on_click(message.PreviousChapter),
-        ],
-        [
-          phosphor.arrow_left_regular([]),
-          html.text("Previous"),
-        ],
-      ),
-      button.element(
-        [
-          button.class("w-32"),
-          event.on_click(message.NextChapter),
-        ],
-        [
-          html.text("Next"),
-          phosphor.arrow_right_regular([]),
-        ],
-      ),
-    ]),
-  ])
+  html.div(
+    [
+      attribute.class("max-w-4xl mx-auto p-16"),
+      attribute.class("flex flex-col gap-4"),
+    ],
+    [
+      html.section([attribute.class("flex flex-col gap-4")], [
+        html.div([], [
+          html.h3([], [
+            html.text(chapter.title(model.chapter)),
+          ]),
+          html.h6([attribute.class("text-(--march-600)")], [
+            html.text("Classic Mode"),
+          ]),
+        ]),
+        case model.chapter {
+          chapter.Introduction -> chapter_introduction_view()
+          chapter.Deck -> chapter_deck_view()
+          chapter.Board -> chapter_board_view()
+        },
+      ]),
+      footer_view(model),
+    ],
+  )
 }
 
-fn introduction_view() {
-  section_view("Introduction", [
+fn chapter_introduction_view() {
+  html.div([attribute.class("flex flex-col gap-4")], [
     html.p([], [
       html.text(
         "This is the tutorial for the classic mode for March. Classic Mode is
-        considered to be the \"purest\" way to play and the recommended game mode
-        to start with, as other game modes will build off of the rules
-        introduced here.",
+        the recommended game mode to start with, as other game modes will build
+        off of the rules introduced here.",
       ),
     ]),
     html.p([], [
@@ -61,21 +55,8 @@ fn introduction_view() {
   ])
 }
 
-fn setup_view() {
-  html.section([], [
-    html.h2([], [html.text("Setup")]),
-    html.text(
-      "March is played with two players sitting on opposing sides of a 4x4 grid.
-      Each player's respective bottom right corner constitutes their \"base\",
-      which serves a central role during gameplay.",
-    ),
-    html.div([attribute.class("flex flex-col gap-4 items-center")], [
-      phosphor.person_regular([attribute.class("size-12")]),
-      board.element([
-        attribute.class("w-64 h-64"),
-      ]),
-      phosphor.person_fill([attribute.class("size-12")]),
-    ]),
+fn chapter_deck_view() {
+  html.div([attribute.class("flex flex-col gap-4")], [
     html.text(
       "Each player uses their own deck consisting of the Jacks, Queens, Kings,
       and Aces from a standard deck of playing cards:",
@@ -104,14 +85,51 @@ fn setup_view() {
   ])
 }
 
-fn section_view(title: String, children: List(Element(Message))) {
-  html.section([attribute.class("flex flex-col gap-4")], [
-    html.div([], [
-      html.h3([], [html.text(title)]),
-      html.h6([attribute.class("text-(--march-600)")], [
-        html.text("Classic Mode"),
-      ]),
+fn chapter_board_view() {
+  html.div([attribute.class("flex flex-col gap-4")], [
+    html.text(
+      "March is played with two players sitting on opposing sides of a 4x4 grid.
+      Each player's respective bottom right corner constitutes their \"base\",
+      which serves a central role during gameplay.",
+    ),
+    board.element([
+      attribute.class("w-64 h-64"),
     ]),
-    ..children
+  ])
+}
+
+fn footer_view(model: Model) {
+  html.div([attribute.class("flex justify-between items-center gap-2")], [
+    html.a(
+      case chapter.previous(model.chapter) {
+        Ok(previous_chapter) -> [attribute.href(chapter.url(previous_chapter))]
+        _ -> [attribute.class("invisible")]
+      },
+      [
+        button.element([button.class("w-32")], [
+          phosphor.arrow_left_regular([]),
+          html.text("Previous"),
+        ]),
+      ],
+    ),
+    button.element(
+      [
+        attribute.title("Table of Contents"),
+        event.on_click(message.ToggleTableOfContents),
+      ],
+      [phosphor.list_bullets_regular([attribute.class("min-h-lh")])],
+    ),
+    html.a(
+      case chapter.next(model.chapter) {
+        Ok(next_chapter) -> [attribute.href(chapter.url(next_chapter))]
+        _ -> [attribute.class("invisible")]
+      },
+      [
+        button.element([button.class("w-32")], [
+          html.text("Next"),
+          phosphor.arrow_right_regular([]),
+        ]),
+      ],
+    ),
   ])
 }

@@ -11,8 +11,8 @@ import routes/learn_classic/update
 import routes/learn_classic/update_ws
 import routes/learn_classic/view
 
-pub fn init(app: App) {
-  let #(route_model, route_effect) = init.init(app)
+pub fn init(app: App, chapter: String) {
+  let #(route_model, route_effect) = init.init(app, chapter)
   #(
     main_model.LearnClassic(route_model),
     effect.map(route_effect, main_message.LearnClassic),
