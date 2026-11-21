@@ -19,15 +19,15 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_player(player: Player) {
+pub fn player(player: Player) {
   attribute.property("player", player.json(player))
 }
 
-pub fn prop_vertical(vertical: Bool) {
+pub fn vertical(vertical: Bool) {
   attribute.property("vertical", json.bool(vertical))
 }
 
@@ -116,9 +116,9 @@ fn view(model: Model) {
     player.Managed(_, _, hand, ..) | player.Controlled(_, _, hand, ..) ->
       list.map(hand, fn(card) {
         blocks_card.element([
-          blocks_card.prop_card_art(model.player.card_art),
-          blocks_card.prop_face(card.face),
-          blocks_card.prop_suit(card.suit),
+          blocks_card.card_art(model.player.card_art),
+          blocks_card.face(card.face),
+          blocks_card.suit(card.suit),
           attribute.class("cursor-pointer"),
           event.on_click(CardClick(card)),
         ])

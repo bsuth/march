@@ -12,11 +12,11 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_value(value: Bool) {
+pub fn value(value: Bool) {
   attribute.property("value", json.bool(value))
 }
 

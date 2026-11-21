@@ -15,19 +15,19 @@ import lustre/element/html
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_card_art(card_art: CardArt) {
+pub fn card_art(card_art: CardArt) {
   attribute.property("card_art", card_art.json(card_art))
 }
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_face(face: Face) {
+pub fn face(face: Face) {
   attribute.property("face", face.json(face))
 }
 
-pub fn prop_suit(suit: Suit) {
+pub fn suit(suit: Suit) {
   attribute.property("suit", suit.json(suit))
 }
 

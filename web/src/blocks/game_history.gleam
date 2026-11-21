@@ -22,15 +22,15 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_settings(settings: Settings) {
+pub fn settings(settings: Settings) {
   attribute.property("settings", settings.json(settings))
 }
 
-pub fn prop_turns(turns: List(Turn)) {
+pub fn turns(turns: List(Turn)) {
   attribute.property("turns", json.array(turns, turn.json))
 }
 

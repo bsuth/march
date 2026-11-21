@@ -13,15 +13,15 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_disabled(disabled: Bool) {
+pub fn disabled(disabled: Bool) {
   attribute.property("disabled", json.bool(disabled))
 }
 
-pub fn prop_options(options: List(#(String, String))) {
+pub fn options(options: List(#(String, String))) {
   attribute.property(
     "options",
     json.array(options, fn(option) {
@@ -33,7 +33,7 @@ pub fn prop_options(options: List(#(String, String))) {
   )
 }
 
-pub fn prop_value(value: String) {
+pub fn value(value: String) {
   attribute.property("value", json.string(value))
 }
 

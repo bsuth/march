@@ -1,3 +1,4 @@
+import components/button
 import gleam/list
 import gleam/result
 import lustre/attribute
@@ -27,6 +28,11 @@ pub fn view(model: Model) {
       attribute.class("overflow-auto"),
     ],
     [
+      html.a([attribute.href("/learn/classic")], [
+        button.element([], [
+          html.text("Classic"),
+        ]),
+      ]),
       case model.show_table_of_contents, chapter {
         True, _ -> table_of_contents.view(model, [attribute.class("grow")])
 

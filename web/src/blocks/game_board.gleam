@@ -25,23 +25,23 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_engine(engine: Engine) {
+pub fn engine(engine: Engine) {
   attribute.property("engine", engine.json(engine))
 }
 
-pub fn prop_flipped(flipped: Bool) {
+pub fn flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
 }
 
-pub fn prop_theme(theme: Theme) {
+pub fn theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 
-pub fn prop_turn_request(turn_request: turn.Request) {
+pub fn turn_request(turn_request: turn.Request) {
   attribute.property("turn_request", turn.request_json(turn_request))
 }
 
@@ -326,12 +326,12 @@ fn update_on_cell_click_march(
 
 fn view(model: Model) {
   board.element([
-    board.prop_class(model.class),
-    board.prop_flipped(model.flipped),
-    board.prop_highlight_index(model.hover_index),
-    board.prop_position(model.engine.position),
-    board.prop_settings(model.engine.kernel.settings),
-    board.prop_theme(model.theme),
+    board.class(model.class),
+    board.flipped(model.flipped),
+    board.highlight_index(model.hover_index),
+    board.position(model.engine.position),
+    board.settings(model.engine.kernel.settings),
+    board.theme(model.theme),
     board.on_board_focusout(OnFocusOut),
     board.on_cell_click(OnCellClick),
   ])

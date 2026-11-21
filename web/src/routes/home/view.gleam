@@ -37,9 +37,9 @@ fn hero_view(model: Model) {
       // TODO: remove cursor-pointer
       html.div([attribute.class("w-48 h-48")], [
         board.element([
-          board.prop_position(model.hero_engine.position),
-          board.prop_settings(model.hero_engine.kernel.settings),
-          board.prop_theme(model.app.theme),
+          board.position(model.hero_engine.position),
+          board.settings(model.hero_engine.kernel.settings),
+          board.theme(model.app.theme),
         ]),
       ]),
     ],

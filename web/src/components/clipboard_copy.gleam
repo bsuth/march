@@ -15,15 +15,15 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_disabled(disabled: Bool) {
+pub fn disabled(disabled: Bool) {
   attribute.property("disabled", json.bool(disabled))
 }
 
-pub fn prop_value(value: String) {
+pub fn value(value: String) {
   attribute.property("value", json.string(value))
 }
 
@@ -112,7 +112,7 @@ fn view(model: Model) {
       attribute.class(model.class),
       attribute.class("relative"),
       event.on_mouse_enter(SetCopied(False)),
-      icon_button.prop_disabled(model.disabled),
+      icon_button.disabled(model.disabled),
       case model.disabled {
         True -> attribute.none()
         False -> event.on_click(CopyValueToClipboard)

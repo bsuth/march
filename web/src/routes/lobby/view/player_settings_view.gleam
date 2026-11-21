@@ -34,8 +34,8 @@ pub fn player_settings_view(model: Model, lobby: Lobby) {
     ]),
     board_ui.element([
       attribute.class("w-full h-full"),
-      board_ui.prop_settings(lobby.engine_settings),
-      board_ui.prop_theme(model.app.theme),
+      board_ui.settings(lobby.engine_settings),
+      board_ui.theme(model.app.theme),
     ]),
     html.div([attribute.class("flex flex-row-reverse justify-between gap-4")], [
       closure_player_color_view(player_color.Black),
@@ -58,7 +58,7 @@ fn player_color_view(
 
   let assert Ok(player_user_id) = lobby.get_player_user_id(lobby, player_index)
 
-  field.element([field.prop_label(player_color.label(player_color))], [
+  field.element([field.label(player_color.label(player_color))], [
     case model.app.user.id == lobby.owner_user_id {
       False ->
         html.text(case player_user_id {
@@ -70,8 +70,8 @@ fn player_color_view(
       True ->
         single_select.element([
           attribute.class("w-48"),
-          single_select.prop_value(option.unwrap(player_user_id, "")),
-          single_select.prop_options(player_options),
+          single_select.value(option.unwrap(player_user_id, "")),
+          single_select.options(player_options),
           single_select.on_change(fn(new_value) {
             message.UserChangedPlayerUserId(player_index, case new_value {
               "" -> option.None

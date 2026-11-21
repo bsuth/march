@@ -45,12 +45,12 @@ fn match_view(model: Model, match: Match) {
 
   game_ui.element([
     attribute.class("size-full"),
-    game_ui.prop_engine_kernel(match.engine_kernel),
-    game_ui.prop_flipped(case match.engine_kernel.settings.doubles {
+    game_ui.engine_kernel(match.engine_kernel),
+    game_ui.flipped(case match.engine_kernel.settings.doubles {
       True -> result.unwrap(user_player_index, 0) > 1
       False -> user_player_index == Ok(1)
     }),
-    game_ui.prop_theme(model.app.theme),
+    game_ui.theme(model.app.theme),
     game_ui.on_turn_end(message.UserEndedTurn),
   ])
 }

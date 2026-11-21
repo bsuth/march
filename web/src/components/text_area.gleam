@@ -12,15 +12,15 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_type(type_: String) {
+pub fn type_(type_: String) {
   attribute.property("type_", json.string(type_))
 }
 
-pub fn prop_value(value: String) {
+pub fn value(value: String) {
   attribute.property("value", json.string(value))
 }
 

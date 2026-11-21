@@ -13,15 +13,15 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_player_color(player_color: PlayerColor) {
+pub fn player_color(player_color: PlayerColor) {
   attribute.property("player_color", player_color.json(player_color))
 }
 
-pub fn prop_theme(theme: Theme) {
+pub fn theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 

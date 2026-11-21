@@ -4,6 +4,7 @@ import lustre/effect
 import main/model.{type Model}
 import routes/home
 import routes/learn
+import routes/learn_classic
 import routes/lobby
 import routes/match
 import routes/play
@@ -20,6 +21,8 @@ pub fn update_ws(model: Model, message: String) {
   case model {
     model.Home(route_model) -> home.update_ws(route_model, ws_message)
     model.Learn(route_model) -> learn.update_ws(route_model, ws_message)
+    model.LearnClassic(route_model) ->
+      learn_classic.update_ws(route_model, ws_message)
     model.Lobby(route_model) -> lobby.update_ws(route_model, ws_message)
     model.Match(route_model) -> match.update_ws(route_model, ws_message)
     model.Play(route_model) -> play.update_ws(route_model, ws_message)

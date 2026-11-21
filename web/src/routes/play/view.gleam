@@ -20,7 +20,7 @@ pub fn view(_model: Model) {
         game_view("Doubles", []),
         game_view("Custom", [
           // event.on_click(message.SubmitLobbyPostRequest),
-        // button.prop_loading(model.post_lobby_request_loading),
+        // button.loading(model.post_lobby_request_loading),
         ]),
       ]),
     ]),

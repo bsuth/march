@@ -11,11 +11,11 @@ import lustre/element/html
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_href(value: String) {
+pub fn href(value: String) {
   attribute.property("href", json.string(value))
 }
 

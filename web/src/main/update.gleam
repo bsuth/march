@@ -9,6 +9,7 @@ import main/update_ws.{update_ws}
 import routes
 import routes/home
 import routes/learn
+import routes/learn_classic
 import routes/lobby
 import routes/match
 import routes/play
@@ -22,6 +23,9 @@ pub fn update(model: Model, message: Message) {
 
     model.Learn(route_model), message.Learn(route_message) ->
       learn.update(route_model, route_message)
+
+    model.LearnClassic(route_model), message.LearnClassic(route_message) ->
+      learn_classic.update(route_model, route_message)
 
     model.Lobby(route_model), message.Lobby(route_message) ->
       lobby.update(route_model, route_message)
@@ -57,6 +61,8 @@ fn update_app(model: Model, app: App) {
     model.About(_) -> model.About(app)
     model.Home(route) -> model.Home(home.update_app(route, app))
     model.Learn(route) -> model.Learn(learn.update_app(route, app))
+    model.LearnClassic(route) ->
+      model.LearnClassic(learn_classic.update_app(route, app))
     model.Lobby(route) -> model.Lobby(lobby.update_app(route, app))
     model.Match(route) -> model.Match(match.update_app(route, app))
     model.Play(route) -> model.Play(play.update_app(route, app))

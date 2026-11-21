@@ -4,6 +4,7 @@ import main/model.{type Model}
 import routes/about
 import routes/home
 import routes/learn
+import routes/learn_classic
 import routes/lobby
 import routes/match
 import routes/not_found
@@ -16,6 +17,7 @@ pub fn init(model: Model, uri: Uri) {
   case model {
     model.Home(route) -> home.deinit(route)
     model.Learn(route) -> learn.deinit(route)
+    model.LearnClassic(route) -> learn_classic.deinit(route)
     model.Lobby(route) -> lobby.deinit(route)
     model.Match(route) -> match.deinit(route)
     model.Play(route) -> play.deinit(route)
@@ -27,6 +29,7 @@ pub fn init(model: Model, uri: Uri) {
     [] -> home.init(app)
     ["about"] -> #(model.About(app), effect.none())
     ["learn"] -> learn.init(app)
+    ["learn", "classic"] -> learn_classic.init(app)
     ["lobby", id] -> lobby.init(app, id)
     ["match", id] -> match.init(app, id)
     ["play"] -> play.init(app)
@@ -40,6 +43,7 @@ pub fn view(model: Model) {
     model.About(_) -> about.view()
     model.Home(route) -> home.view(route)
     model.Learn(route) -> learn.view(route)
+    model.LearnClassic(route) -> learn_classic.view(route)
     model.Lobby(route) -> lobby.view(route)
     model.Match(route) -> match.view(route)
     model.Play(route) -> play.view(route)

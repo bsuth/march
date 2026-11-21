@@ -13,16 +13,16 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_disabled(value: Bool) {
-  attribute.property("disabled", json.bool(value))
+pub fn disabled(disabled: Bool) {
+  attribute.property("disabled", json.bool(disabled))
 }
 
-pub fn prop_loading(value: Bool) {
-  attribute.property("loading", json.bool(value))
+pub fn loading(loading: Bool) {
+  attribute.property("loading", json.bool(loading))
 }
 
 pub fn on_click(message: message) -> Attribute(message) {

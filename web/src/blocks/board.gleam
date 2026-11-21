@@ -22,30 +22,30 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_flipped(flipped: Bool) {
+pub fn flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
 }
 
-pub fn prop_highlight_index(highlight_index: Option(Int)) {
+pub fn highlight_index(highlight_index: Option(Int)) {
   attribute.property(
     "highlight_index",
     json.nullable(highlight_index, json.int),
   )
 }
 
-pub fn prop_position(position: Position) {
+pub fn position(position: Position) {
   attribute.property("position", position.json(position))
 }
 
-pub fn prop_settings(settings: Settings) {
+pub fn settings(settings: Settings) {
   attribute.property("settings", settings.json(settings))
 }
 
-pub fn prop_theme(theme: Theme) {
+pub fn theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 
@@ -253,9 +253,9 @@ fn cell_content_view(model: Model, cell_index: Int) {
   case dict.get(model.position, cell_index) {
     Ok(option.Some(position_card)) ->
       card.element([
-        card.prop_card_art(position_card.card_art),
-        card.prop_face(position_card.face),
-        card.prop_suit(position_card.suit),
+        card.card_art(position_card.card_art),
+        card.face(position_card.face),
+        card.suit(position_card.suit),
         attribute.class("w-full h-full"),
         case option.Some(cell_index) == model.highlight_index {
           True ->
@@ -266,29 +266,29 @@ fn cell_content_view(model: Model, cell_index: Int) {
 
     _ if cell_index == 0 ->
       base_icon.element([
-        base_icon.prop_player_color(player_color.Black),
-        base_icon.prop_theme(model.theme),
+        base_icon.player_color(player_color.Black),
+        base_icon.theme(model.theme),
         attribute.class("size-1/2"),
       ])
 
     _ if cell_index == width * height - 1 ->
       base_icon.element([
-        base_icon.prop_player_color(player_color.White),
-        base_icon.prop_theme(model.theme),
+        base_icon.player_color(player_color.White),
+        base_icon.theme(model.theme),
         attribute.class("size-1/2"),
       ])
 
     _ if cell_index == width - 1 && model.settings.doubles ->
       base_icon.element([
-        base_icon.prop_player_color(player_color.LightRed),
-        base_icon.prop_theme(model.theme),
+        base_icon.player_color(player_color.LightRed),
+        base_icon.theme(model.theme),
         attribute.class("size-1/2"),
       ])
 
     _ if cell_index == width * { height - 1 } && model.settings.doubles ->
       base_icon.element([
-        base_icon.prop_player_color(player_color.DarkRed),
-        base_icon.prop_theme(model.theme),
+        base_icon.player_color(player_color.DarkRed),
+        base_icon.theme(model.theme),
         attribute.class("size-1/2"),
       ])
 

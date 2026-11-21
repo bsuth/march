@@ -33,19 +33,19 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_class(class: String) {
+pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn prop_engine_kernel(engine_kernel: engine.Kernel) {
+pub fn engine_kernel(engine_kernel: engine.Kernel) {
   attribute.property("engine_kernel", engine.kernel_json(engine_kernel))
 }
 
-pub fn prop_flipped(flipped: Bool) {
+pub fn flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
 }
 
-pub fn prop_theme(theme: Theme) {
+pub fn theme(theme: Theme) {
   attribute.property("theme", theme.json(theme))
 }
 
@@ -282,10 +282,10 @@ fn view(model: Model) {
               // mutating preview board
               game_board.element([
                 attribute.class("w-full h-full"),
-                game_board.prop_engine(engine),
-                game_board.prop_flipped(model.flipped),
-                game_board.prop_theme(model.theme),
-                game_board.prop_turn_request(model.turn_request),
+                game_board.engine(engine),
+                game_board.flipped(model.flipped),
+                game_board.theme(model.theme),
+                game_board.turn_request(model.turn_request),
                 game_board.on_update_turn_request(OnUpdateTurnRequest),
               ]),
               case engine.kernel.settings.doubles {
@@ -305,8 +305,8 @@ fn view(model: Model) {
         ],
         [
           game_history.element([
-            game_history.prop_settings(model.engine.kernel.settings),
-            game_history.prop_turns(model.engine.kernel.turns),
+            game_history.settings(model.engine.kernel.settings),
+            game_history.turns(model.engine.kernel.turns),
             game_history.on_turn_click(PreviewTurn),
             attribute.class("w-full min-h-0 overflow-auto"),
           ]),
@@ -323,7 +323,7 @@ fn view(model: Model) {
               case model.preview_engine {
                 option.Some(_) -> [
                   button.element(
-                    [button.prop_disabled(False), event.on_click(ClearPreview)],
+                    [button.disabled(False), event.on_click(ClearPreview)],
                     [html.text("Back to Live")],
                   ),
                 ]
@@ -355,8 +355,8 @@ fn player_hand_view(model: Model, player_index: Int) {
   let assert Ok(player) = util.get_list_index(engine.players, player_index)
 
   player_hand.element([
-    player_hand.prop_player(player),
-    player_hand.prop_vertical(
+    player_hand.player(player),
+    player_hand.vertical(
       engine.kernel.settings.doubles && player_index % 2 == 1,
     ),
     case player.index == engine.active_player_index {
@@ -401,7 +401,7 @@ fn end_turn_button_view(model: Model) {
       engine
         |> engine.validate_turn_request(model.turn_request)
         |> bool.negate()
-        |> button.prop_disabled(),
+        |> button.disabled(),
       event.on_click(EndTurn),
     ],
     [html.text("End Turn")],

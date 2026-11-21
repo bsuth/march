@@ -60,8 +60,8 @@ fn user_view(model: Model, lobby: Lobby, user: User) {
     case player_color {
       Ok(player_color) ->
         base_icon.element([
-          base_icon.prop_player_color(player_color),
-          base_icon.prop_theme(model.app.theme),
+          base_icon.player_color(player_color),
+          base_icon.theme(model.app.theme),
           attribute.class("size-5"),
           attribute.title("Assigned to " <> player_color.label(player_color)),
         ])
