@@ -11,6 +11,10 @@ import lustre/element/html
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_href(value: String) {
   attribute.property("href", json.string(value))
 }
@@ -30,6 +34,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("href", {
       decode.string |> decode.map(PropsChangedHref)
     }),
@@ -42,11 +49,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(href: String)
+  Model(class: String, href: String)
 }
 
 fn init(_) {
-  #(Model(href: "/"), effect.none())
+  #(Model(class: "", href: "/"), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -54,12 +61,14 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedHref(String)
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedHref(href) -> #(Model(href:), effect.none())
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+    PropsChangedHref(href) -> #(Model(..model, href:), effect.none())
   }
 }
 
@@ -70,6 +79,7 @@ fn update(_model: Model, message: Message) {
 fn view(model: Model) {
   html.a(
     [
+      attribute.class(model.class),
       attribute.class("text-(--march-primary)"),
       attribute.href(model.href),
     ],

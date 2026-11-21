@@ -2,6 +2,7 @@ import core/engine/card_art.{type CardArt}
 import core/engine/face.{type Face}
 import core/engine/suit.{type Suit}
 import gleam/dynamic/decode
+import gleam/json
 import gleam/string
 import lustre
 import lustre/attribute.{type Attribute}
@@ -16,6 +17,10 @@ import lustre/element/html
 
 pub fn prop_card_art(card_art: CardArt) {
   attribute.property("card_art", card_art.json(card_art))
+}
+
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
 }
 
 pub fn prop_face(face: Face) {
@@ -41,6 +46,9 @@ pub fn register() {
     component.on_property_change("card_art", {
       card_art.decoder() |> decode.map(PropsChangedCardArt)
     }),
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("face", {
       face.decoder() |> decode.map(PropsChangedFace)
     }),
@@ -56,12 +64,17 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(card_art: CardArt, face: Face, suit: Suit)
+  Model(card_art: CardArt, class: String, face: Face, suit: Suit)
 }
 
 fn init(_) {
   #(
-    Model(card_art: card_art.DefaultBlack, face: face.Ace, suit: suit.Spades),
+    Model(
+      card_art: card_art.DefaultBlack,
+      class: "",
+      face: face.Ace,
+      suit: suit.Spades,
+    ),
     effect.none(),
   )
 }
@@ -72,6 +85,7 @@ fn init(_) {
 
 type Message {
   PropsChangedCardArt(CardArt)
+  PropsChangedClass(String)
   PropsChangedFace(Face)
   PropsChangedSuit(Suit)
 }
@@ -79,6 +93,7 @@ type Message {
 fn update(model: Model, msg: Message) {
   case msg {
     PropsChangedCardArt(card_art) -> #(Model(..model, card_art:), effect.none())
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedFace(face) -> #(Model(..model, face:), effect.none())
     PropsChangedSuit(suit) -> #(Model(..model, suit:), effect.none())
   }
@@ -101,6 +116,7 @@ fn view(model: Model) {
     ])
 
   html.img([
+    attribute.class(model.class),
     attribute.class("w-full h-full object-contain"),
     attribute.src(src),
     attribute.alt(face.to_string(model.face) <> suit.to_string(model.suit)),

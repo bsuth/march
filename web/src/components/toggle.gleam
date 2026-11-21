@@ -12,6 +12,10 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_value(value: Bool) {
   attribute.property("value", json.bool(value))
 }
@@ -35,6 +39,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("value", {
       decode.bool |> decode.map(PropsChangedValue)
     }),
@@ -47,11 +54,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: Bool)
+  Model(class: String, value: Bool)
 }
 
 fn init(_) {
-  #(Model(value: False), effect.none())
+  #(Model(class: "", value: False), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -59,16 +66,21 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedValue(Bool)
 
   OnUpdate(Bool)
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedValue(value) -> #(Model(value:), effect.none())
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+    PropsChangedValue(value) -> #(Model(..model, value:), effect.none())
 
-    OnUpdate(value) -> #(Model(value:), event.emit("update", json.bool(value)))
+    OnUpdate(value) -> #(
+      Model(..model, value:),
+      event.emit("update", json.bool(value)),
+    )
   }
 }
 
@@ -79,6 +91,7 @@ fn update(_model: Model, message: Message) {
 fn view(model: Model) {
   html.div(
     [
+      attribute.class(model.class),
       attribute.class("w-12 h-6"),
       attribute.class("flex items-center"),
       attribute.class("rounded-full"),

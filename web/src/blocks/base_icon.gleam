@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/json
 import lib/player_color.{type PlayerColor}
 import lib/theme.{type Theme}
 import lustre
@@ -11,6 +12,10 @@ import phosphor
 // -----------------------------------------------------------------------------
 // Props / Events
 // -----------------------------------------------------------------------------
+
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
 
 pub fn prop_player_color(player_color: PlayerColor) {
   attribute.property("player_color", player_color.json(player_color))
@@ -32,6 +37,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("player_color", {
       player_color.decoder() |> decode.map(PropsChangedPlayerColor)
     }),
@@ -47,11 +55,14 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(player_color: PlayerColor, theme: Theme)
+  Model(class: String, player_color: PlayerColor, theme: Theme)
 }
 
 fn init(_) {
-  #(Model(player_color: player_color.Black, theme: theme.Light), effect.none())
+  #(
+    Model(class: "", player_color: player_color.Black, theme: theme.Light),
+    effect.none(),
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -59,12 +70,14 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 pub type Message {
+  PropsChangedClass(String)
   PropsChangedPlayerColor(PlayerColor)
   PropsChangedTheme(Theme)
 }
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedPlayerColor(player_color) -> #(
       Model(..model, player_color:),
       effect.none(),
@@ -99,5 +112,9 @@ fn view(model: Model) {
     player_color.DarkRed, _ -> #(phosphor.castle_turret_fill, "text-red-900")
   }
 
-  icon([attribute.class("w-full h-full"), attribute.class(class)])
+  icon([
+    attribute.class("w-full h-full"),
+    attribute.class(model.class),
+    attribute.class(class),
+  ])
 }

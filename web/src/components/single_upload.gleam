@@ -12,6 +12,10 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_value(value: String) {
   attribute.property("value", json.string(value))
 }
@@ -35,6 +39,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("value", {
       decode.string |> decode.map(PropsChangedValue)
     }),
@@ -47,11 +54,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: String)
+  Model(class: String, value: String)
 }
 
 fn init(_) {
-  #(Model(value: ""), effect.none())
+  #(Model(class: "", value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -59,15 +66,15 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedValue(String)
   OnUpdate(String)
 }
 
 fn update(model: Model, message: Message) {
   case message {
-    PropsChangedValue(new_value) -> {
-      #(Model(value: new_value), effect.none())
-    }
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+    PropsChangedValue(value) -> #(Model(..model, value:), effect.none())
 
     OnUpdate(new_value) -> #(model, event.emit("input", json.string(new_value)))
   }
@@ -77,6 +84,8 @@ fn update(model: Model, message: Message) {
 // View
 // -----------------------------------------------------------------------------
 
-fn view(_model: Model) {
-  html.div([], [html.text("TODO")])
+fn view(model: Model) {
+  html.div([attribute.class(model.class)], [
+    html.text("TODO"),
+  ])
 }

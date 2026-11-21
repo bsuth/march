@@ -22,6 +22,10 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_settings(settings: Settings) {
   attribute.property("settings", settings.json(settings))
 }
@@ -49,6 +53,9 @@ pub fn element(attrs: List(Attribute(msg))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("settings", {
       settings.decoder() |> decode.map(PropsChangedSettings)
     }),
@@ -64,11 +71,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(settings: Settings, turns: List(Turn))
+  Model(class: String, settings: Settings, turns: List(Turn))
 }
 
 fn init(_) {
-  #(Model(settings: settings.standard(), turns: []), effect.none())
+  #(Model(class: "", settings: settings.standard(), turns: []), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -76,6 +83,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedSettings(Settings)
   PropsChangedTurns(List(Turn))
   OnTurnClick(Int)
@@ -83,6 +91,7 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedSettings(settings) -> #(
       Model(..model, settings:),
       effect.none(),
@@ -107,7 +116,7 @@ fn view(model: Model) {
   }
 
   html.ul(
-    [],
+    [attribute.class(model.class)],
     model.turns
       |> list.reverse()
       |> list.index_map(fn(turn, turn_index) {

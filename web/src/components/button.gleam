@@ -13,6 +13,10 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_disabled(value: Bool) {
   attribute.property("disabled", json.bool(value))
 }
@@ -40,6 +44,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("disabled", {
       decode.bool |> decode.map(PropsChangedDisabled)
     }),
@@ -55,11 +62,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(disabled: Bool, loading: Bool)
+  Model(class: String, disabled: Bool, loading: Bool)
 }
 
 fn init(_) {
-  #(Model(disabled: False, loading: False), effect.none())
+  #(Model(class: "", disabled: False, loading: False), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -67,12 +74,15 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedDisabled(Bool)
   PropsChangedLoading(Bool)
 }
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+
     PropsChangedDisabled(disabled) -> #(
       Model(..model, disabled:),
       effect.none(),
@@ -89,8 +99,9 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   html.button(
     [
+      attribute.class(model.class),
       attribute.class("px-4 py-2"),
-      attribute.class("flex gap-2 items-center"),
+      attribute.class("flex justify-center items-center gap-2"),
       attribute.class("bg-(--march-800)"),
       attribute.class("text-(--march-50)"),
       attribute.class("font-bold"),

@@ -25,6 +25,10 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_engine(engine: Engine) {
   attribute.property("engine", engine.json(engine))
 }
@@ -60,6 +64,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("engine", {
       engine.decoder() |> decode.map(PropsChangedEngine)
     }),
@@ -82,6 +89,7 @@ pub fn register() {
 
 type Model {
   Model(
+    class: String,
     engine: Engine,
     flipped: Bool,
     hover_index: Option(Int),
@@ -97,6 +105,7 @@ fn init(_) {
 
   #(
     Model(
+      class: "",
       engine:,
       flipped: False,
       hover_index: option.None,
@@ -112,6 +121,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 pub type Message {
+  PropsChangedClass(String)
   PropsChangedEngine(Engine)
   PropsChangedFlipped(Bool)
   PropsChangedTheme(Theme)
@@ -123,6 +133,7 @@ pub type Message {
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedEngine(engine) -> #(Model(..model, engine:), effect.none())
     PropsChangedFlipped(flipped) -> #(Model(..model, flipped:), effect.none())
     PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
@@ -315,6 +326,7 @@ fn update_on_cell_click_march(
 
 fn view(model: Model) {
   board.element([
+    board.prop_class(model.class),
     board.prop_flipped(model.flipped),
     board.prop_highlight_index(model.hover_index),
     board.prop_position(model.engine.position),

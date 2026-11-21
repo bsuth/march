@@ -19,6 +19,10 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_player(player: Player) {
   attribute.property("player", player.json(player))
 }
@@ -46,6 +50,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("player", {
       player.decoder() |> decode.map(PropsChangedPlayer)
     }),
@@ -61,12 +68,13 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(player: Player, vertical: Bool)
+  Model(class: String, player: Player, vertical: Bool)
 }
 
 fn init(_) {
   #(
     Model(
+      class: "",
       player: player.Observed(0, 0, 0, [], card_art.DefaultBlack),
       vertical: False,
     ),
@@ -79,6 +87,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedPlayer(Player)
   PropsChangedVertical(Bool)
 
@@ -87,6 +96,7 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedPlayer(player) -> #(Model(..model, player:), effect.none())
     PropsChangedVertical(vertical) -> #(
       Model(..model, vertical:),
@@ -122,6 +132,7 @@ fn view(model: Model) {
 
   html.div(
     [
+      attribute.class(model.class),
       attribute.class("flex gap-4"),
       case model.vertical {
         True -> attribute.class("flex-col")

@@ -22,6 +22,10 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
 }
@@ -68,6 +72,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("flipped", {
       decode.bool |> decode.map(PropsChangedFlipped)
     }),
@@ -93,6 +100,7 @@ pub fn register() {
 
 type Model {
   Model(
+    class: String,
     flipped: Bool,
     highlight_index: Option(Int),
     position: Position,
@@ -106,6 +114,7 @@ fn init(_) {
 
   #(
     Model(
+      class: "",
       flipped: False,
       highlight_index: option.None,
       position: position.new(settings.board),
@@ -121,6 +130,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 pub type Message {
+  PropsChangedClass(String)
   PropsChangedFlipped(Bool)
   PropsChangedHighlightIndex(Option(Int))
   PropsChangedPosition(Position)
@@ -133,6 +143,7 @@ pub type Message {
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedFlipped(flipped) -> #(Model(..model, flipped:), effect.none())
     PropsChangedHighlightIndex(highlight_index) -> #(
       Model(..model, highlight_index:),
@@ -166,6 +177,7 @@ fn view(model: Model) {
 
   html.div(
     [
+      attribute.class(model.class),
       attribute.class("w-full h-full relative"),
       case model.flipped {
         True -> attribute.none()

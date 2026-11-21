@@ -11,6 +11,10 @@ import lustre/element/html
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_label(label: String) {
   attribute.property("label", json.string(label))
 }
@@ -30,6 +34,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("label", {
       decode.string |> decode.map(PropsChangedLabel)
     }),
@@ -42,11 +49,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(label: String)
+  Model(class: String, label: String)
 }
 
 fn init(_) {
-  #(Model(label: ""), effect.none())
+  #(Model(class: "", label: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -54,12 +61,14 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedLabel(String)
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedLabel(new_label) -> #(Model(new_label), effect.none())
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+    PropsChangedLabel(label) -> #(Model(..model, label:), effect.none())
   }
 }
 
@@ -68,10 +77,13 @@ fn update(_model: Model, message: Message) {
 // -----------------------------------------------------------------------------
 
 fn view(model: Model) {
-  html.div([attribute.class("flex flex-col gap-1")], [
-    html.label([], [
-      component.named_slot("label", [], [html.text(model.label)]),
-    ]),
-    component.default_slot([], []),
-  ])
+  html.div(
+    [attribute.class(model.class), attribute.class("flex flex-col gap-1")],
+    [
+      html.label([], [
+        component.named_slot("label", [], [html.text(model.label)]),
+      ]),
+      component.default_slot([], []),
+    ],
+  )
 }

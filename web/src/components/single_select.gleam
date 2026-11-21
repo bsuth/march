@@ -13,8 +13,12 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_value(value: String) {
-  attribute.property("value", json.string(value))
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
+pub fn prop_disabled(disabled: Bool) {
+  attribute.property("disabled", json.bool(disabled))
 }
 
 pub fn prop_options(options: List(#(String, String))) {
@@ -29,8 +33,8 @@ pub fn prop_options(options: List(#(String, String))) {
   )
 }
 
-pub fn prop_disabled(disabled: Bool) {
-  attribute.property("disabled", json.bool(disabled))
+pub fn prop_value(value: String) {
+  attribute.property("value", json.string(value))
 }
 
 pub fn on_change(handler: fn(String) -> message) {
@@ -52,6 +56,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("value", {
       decode.string |> decode.map(PropsChangedValue)
     }),
@@ -76,11 +83,16 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: String, options: List(#(String, String)), disabled: Bool)
+  Model(
+    class: String,
+    disabled: Bool,
+    options: List(#(String, String)),
+    value: String,
+  )
 }
 
 fn init(_) {
-  #(Model(value: "", options: [], disabled: False), effect.none())
+  #(Model(class: "", disabled: False, options: [], value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -88,24 +100,24 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
-  OnChange(String)
+  PropsChangedClass(String)
   PropsChangedDisabled(Bool)
   PropsChangedOptions(List(#(String, String)))
   PropsChangedValue(String)
+  OnChange(String)
 }
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedDisabled(new_disabled) -> #(
       Model(..model, disabled: new_disabled),
       effect.none(),
     )
-
     PropsChangedOptions(new_options) -> #(
       Model(..model, options: new_options),
       effect.none(),
     )
-
     PropsChangedValue(new_value) -> #(
       Model(..model, value: new_value),
       effect.none(),
@@ -125,6 +137,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   html.select(
     [
+      attribute.class(model.class),
       attribute.class("w-full p-2"),
       attribute.class("border"),
       attribute.class("cursor-pointer outline-none"),

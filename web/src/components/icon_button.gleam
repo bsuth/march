@@ -12,6 +12,10 @@ import lustre/element/html
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_disabled(value: Bool) {
   attribute.property("disabled", json.bool(value))
 }
@@ -31,6 +35,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("disabled", {
       decode.bool |> decode.map(PropsChangedDisabled)
     }),
@@ -43,11 +50,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(disabled: Bool)
+  Model(class: String, disabled: Bool)
 }
 
 fn init(_) {
-  #(Model(disabled: False), effect.none())
+  #(Model(class: "", disabled: False), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -55,13 +62,15 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedDisabled(Bool)
 }
 
-fn update(_model: Model, message: Message) {
+fn update(model: Model, message: Message) {
   case message {
-    PropsChangedDisabled(new_disabled) -> #(
-      Model(disabled: new_disabled),
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
+    PropsChangedDisabled(disabled) -> #(
+      Model(..model, disabled:),
       effect.none(),
     )
   }
@@ -75,6 +84,7 @@ fn view(model: Model) {
   html.button(
     list.flatten([
       [
+        attribute.class(model.class),
         attribute.class("p-2"),
         attribute.class("flex justify-center items-center"),
         attribute.class("rounded-full"),

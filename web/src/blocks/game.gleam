@@ -33,6 +33,10 @@ import yuzu
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_engine_kernel(engine_kernel: engine.Kernel) {
   attribute.property("engine_kernel", engine.kernel_json(engine_kernel))
 }
@@ -64,6 +68,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("engine_kernel", {
       engine.kernel_decoder() |> decode.map(PropsChangedEngineKernel)
     }),
@@ -83,6 +90,7 @@ pub fn register() {
 
 type Model {
   Model(
+    class: String,
     engine: Engine,
     flipped: Bool,
     hover_index: Option(Int),
@@ -107,6 +115,7 @@ fn init(_) {
 
   #(
     Model(
+      class: "",
       engine:,
       flipped: False,
       hover_index: option.None,
@@ -124,6 +133,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedEngineKernel(engine.Kernel)
   PropsChangedFlipped(Bool)
   PropsChangedTheme(Theme)
@@ -138,6 +148,7 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedEngineKernel(engine_kernel) -> {
       let engine = engine.new(engine_kernel)
 
@@ -242,6 +253,7 @@ fn view(model: Model) {
 
   html.div(
     [
+      attribute.class(model.class),
       attribute.class("h-full"),
       attribute.class("flex justify-center gap-8"),
     ],

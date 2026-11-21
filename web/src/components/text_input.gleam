@@ -16,6 +16,10 @@ pub fn prop_autofocus(value: Bool) {
   attribute.property("autofocus", json.bool(value))
 }
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_type(type_: String) {
   attribute.property("type", json.string(type_))
 }
@@ -59,6 +63,9 @@ pub fn register() {
     component.on_property_change("autofocus", {
       decode.bool |> decode.map(PropsChangedAutofocus)
     }),
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("type", {
       decode.string |> decode.map(PropsChangedType)
     }),
@@ -74,11 +81,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(autofocus: Bool, type_: String, value: String)
+  Model(autofocus: Bool, class: String, type_: String, value: String)
 }
 
 fn init(_) {
-  #(Model(autofocus: False, type_: "text", value: ""), effect.none())
+  #(Model(autofocus: False, class: "", type_: "text", value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -87,6 +94,7 @@ fn init(_) {
 
 type Message {
   PropsChangedAutofocus(Bool)
+  PropsChangedClass(String)
   PropsChangedType(String)
   PropsChangedValue(String)
   OnChange(String)
@@ -100,6 +108,7 @@ fn update(model: Model, message: Message) {
       Model(..model, autofocus:),
       effect.none(),
     )
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedType(type_) -> #(Model(..model, type_:), effect.none())
     PropsChangedValue(value) -> {
       #(Model(..model, value:), effect.none())
@@ -129,6 +138,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   html.input([
     attribute.autofocus(model.autofocus),
+    attribute.class(model.class),
     attribute.class("w-full px-2 py-1"),
     attribute.class("ring"),
     attribute.class("outline-none"),

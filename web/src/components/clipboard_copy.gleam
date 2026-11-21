@@ -15,6 +15,10 @@ import phosphor
 // Props / Events
 // -----------------------------------------------------------------------------
 
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
+}
+
 pub fn prop_disabled(disabled: Bool) {
   attribute.property("disabled", json.bool(disabled))
 }
@@ -38,6 +42,9 @@ pub fn element(
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
+    }),
     component.on_property_change("disabled", {
       decode.bool |> decode.map(PropsChangedDisabled)
     }),
@@ -53,11 +60,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(copied: Bool, disabled: Bool, value: String)
+  Model(class: String, copied: Bool, disabled: Bool, value: String)
 }
 
 fn init(_) {
-  #(Model(copied: False, disabled: False, value: ""), effect.none())
+  #(Model(class: "", copied: False, disabled: False, value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -65,6 +72,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedDisabled(Bool)
   PropsChangedValue(String)
 
@@ -74,6 +82,7 @@ type Message {
 
 fn update(model: Model, message: Message) {
   case message {
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedDisabled(disabled) -> #(
       Model(..model, disabled:),
       effect.none(),
@@ -100,6 +109,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   icon_button.element(
     [
+      attribute.class(model.class),
       attribute.class("relative"),
       event.on_mouse_enter(SetCopied(False)),
       icon_button.prop_disabled(model.disabled),

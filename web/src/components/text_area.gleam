@@ -12,12 +12,16 @@ import lustre/event
 // Props / Events
 // -----------------------------------------------------------------------------
 
-pub fn prop_value(value: String) {
-  attribute.property("value", json.string(value))
+pub fn prop_class(class: String) {
+  attribute.property("class", json.string(class))
 }
 
 pub fn prop_type(type_: String) {
   attribute.property("type_", json.string(type_))
+}
+
+pub fn prop_value(value: String) {
+  attribute.property("value", json.string(value))
 }
 
 pub fn on_input(handler: fn(String) -> message) {
@@ -46,11 +50,14 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
-    component.on_property_change("value", {
-      decode.string |> decode.map(PropsChangedValue)
+    component.on_property_change("class", {
+      decode.string |> decode.map(PropsChangedClass)
     }),
     component.on_property_change("type_", {
       decode.string |> decode.map(PropsChangedType)
+    }),
+    component.on_property_change("value", {
+      decode.string |> decode.map(PropsChangedValue)
     }),
   ])
   |> lustre.register(element_name)
@@ -61,11 +68,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(value: String, type_: String)
+  Model(class: String, type_: String, value: String)
 }
 
 fn init(_) {
-  #(Model(value: "", type_: "text"), effect.none())
+  #(Model(class: "", type_: "text", value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -73,6 +80,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedClass(String)
   PropsChangedValue(String)
   PropsChangedType(String)
   OnInput(String)
@@ -81,17 +89,16 @@ type Message {
 
 fn update(model: Model, message: Message) {
   case message {
-    PropsChangedValue(new_value) -> {
-      #(Model(..model, value: new_value), effect.none())
-    }
-
+    PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedType(new_type_) -> #(
       Model(..model, type_: new_type_),
       effect.none(),
     )
+    PropsChangedValue(new_value) -> {
+      #(Model(..model, value: new_value), effect.none())
+    }
 
     OnInput(new_value) -> #(model, event.emit("input", json.string(new_value)))
-
     OnChange(new_value) -> #(
       model,
       event.emit("change", json.string(new_value)),
@@ -105,6 +112,7 @@ fn update(model: Model, message: Message) {
 
 fn view(model: Model) {
   html.input([
+    attribute.class(model.class),
     attribute.class("px-2 py-1"),
     attribute.class("border rounded"),
     attribute.class("text-black"),
