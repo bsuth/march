@@ -97,7 +97,7 @@ fn doubles_view(model: Model, lobby: Lobby) {
 
       False, False ->
         phosphor.x_circle_regular([
-          attribute.class("text-(--march-error) size-6"),
+          attribute.class("text-(--march-danger) size-6"),
         ])
 
       True, doubles ->

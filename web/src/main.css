@@ -22,7 +22,7 @@
   --march-info: var(--color-neutral-600);
   --march-success: var(--color-emerald-600);
   --march-warning: var(--color-amber-600);
-  --march-error: var(--color-red-600);
+  --march-danger: var(--color-red-600);
 
   --march-suit-red: var(--color-red-400);
 

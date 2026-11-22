@@ -1,3 +1,4 @@
+import components/admonition
 import components/button
 import components/clipboard_copy
 import components/field
@@ -16,6 +17,7 @@ import components/text_link
 import components/toggle
 
 pub fn register() {
+  let assert Ok(_) = admonition.register()
   let assert Ok(_) = button.register()
   let assert Ok(_) = clipboard_copy.register()
   let assert Ok(_) = field.register()
