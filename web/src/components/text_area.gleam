@@ -16,10 +16,6 @@ pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn type_(type_: String) {
-  attribute.property("type_", json.string(type_))
-}
-
 pub fn value(value: String) {
   attribute.property("value", json.string(value))
 }
@@ -53,9 +49,6 @@ pub fn register() {
     component.on_property_change("class", {
       decode.string |> decode.map(PropsChangedClass)
     }),
-    component.on_property_change("type_", {
-      decode.string |> decode.map(PropsChangedType)
-    }),
     component.on_property_change("value", {
       decode.string |> decode.map(PropsChangedValue)
     }),
@@ -68,11 +61,11 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(class: String, type_: String, value: String)
+  Model(class: String, value: String)
 }
 
 fn init(_) {
-  #(Model(class: "", type_: "text", value: ""), effect.none())
+  #(Model(class: "", value: ""), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -82,7 +75,6 @@ fn init(_) {
 type Message {
   PropsChangedClass(String)
   PropsChangedValue(String)
-  PropsChangedType(String)
   OnInput(String)
   OnChange(String)
 }
@@ -90,10 +82,6 @@ type Message {
 fn update(model: Model, message: Message) {
   case message {
     PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
-    PropsChangedType(new_type_) -> #(
-      Model(..model, type_: new_type_),
-      effect.none(),
-    )
     PropsChangedValue(new_value) -> {
       #(Model(..model, value: new_value), effect.none())
     }
@@ -111,14 +99,15 @@ fn update(model: Model, message: Message) {
 // -----------------------------------------------------------------------------
 
 fn view(model: Model) {
-  html.input([
-    attribute.class(model.class),
-    attribute.class("px-2 py-1"),
-    attribute.class("border rounded"),
-    attribute.class("text-black"),
-    attribute.value(model.value),
-    attribute.type_(model.type_),
-    event.on_input(OnInput),
-    event.on_change(OnChange),
-  ])
+  html.textarea(
+    [
+      attribute.class(model.class),
+      attribute.class("px-2 py-1"),
+      attribute.class("border rounded"),
+      attribute.class("text-black"),
+      event.on_input(OnInput),
+      event.on_change(OnChange),
+    ],
+    model.value,
+  )
 }
