@@ -4,12 +4,26 @@ pub type Chapter {
   Introduction
   Deck
   Board
+  Turn
+  Leading
+  Marching
+  Deploying
+  Capturing
+  Winning
+  Conclusion
 }
 
 pub const list = [
   Introduction,
   Deck,
   Board,
+  Turn,
+  Leading,
+  Marching,
+  Deploying,
+  Capturing,
+  Winning,
+  Conclusion,
 ]
 
 pub fn to_string(chapter: Chapter) {
@@ -17,23 +31,29 @@ pub fn to_string(chapter: Chapter) {
     Introduction -> "introduction"
     Deck -> "deck"
     Board -> "board"
+    Turn -> "turn"
+    Leading -> "leading"
+    Marching -> "marching"
+    Deploying -> "deploying"
+    Capturing -> "capturing"
+    Winning -> "winning"
+    Conclusion -> "conclusion"
   }
 }
 
 pub fn from_string(chapter_string: String) {
   case chapter_string {
     "introduction" -> Ok(Introduction)
-    "board" -> Ok(Board)
     "deck" -> Ok(Deck)
+    "board" -> Ok(Board)
+    "turn" -> Ok(Turn)
+    "leading" -> Ok(Leading)
+    "marching" -> Ok(Marching)
+    "deploying" -> Ok(Deploying)
+    "capturing" -> Ok(Capturing)
+    "winning" -> Ok(Winning)
+    "conclusion" -> Ok(Conclusion)
     _ -> Error(Nil)
-  }
-}
-
-pub fn title(chapter: Chapter) {
-  case chapter {
-    Introduction -> "Introduction"
-    Deck -> "Deck"
-    Board -> "Board"
   }
 }
 

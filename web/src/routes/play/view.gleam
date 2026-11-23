@@ -1,5 +1,6 @@
 import lustre/attribute.{type Attribute}
 import lustre/element/html
+import lustre/event
 import routes/play/message.{type Message}
 import routes/play/model.{type Model}
 
@@ -18,10 +19,7 @@ pub fn view(_model: Model) {
         game_view("Classic", []),
         game_view("Standard", []),
         game_view("Doubles", []),
-        game_view("Custom", [
-          // event.on_click(message.SubmitLobbyPostRequest),
-        // button.loading(model.post_lobby_request_loading),
-        ]),
+        game_view("Custom", []),
       ]),
     ]),
   ])
@@ -35,6 +33,8 @@ fn game_view(title: String, attrs: List(Attribute(Message))) {
       attribute.class("text-(--march-50) bg-(--march-800)"),
       attribute.class("hover:text-(--march-950) hover:bg-(--march-200)"),
       attribute.class("cursor-pointer"),
+      // TODO: REMOVE ME
+      event.on_click(message.SubmitLobbyPostRequest),
       ..attrs
     ],
     [html.div([], [html.text(title)])],

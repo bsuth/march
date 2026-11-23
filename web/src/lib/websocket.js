@@ -14,7 +14,6 @@ export function connect(conn) {
     return;
   }
 
-  console.log("connecting");
   conn.ws = new WebSocket(conn.url);
 
   conn.ws.addEventListener("open", () => {

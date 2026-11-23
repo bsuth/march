@@ -23,7 +23,7 @@ pub fn handler(
     "update.doubles" -> update_doubles(state, conn, payload)
     "update.hand_size" -> update_hand_size(state, conn, payload)
     "update.mode" -> update_mode(state, conn, payload)
-    "update.player" -> update_player_user_id(state, conn, payload)
+    "update.player_user_id" -> update_player_user_id(state, conn, payload)
 
     _ -> {
       logging.log(logging.Error, "invalid ws path: lobby." <> path)

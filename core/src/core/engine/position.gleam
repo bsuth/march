@@ -41,6 +41,10 @@ pub fn move_one(position: Position, move: #(Int, Int)) {
   |> dict.insert(move.0, option.None)
 }
 
+pub fn clear(position: Position) {
+  dict.map_values(position, fn(_, _) { option.None })
+}
+
 // -----------------------------------------------------------------------------
 // Encoding / Decoding
 // -----------------------------------------------------------------------------

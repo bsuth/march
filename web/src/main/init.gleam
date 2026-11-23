@@ -18,6 +18,7 @@ pub fn init(_) {
     websocket.init(
       // TODO: Read this from env variables.
       // In particular, needs to be different when running inside docker.
+      // "ws://" <> js.window_location_host() <> "/ws",
       "ws://localhost:8000/ws",
       fn() { message.WebsocketOpen },
       message.WebsocketMessage,

@@ -106,7 +106,7 @@ fn update(model: Model, msg: Message) {
 fn view(model: Model) {
   let src =
     string.concat([
-      "decks",
+      "/decks",
       "/",
       card_art.to_string(model.card_art),
       "/",
