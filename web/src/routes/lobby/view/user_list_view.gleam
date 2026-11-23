@@ -1,14 +1,14 @@
-import blocks/base_icon
 import core/lobby.{type Lobby}
 import core/user.{type User}
+import core/util
+import gleam/int
 import gleam/list
-import lib/player_color
+import gleam/option
 import lustre/attribute
 import lustre/element
 import lustre/element/html
 import phosphor
 import routes/lobby/model.{type Model}
-import yuzu
 
 // TODO: allow muting players
 // TODO: allow kicking players
@@ -23,19 +23,8 @@ pub fn user_list_view(model: Model, lobby: Lobby) {
 }
 
 fn user_view(model: Model, lobby: Lobby, user: User) {
-  let player_color =
-    lobby.player_user_ids
-    |> list.index_map(fn(player_user_id, player_index) {
-      #(player_user_id, player_index)
-    })
-    |> list.find_map(fn(player_user_id_and_index) {
-      use player_user_id <- yuzu.some(player_user_id_and_index.0, Error(Nil))
-      use <- yuzu.true(player_user_id == user.id, Error(Nil))
-
-      player_user_id_and_index.1
-      |> player_color.from_player_index(lobby.engine_settings.doubles)
-      |> Ok()
-    })
+  let player_index =
+    util.find_list_index(lobby.player_user_ids, option.Some(user.id))
 
   html.li([attribute.class("flex gap-2 items-center")], [
     html.p(
@@ -57,14 +46,12 @@ fn user_view(model: Model, lobby: Lobby, user: User) {
           phosphor.star_fill([attribute.class("size-5")]),
         ])
     },
-    case player_color {
-      Ok(player_color) ->
-        base_icon.element([
-          base_icon.player_color(player_color),
-          base_icon.theme(model.app.theme),
-          attribute.class("size-5"),
-          attribute.title("Assigned to " <> player_color.label(player_color)),
-        ])
+    case player_index {
+      Ok(player_index) ->
+        html.div(
+          [attribute.title("Player " <> int.to_string(player_index + 1))],
+          [html.text(int.to_string(player_index + 1))],
+        )
       _ -> element.none()
     },
   ])

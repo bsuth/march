@@ -39,7 +39,6 @@ fn hero_view(model: Model) {
         board.element([
           board.position(model.hero_engine.position),
           board.settings(model.hero_engine.kernel.settings),
-          board.theme(model.app.theme),
         ]),
       ]),
     ],

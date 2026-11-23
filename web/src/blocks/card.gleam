@@ -11,6 +11,12 @@ import lustre/effect
 import lustre/element
 import lustre/element/html
 
+pub type Variant {
+  Front(face: Face, suit: Suit)
+  Back
+  Base
+}
+
 // -----------------------------------------------------------------------------
 // Props / Events
 // -----------------------------------------------------------------------------
@@ -23,12 +29,13 @@ pub fn class(class: String) {
   attribute.property("class", json.string(class))
 }
 
-pub fn face(face: Face) {
-  attribute.property("face", face.json(face))
-}
-
-pub fn suit(suit: Suit) {
-  attribute.property("suit", suit.json(suit))
+pub fn variant(variant: Variant) {
+  attribute.property("variant", case variant {
+    Front(face, suit) ->
+      json.object([#("face", face.json(face)), #("suit", suit.json(suit))])
+    Back -> json.string("back")
+    Base -> json.string("base")
+  })
 }
 
 // -----------------------------------------------------------------------------
@@ -49,11 +56,22 @@ pub fn register() {
     component.on_property_change("class", {
       decode.string |> decode.map(PropsChangedClass)
     }),
-    component.on_property_change("face", {
-      face.decoder() |> decode.map(PropsChangedFace)
-    }),
-    component.on_property_change("suit", {
-      suit.decoder() |> decode.map(PropsChangedSuit)
+    component.on_property_change("variant", {
+      {
+        use face <- decode.field("face", face.decoder())
+        use suit <- decode.field("suit", suit.decoder())
+        decode.success(Front(face:, suit:))
+      }
+      |> decode.one_of([
+        decode.then(decode.string, fn(variant_string) {
+          case variant_string {
+            "back" -> decode.success(Back)
+            "base" -> decode.success(Base)
+            _ -> decode.failure(Back, "variant")
+          }
+        }),
+      ])
+      |> decode.map(PropsChangedVariant)
     }),
   ])
   |> lustre.register(element_name)
@@ -64,17 +82,12 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(card_art: CardArt, class: String, face: Face, suit: Suit)
+  Model(card_art: CardArt, class: String, variant: Variant)
 }
 
 fn init(_) {
   #(
-    Model(
-      card_art: card_art.DefaultBlack,
-      class: "",
-      face: face.Ace,
-      suit: suit.Spades,
-    ),
+    Model(card_art: card_art.DefaultBlack, class: "", variant: Back),
     effect.none(),
   )
 }
@@ -86,16 +99,14 @@ fn init(_) {
 type Message {
   PropsChangedCardArt(CardArt)
   PropsChangedClass(String)
-  PropsChangedFace(Face)
-  PropsChangedSuit(Suit)
+  PropsChangedVariant(Variant)
 }
 
 fn update(model: Model, msg: Message) {
   case msg {
     PropsChangedCardArt(card_art) -> #(Model(..model, card_art:), effect.none())
     PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
-    PropsChangedFace(face) -> #(Model(..model, face:), effect.none())
-    PropsChangedSuit(suit) -> #(Model(..model, suit:), effect.none())
+    PropsChangedVariant(variant) -> #(Model(..model, variant:), effect.none())
   }
 }
 
@@ -104,14 +115,19 @@ fn update(model: Model, msg: Message) {
 // -----------------------------------------------------------------------------
 
 fn view(model: Model) {
+  let basename = case model.variant {
+    Front(face:, suit:) -> face.to_string(face) <> suit.to_string(suit)
+    Back -> "back"
+    Base -> "base"
+  }
+
   let src =
     string.concat([
       "/decks",
       "/",
       card_art.to_string(model.card_art),
       "/",
-      face.to_string(model.face),
-      suit.to_string(model.suit),
+      basename,
       ".png",
     ])
 
@@ -119,6 +135,6 @@ fn view(model: Model) {
     attribute.class(model.class),
     attribute.class("w-full h-full object-contain"),
     attribute.src(src),
-    attribute.alt(face.to_string(model.face) <> suit.to_string(model.suit)),
+    attribute.alt(basename),
   ])
 }

@@ -1,5 +1,4 @@
 import core/engine/board.{Board}
-import core/engine/card_art
 import core/engine/face
 import core/engine/position
 import core/engine/position_card.{PositionCard}
@@ -24,12 +23,7 @@ pub fn init(app: App, chapter_string: String) {
       |> position.new()
       |> position.insert_one(#(
         0,
-        option.Some(PositionCard(
-          0,
-          face.Jack,
-          suit.Spades,
-          card_art.DefaultBlack,
-        )),
+        option.Some(PositionCard(0, face.Jack, suit.Spades)),
       ))
     _ -> position.new(board)
   }

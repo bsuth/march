@@ -1,6 +1,6 @@
 import blocks/card as blocks_card
 import core/engine/card.{type Card}
-import core/engine/card_art
+import core/engine/card_art.{type CardArt}
 import core/engine/player.{type Player}
 import gleam/dynamic/decode
 import gleam/int
@@ -13,11 +13,14 @@ import lustre/effect
 import lustre/element
 import lustre/element/html
 import lustre/event
-import phosphor
 
 // -----------------------------------------------------------------------------
 // Props / Events
 // -----------------------------------------------------------------------------
+
+pub fn card_art(card_art: CardArt) {
+  attribute.property("card_art", card_art.json(card_art))
+}
 
 pub fn class(class: String) {
   attribute.property("class", json.string(class))
@@ -50,6 +53,9 @@ pub fn element(attrs: List(Attribute(message))) {
 
 pub fn register() {
   lustre.component(init, update, view, [
+    component.on_property_change("card_art", {
+      card_art.decoder() |> decode.map(PropsChangedCardArt)
+    }),
     component.on_property_change("class", {
       decode.string |> decode.map(PropsChangedClass)
     }),
@@ -68,14 +74,15 @@ pub fn register() {
 // -----------------------------------------------------------------------------
 
 type Model {
-  Model(class: String, player: Player, vertical: Bool)
+  Model(card_art: CardArt, class: String, player: Player, vertical: Bool)
 }
 
 fn init(_) {
   #(
     Model(
+      card_art: card_art.DefaultBlack,
       class: "",
-      player: player.Observed(0, 0, 0, [], card_art.DefaultBlack),
+      player: player.Observed(0, 0, 0, []),
       vertical: False,
     ),
     effect.none(),
@@ -87,6 +94,7 @@ fn init(_) {
 // -----------------------------------------------------------------------------
 
 type Message {
+  PropsChangedCardArt(CardArt)
   PropsChangedClass(String)
   PropsChangedPlayer(Player)
   PropsChangedVertical(Bool)
@@ -96,6 +104,7 @@ type Message {
 
 fn update(model: Model, msg: Message) {
   case msg {
+    PropsChangedCardArt(card_art) -> #(Model(..model, card_art:), effect.none())
     PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedPlayer(player) -> #(Model(..model, player:), effect.none())
     PropsChangedVertical(vertical) -> #(
@@ -116,9 +125,8 @@ fn view(model: Model) {
     player.Managed(_, _, hand, ..) | player.Controlled(_, _, hand, ..) ->
       list.map(hand, fn(card) {
         blocks_card.element([
-          blocks_card.card_art(model.player.card_art),
-          blocks_card.face(card.face),
-          blocks_card.suit(card.suit),
+          blocks_card.card_art(model.card_art),
+          blocks_card.variant(blocks_card.Front(card.face, card.suit)),
           attribute.class("cursor-pointer"),
           event.on_click(CardClick(card)),
         ])
@@ -126,7 +134,13 @@ fn view(model: Model) {
 
     player.Observed(_, _, hand, ..) ->
       int.range(0, hand, [], fn(children, _) {
-        list.prepend(children, unknown_card_view())
+        list.prepend(
+          children,
+          blocks_card.element([
+            blocks_card.card_art(model.card_art),
+            blocks_card.variant(blocks_card.Back),
+          ]),
+        )
       })
   }
 
@@ -144,25 +158,5 @@ fn view(model: Model) {
         child,
       ])
     }),
-  )
-}
-
-fn unknown_card_view() {
-  let suit_class = attribute.class("size-6 -rotate-45")
-
-  html.div(
-    [
-      attribute.class("h-full flex justify-center items-center"),
-      // TODO: properly load deck back
-      attribute.class("text-white bg-black"),
-    ],
-    [
-      html.div([attribute.class("grid grid-cols-2 gap-1 rotate-45")], [
-        phosphor.spade_fill([suit_class]),
-        phosphor.diamond_fill([suit_class, attribute.class("text-red-400")]),
-        phosphor.heart_fill([suit_class, attribute.class("text-red-400")]),
-        phosphor.club_fill([suit_class]),
-      ]),
-    ],
   )
 }

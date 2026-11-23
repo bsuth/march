@@ -1,5 +1,4 @@
 import core/engine/card.{Card}
-import core/engine/card_art
 import core/engine/move
 import core/engine/player.{type Player}
 import core/engine/position.{type Position}
@@ -56,21 +55,7 @@ pub fn new_kernel(settings: Settings) {
       card.deck()
       |> list.shuffle()
       |> list.split(settings.hand_size)
-      |> fn(split) {
-        player.Managed(
-          player_index,
-          split.1,
-          split.0,
-          [],
-          case settings.doubles, player_index % 4 {
-            True, 3 -> card_art.DefaultBlue
-            True, 2 -> card_art.DefaultWhite
-            True, 1 -> card_art.DefaultRed
-            False, 1 -> card_art.DefaultWhite
-            _, _ -> card_art.DefaultBlack
-          },
-        )
-      }
+      |> fn(split) { player.Managed(player_index, split.1, split.0, []) }
       |> list.prepend(players, _)
     })
 
@@ -319,12 +304,12 @@ pub fn apply_turn(engine: Engine, turn: Turn) {
       )
 
     let capture_player = case capture_player {
-      player.Managed(index, deck, hand, _, card_art) ->
-        player.Managed(index, deck, hand, capture_player_discard, card_art)
-      player.Controlled(index, deck, hand, _, card_art) ->
-        player.Controlled(index, deck, hand, capture_player_discard, card_art)
-      player.Observed(index, deck, hand, _, card_art) ->
-        player.Observed(index, deck, hand, capture_player_discard, card_art)
+      player.Managed(index, deck, hand, _) ->
+        player.Managed(index, deck, hand, capture_player_discard)
+      player.Controlled(index, deck, hand, _) ->
+        player.Controlled(index, deck, hand, capture_player_discard)
+      player.Observed(index, deck, hand, _) ->
+        player.Observed(index, deck, hand, capture_player_discard)
     }
 
     util.set_list_index(
@@ -356,7 +341,6 @@ pub fn apply_turn(engine: Engine, turn: Turn) {
           player_index: active_player.index,
           face: deploy_card.face,
           suit: deploy_card.suit,
-          card_art: active_player.card_art,
         )),
       )),
     )
@@ -367,9 +351,8 @@ pub fn apply_turn(engine: Engine, turn: Turn) {
       player.draw(active_player, draw_card)
 
     turn.Observed(_, _, _, _, True) -> {
-      let assert player.Observed(color, deck, hand, discard, card_art) =
-        active_player
-      player.Observed(color, deck - 1, hand + 1, discard, card_art)
+      let assert player.Observed(color, deck, hand, discard) = active_player
+      player.Observed(color, deck - 1, hand + 1, discard)
     }
 
     _ -> active_player

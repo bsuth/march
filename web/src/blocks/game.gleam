@@ -3,11 +3,10 @@ import blocks/game_history
 import blocks/player_hand
 import components/button
 import core/engine.{type Engine}
-import core/engine/board.{Board}
 import core/engine/card.{type Card}
-import core/engine/mode
+import core/engine/card_art
 import core/engine/player
-import core/engine/settings.{Settings}
+import core/engine/settings
 import core/engine/turn
 import core/util
 import gleam/bool
@@ -18,7 +17,6 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option}
 import gleam/result
-import lib/theme.{type Theme}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -43,10 +41,6 @@ pub fn engine_kernel(engine_kernel: engine.Kernel) {
 
 pub fn flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
-}
-
-pub fn theme(theme: Theme) {
-  attribute.property("theme", theme.json(theme))
 }
 
 pub fn on_turn_end(handler: fn(turn.Request) -> message) {
@@ -77,9 +71,6 @@ pub fn register() {
     component.on_property_change("flipped", {
       decode.bool |> decode.map(PropsChangedFlipped)
     }),
-    component.on_property_change("theme", {
-      theme.decoder() |> decode.map(PropsChangedTheme)
-    }),
   ])
   |> lustre.register(element_name)
 }
@@ -95,23 +86,16 @@ type Model {
     flipped: Bool,
     hover_index: Option(Int),
     preview_engine: Option(Engine),
-    theme: Theme,
     turn_request: turn.Request,
     turn_request_engine: Engine,
   )
 }
 
 fn init(_) {
-  let settings =
-    Settings(
-      board: Board(4, 4),
-      doubles: False,
-      hand_size: 4,
-      mode: mode.Standard,
-    )
-
-  let kernel = engine.new_kernel(settings)
-  let engine = engine.new(kernel)
+  let engine =
+    settings.classic()
+    |> engine.new_kernel()
+    |> engine.new()
 
   #(
     Model(
@@ -120,7 +104,6 @@ fn init(_) {
       flipped: False,
       hover_index: option.None,
       preview_engine: option.None,
-      theme: theme.Light,
       turn_request: turn.Request(option.None, [], option.None),
       turn_request_engine: engine,
     ),
@@ -136,7 +119,6 @@ type Message {
   PropsChangedClass(String)
   PropsChangedEngineKernel(engine.Kernel)
   PropsChangedFlipped(Bool)
-  PropsChangedTheme(Theme)
 
   ClearPreview
   Deploy(Card)
@@ -163,7 +145,6 @@ fn update(model: Model, msg: Message) {
       )
     }
     PropsChangedFlipped(flipped) -> #(Model(..model, flipped:), effect.none())
-    PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
     ClearPreview -> #(
       Model(..model, preview_engine: option.None),
@@ -284,7 +265,6 @@ fn view(model: Model) {
                 attribute.class("w-full h-full"),
                 game_board.engine(engine),
                 game_board.flipped(model.flipped),
-                game_board.theme(model.theme),
                 game_board.turn_request(model.turn_request),
                 game_board.on_update_turn_request(OnUpdateTurnRequest),
               ]),
@@ -355,6 +335,10 @@ fn player_hand_view(model: Model, player_index: Int) {
   let assert Ok(player) = util.get_list_index(engine.players, player_index)
 
   player_hand.element([
+    model.engine.kernel.settings.card_arts
+      |> util.get_list_index(player_index)
+      |> result.unwrap(card_art.DefaultBlack)
+      |> player_hand.card_art(),
     player_hand.player(player),
     player_hand.vertical(
       engine.kernel.settings.doubles && player_index % 2 == 1,

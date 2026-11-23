@@ -1,10 +1,17 @@
 import core/engine/board.{type Board, Board}
+import core/engine/card_art.{type CardArt}
 import core/engine/mode.{type Mode}
 import gleam/dynamic/decode
 import gleam/json
 
 pub type Settings {
-  Settings(board: Board, doubles: Bool, hand_size: Int, mode: Mode)
+  Settings(
+    board: Board,
+    card_arts: List(CardArt),
+    doubles: Bool,
+    hand_size: Int,
+    mode: Mode,
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -14,6 +21,7 @@ pub type Settings {
 pub fn json(settings: Settings) {
   json.object([
     #("board", board.json(settings.board)),
+    #("card_arts", json.array(settings.card_arts, card_art.json)),
     #("doubles", json.bool(settings.doubles)),
     #("hand_size", json.int(settings.hand_size)),
     #("mode", mode.json(settings.mode)),
@@ -22,10 +30,11 @@ pub fn json(settings: Settings) {
 
 pub fn decoder() {
   use board <- decode.field("board", board.decoder())
+  use card_arts <- decode.field("card_arts", decode.list(card_art.decoder()))
   use doubles <- decode.field("doubles", decode.bool)
   use hand_size <- decode.field("hand_size", decode.int)
   use mode <- decode.field("mode", mode.decoder())
-  decode.success(Settings(board:, doubles:, hand_size:, mode:))
+  decode.success(Settings(board:, card_arts:, doubles:, hand_size:, mode:))
 }
 
 // -----------------------------------------------------------------------------
@@ -33,12 +42,19 @@ pub fn decoder() {
 // -----------------------------------------------------------------------------
 
 pub fn classic() {
-  Settings(board: Board(4, 4), doubles: False, hand_size: 4, mode: mode.Classic)
+  Settings(
+    board: Board(4, 4),
+    card_arts: [card_art.DefaultBlack, card_art.DefaultWhite],
+    doubles: False,
+    hand_size: 4,
+    mode: mode.Classic,
+  )
 }
 
 pub fn standard() {
   Settings(
     board: Board(4, 4),
+    card_arts: [card_art.DefaultBlack, card_art.DefaultWhite],
     doubles: False,
     hand_size: 4,
     mode: mode.Standard,
@@ -46,7 +62,18 @@ pub fn standard() {
 }
 
 pub fn doubles() {
-  Settings(board: Board(5, 5), doubles: True, hand_size: 4, mode: mode.AnyMarch)
+  Settings(
+    board: Board(5, 5),
+    card_arts: [
+      card_art.DefaultBlack,
+      card_art.DefaultRed,
+      card_art.DefaultWhite,
+      card_art.DefaultBlue,
+    ],
+    doubles: True,
+    hand_size: 4,
+    mode: mode.AnyMarch,
+  )
 }
 
 // -----------------------------------------------------------------------------

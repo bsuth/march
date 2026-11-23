@@ -12,7 +12,6 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option}
 import gleam/result
-import lib/theme.{type Theme}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -35,10 +34,6 @@ pub fn engine(engine: Engine) {
 
 pub fn flipped(flipped: Bool) {
   attribute.property("flipped", json.bool(flipped))
-}
-
-pub fn theme(theme: Theme) {
-  attribute.property("theme", theme.json(theme))
 }
 
 pub fn turn_request(turn_request: turn.Request) {
@@ -73,9 +68,6 @@ pub fn register() {
     component.on_property_change("flipped", {
       decode.bool |> decode.map(PropsChangedFlipped)
     }),
-    component.on_property_change("theme", {
-      theme.decoder() |> decode.map(PropsChangedTheme)
-    }),
     component.on_property_change("turn_request", {
       turn.request_decoder() |> decode.map(PropsChangedTurnRequest)
     }),
@@ -93,7 +85,6 @@ type Model {
     engine: Engine,
     flipped: Bool,
     hover_index: Option(Int),
-    theme: Theme,
     turn_request: turn.Request,
   )
 }
@@ -109,7 +100,6 @@ fn init(_) {
       engine:,
       flipped: False,
       hover_index: option.None,
-      theme: theme.Light,
       turn_request: turn.Request(option.None, [], option.None),
     ),
     effect.none(),
@@ -124,7 +114,6 @@ pub type Message {
   PropsChangedClass(String)
   PropsChangedEngine(Engine)
   PropsChangedFlipped(Bool)
-  PropsChangedTheme(Theme)
   PropsChangedTurnRequest(turn.Request)
 
   OnCellClick(Int)
@@ -136,7 +125,6 @@ fn update(model: Model, message: Message) {
     PropsChangedClass(class) -> #(Model(..model, class:), effect.none())
     PropsChangedEngine(engine) -> #(Model(..model, engine:), effect.none())
     PropsChangedFlipped(flipped) -> #(Model(..model, flipped:), effect.none())
-    PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
     PropsChangedTurnRequest(turn_request) -> #(
       Model(..model, turn_request:),
       effect.none(),
@@ -331,7 +319,6 @@ fn view(model: Model) {
     board.highlight_index(model.hover_index),
     board.position(model.engine.position),
     board.settings(model.engine.kernel.settings),
-    board.theme(model.theme),
     board.on_board_focusout(OnFocusOut),
     board.on_cell_click(OnCellClick),
   ])

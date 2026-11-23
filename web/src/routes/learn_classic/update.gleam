@@ -3,7 +3,6 @@ import core/engine/position
 import gleam/dict
 import gleam/list
 import gleam/option
-import gleam/result
 import lustre/effect
 import routes/learn_classic/message.{type Message}
 import routes/learn_classic/model.{type Model, Model}

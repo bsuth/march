@@ -50,7 +50,6 @@ fn match_view(model: Model, match: Match) {
       True -> result.unwrap(user_player_index, 0) > 1
       False -> user_player_index == Ok(1)
     }),
-    game_ui.theme(model.app.theme),
     game_ui.on_turn_end(message.UserEndedTurn),
   ])
 }

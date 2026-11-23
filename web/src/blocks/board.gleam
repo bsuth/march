@@ -1,15 +1,15 @@
-import blocks/base_icon
 import blocks/card
+import core/engine/card_art
 import core/engine/position.{type Position}
 import core/engine/settings.{type Settings}
+import core/util
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{type Option}
-import lib/player_color
-import lib/theme.{type Theme}
+import gleam/result
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -43,10 +43,6 @@ pub fn position(position: Position) {
 
 pub fn settings(settings: Settings) {
   attribute.property("settings", settings.json(settings))
-}
-
-pub fn theme(theme: Theme) {
-  attribute.property("theme", theme.json(theme))
 }
 
 pub fn on_board_focusout(message: message) {
@@ -87,9 +83,6 @@ pub fn register() {
     component.on_property_change("settings", {
       settings.decoder() |> decode.map(PropsChangedSettings)
     }),
-    component.on_property_change("theme", {
-      theme.decoder() |> decode.map(PropsChangedTheme)
-    }),
   ])
   |> lustre.register(element_name)
 }
@@ -105,7 +98,6 @@ type Model {
     highlight_index: Option(Int),
     position: Position,
     settings: Settings,
-    theme: Theme,
   )
 }
 
@@ -119,7 +111,6 @@ fn init(_) {
       highlight_index: option.None,
       position: position.new(settings.board),
       settings: settings,
-      theme: theme.Light,
     ),
     effect.none(),
   )
@@ -135,7 +126,6 @@ pub type Message {
   PropsChangedHighlightIndex(Option(Int))
   PropsChangedPosition(Position)
   PropsChangedSettings(Settings)
-  PropsChangedTheme(Theme)
 
   OnCellClick(Int)
   OnFocusOut
@@ -157,7 +147,6 @@ fn update(model: Model, message: Message) {
       Model(..model, settings:),
       effect.none(),
     )
-    PropsChangedTheme(theme) -> #(Model(..model, theme:), effect.none())
 
     OnCellClick(cell_index) -> #(
       model,
@@ -250,12 +239,23 @@ fn cell_content_view(model: Model, cell_index: Int) {
   let width = model.settings.board.width
   let height = model.settings.board.height
 
-  case dict.get(model.position, cell_index) {
-    Ok(option.Some(position_card)) ->
+  let base_cell_player_index = case model.settings.doubles {
+    _ if cell_index == 0 -> option.Some(0)
+    False if cell_index == width * height - 1 -> option.Some(1)
+    True if cell_index == width - 1 -> option.Some(1)
+    True if cell_index == width * height - 1 -> option.Some(2)
+    True if cell_index == width * { height - 1 } -> option.Some(3)
+    _ -> option.None
+  }
+
+  case dict.get(model.position, cell_index), base_cell_player_index {
+    Ok(option.Some(position_card)), _ ->
       card.element([
-        card.card_art(position_card.card_art),
-        card.face(position_card.face),
-        card.suit(position_card.suit),
+        model.settings.card_arts
+          |> util.get_list_index(position_card.player_index)
+          |> result.unwrap(card_art.DefaultBlack)
+          |> card.card_art(),
+        card.variant(card.Front(position_card.face, position_card.suit)),
         attribute.class("w-full h-full"),
         case option.Some(cell_index) == model.highlight_index {
           True ->
@@ -264,34 +264,16 @@ fn cell_content_view(model: Model, cell_index: Int) {
         },
       ])
 
-    _ if cell_index == 0 ->
-      base_icon.element([
-        base_icon.player_color(player_color.Black),
-        base_icon.theme(model.theme),
-        attribute.class("size-1/2"),
+    _, option.Some(base_cell_player_index) ->
+      card.element([
+        model.settings.card_arts
+          |> util.get_list_index(base_cell_player_index)
+          |> result.unwrap(card_art.DefaultBlack)
+          |> card.card_art(),
+        card.variant(card.Base),
+        attribute.class("w-full h-full"),
       ])
 
-    _ if cell_index == width * height - 1 ->
-      base_icon.element([
-        base_icon.player_color(player_color.White),
-        base_icon.theme(model.theme),
-        attribute.class("size-1/2"),
-      ])
-
-    _ if cell_index == width - 1 && model.settings.doubles ->
-      base_icon.element([
-        base_icon.player_color(player_color.LightRed),
-        base_icon.theme(model.theme),
-        attribute.class("size-1/2"),
-      ])
-
-    _ if cell_index == width * { height - 1 } && model.settings.doubles ->
-      base_icon.element([
-        base_icon.player_color(player_color.DarkRed),
-        base_icon.theme(model.theme),
-        attribute.class("size-1/2"),
-      ])
-
-    _ -> element.none()
+    _, _ -> element.none()
   }
 }
