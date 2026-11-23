@@ -133,7 +133,6 @@ fn view(model: Model) {
 
   html.img([
     attribute.class(model.class),
-    attribute.class("w-full h-full object-contain"),
     attribute.src(src),
     attribute.alt(basename),
   ])

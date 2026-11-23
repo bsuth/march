@@ -251,12 +251,13 @@ fn cell_content_view(model: Model, cell_index: Int) {
   case dict.get(model.position, cell_index), base_cell_player_index {
     Ok(option.Some(position_card)), _ ->
       card.element([
+        attribute.class("w-full h-full"),
+        card.class("w-full h-full object-fill"),
+        card.variant(card.Front(position_card.face, position_card.suit)),
         model.settings.card_arts
           |> util.get_list_index(position_card.player_index)
           |> result.unwrap(card_art.DefaultBlack)
           |> card.card_art(),
-        card.variant(card.Front(position_card.face, position_card.suit)),
-        attribute.class("w-full h-full"),
         case option.Some(cell_index) == model.highlight_index {
           True ->
             attribute.style("box-shadow", "0 0 4px 4px var(--march-primary)")
@@ -266,12 +267,13 @@ fn cell_content_view(model: Model, cell_index: Int) {
 
     _, option.Some(base_cell_player_index) ->
       card.element([
+        attribute.class("w-full h-full"),
+        card.class("w-full h-full object-fill"),
+        card.variant(card.Base),
         model.settings.card_arts
           |> util.get_list_index(base_cell_player_index)
           |> result.unwrap(card_art.DefaultBlack)
           |> card.card_art(),
-        card.variant(card.Base),
-        attribute.class("w-full h-full"),
       ])
 
     _, _ -> element.none()

@@ -125,9 +125,10 @@ fn view(model: Model) {
     player.Managed(_, _, hand, ..) | player.Controlled(_, _, hand, ..) ->
       list.map(hand, fn(card) {
         blocks_card.element([
+          attribute.class("h-full"),
+          blocks_card.class("h-full cursor-pointer"),
           blocks_card.card_art(model.card_art),
           blocks_card.variant(blocks_card.Front(card.face, card.suit)),
-          attribute.class("cursor-pointer"),
           event.on_click(CardClick(card)),
         ])
       })
@@ -137,6 +138,8 @@ fn view(model: Model) {
         list.prepend(
           children,
           blocks_card.element([
+            attribute.class("h-full"),
+            blocks_card.class("h-full"),
             blocks_card.card_art(model.card_art),
             blocks_card.variant(blocks_card.Back),
           ]),
@@ -147,16 +150,12 @@ fn view(model: Model) {
   html.div(
     [
       attribute.class(model.class),
-      attribute.class("flex gap-4"),
+      attribute.class("h-28 flex gap-4"),
       case model.vertical {
         True -> attribute.class("flex-col")
         False -> attribute.none()
       },
     ],
-    list.map(children, fn(child) {
-      html.div([attribute.class("w-24 h-24 rounded overflow-hidden")], [
-        child,
-      ])
-    }),
+    children,
   )
 }
