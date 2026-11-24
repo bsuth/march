@@ -90,14 +90,12 @@ type Model {
 }
 
 fn init(_) {
-  let settings = settings.classic()
-  let kernel = engine.new_kernel(settings)
-  let engine = engine.new(kernel)
-
   #(
     Model(
       class: "",
-      engine:,
+      engine: settings.classic()
+        |> engine.new_kernel()
+        |> engine.new(),
       flipped: False,
       hover_index: option.None,
       turn_request: turn.Request(option.None, [], option.None),

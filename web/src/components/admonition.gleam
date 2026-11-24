@@ -10,7 +10,7 @@ import phosphor
 
 pub type Variant {
   Danger
-  Note
+  Info
   Success
   Tip
   Warning
@@ -27,7 +27,7 @@ pub fn class(class: String) {
 pub fn variant(variant: Variant) {
   attribute.property("variant", case variant {
     Danger -> json.string("danger")
-    Note -> json.string("note")
+    Info -> json.string("info")
     Success -> json.string("success")
     Tip -> json.string("tip")
     Warning -> json.string("warning")
@@ -58,11 +58,11 @@ pub fn register() {
         |> decode.then(fn(variant_string) {
           case variant_string {
             "danger" -> decode.success(Danger)
-            "note" -> decode.success(Note)
+            "info" -> decode.success(Info)
             "success" -> decode.success(Success)
             "tip" -> decode.success(Tip)
             "warning" -> decode.success(Warning)
-            _ -> decode.failure(Note, "variant")
+            _ -> decode.failure(Info, "variant")
           }
         })
         |> decode.map(PropsChangedVariant),
@@ -80,7 +80,7 @@ type Model {
 }
 
 fn init(_) {
-  #(Model(class: "", variant: Note), effect.none())
+  #(Model(class: "", variant: Info), effect.none())
 }
 
 // -----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ fn update(model: Model, message: Message) {
 fn view(model: Model) {
   let #(title, icon) = case model.variant {
     Danger -> #("Danger", phosphor.warning_regular)
-    Note -> #("Note", phosphor.info_regular)
+    Info -> #("Info", phosphor.info_regular)
     Success -> #("Success", phosphor.check_circle_regular)
     Tip -> #("Tip", phosphor.lightbulb_regular)
     Warning -> #("Warning", phosphor.warning_circle_regular)
@@ -118,29 +118,25 @@ fn view(model: Model) {
       attribute.class("p-3"),
       attribute.class("flex flex-col gap-2"),
       attribute.class("border-l-8"),
-      case model.variant {
-        Danger ->
-          attribute.class("bg-(--march-danger)/10 border-(--march-danger)")
-        Note -> attribute.class("bg-(--march-info)/10 border-(--march-info)")
-        Success ->
-          attribute.class("bg-(--march-success)/10 border-(--march-success)")
-        Tip ->
-          attribute.class(" bg-(--march-primary)/10 border-(--march-primary)")
-        Warning ->
-          attribute.class("bg-(--march-warning)/10 border-(--march-warning)")
-      },
+      attribute.class(case model.variant {
+        Danger -> "bg-(--march-danger)/10 border-(--march-danger)"
+        Info -> "bg-(--march-info)/10 border-(--march-info)"
+        Success -> "bg-(--march-success)/10 border-(--march-success)"
+        Tip -> "bg-(--march-primary)/10 border-(--march-primary)"
+        Warning -> "bg-(--march-warning)/10 border-(--march-warning)"
+      }),
     ],
     [
       html.div(
         [
           attribute.class("flex items-center gap-2"),
-          case model.variant {
-            Danger -> attribute.class("text-(--march-danger)")
-            Note -> attribute.class("text-(--march-info)")
-            Success -> attribute.class("text-(--march-success)")
-            Tip -> attribute.class("text-(--march-primary)")
-            Warning -> attribute.class("text-(--march-warning)")
-          },
+          attribute.class(case model.variant {
+            Danger -> "text-(--march-danger)"
+            Info -> "text-(--march-info)"
+            Success -> "text-(--march-success)"
+            Tip -> "text-(--march-primary)"
+            Warning -> "text-(--march-warning)"
+          }),
         ],
         [
           icon([attribute.class("size-6")]),

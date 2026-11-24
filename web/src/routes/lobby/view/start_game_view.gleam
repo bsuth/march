@@ -5,6 +5,7 @@ import gleam/option
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import lustre/event
 import routes/lobby/message
 import routes/lobby/model.{type Model}
 import yuzu
@@ -16,7 +17,7 @@ pub fn start_game_view(model: Model, lobby: Lobby) {
     [
       attribute.class("m-auto"),
       button.disabled(list.any(lobby.player_user_ids, option.is_none)),
-      button.on_click(message.UserStartedGame),
+      event.on_click(message.UserStartedGame),
     ],
     [
       html.text("Start Game"),

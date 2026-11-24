@@ -1,4 +1,10 @@
+import core/engine/card.{type Card}
+import core/engine/turn
+
 pub type Message {
-  LeadBoardClick(Int)
+  Deploy(Card)
+  OnUpdateTurnRequest(turn.Request)
+  ResetTurnRequest
+  ShuffleCards
   ToggleTableOfContents
 }

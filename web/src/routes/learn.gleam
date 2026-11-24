@@ -31,8 +31,8 @@ pub fn update_ws(route_model: RouteModel, ws_message: ws_api.Message) {
   #(main_model.Learn(route_model), effect.map(route_effect, main_message.Learn))
 }
 
-pub fn update_app(route_model: RouteModel, app: App) {
-  RouteModel(..route_model, app:)
+pub fn update_app(_route_model: RouteModel, app: App) {
+  RouteModel(app:)
 }
 
 pub fn view(route_model: RouteModel) {

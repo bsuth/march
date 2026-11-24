@@ -6,7 +6,6 @@ import lustre/component
 import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
 import phosphor
 
 // -----------------------------------------------------------------------------
@@ -23,10 +22,6 @@ pub fn disabled(disabled: Bool) {
 
 pub fn loading(loading: Bool) {
   attribute.property("loading", json.bool(loading))
-}
-
-pub fn on_click(message: message) -> Attribute(message) {
-  event.on_click(message)
 }
 
 // -----------------------------------------------------------------------------

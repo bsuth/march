@@ -1,4 +1,5 @@
 import components/admonition
+import components/alert
 import components/button
 import components/clipboard_copy
 import components/field
@@ -13,6 +14,7 @@ import components/toggle
 
 pub fn register() {
   let assert Ok(_) = admonition.register()
+  let assert Ok(_) = alert.register()
   let assert Ok(_) = button.register()
   let assert Ok(_) = clipboard_copy.register()
   let assert Ok(_) = field.register()

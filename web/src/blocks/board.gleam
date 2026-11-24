@@ -10,6 +10,7 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option}
 import gleam/result
+import gleam/string
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/component
@@ -168,6 +169,7 @@ fn view(model: Model) {
     [
       attribute.class(model.class),
       attribute.class("w-full h-full relative"),
+      attribute.class("select-none"),
       case model.flipped {
         True -> attribute.none()
         False -> attribute.class("rotate-180")
@@ -252,17 +254,30 @@ fn cell_content_view(model: Model, cell_index: Int) {
     Ok(option.Some(position_card)), _ ->
       card.element([
         attribute.class("w-full h-full"),
-        card.class("w-full h-full object-fill"),
+        case option.Some(cell_index) == model.highlight_index {
+          True ->
+            attribute.style(
+              "box-shadow",
+              "inset 0 0 0px 3px var(--march-primary)",
+            )
+          False -> attribute.none()
+        },
+        card.class(string.join(
+          [
+            "w-full h-full object-fill",
+            "relative -z-10",
+            case option.Some(cell_index) == model.highlight_index {
+              True -> "opacity-90"
+              False -> ""
+            },
+          ],
+          " ",
+        )),
         card.variant(card.Front(position_card.face, position_card.suit)),
         model.settings.card_arts
           |> util.get_list_index(position_card.player_index)
           |> result.unwrap(card_art.DefaultBlack)
           |> card.card_art(),
-        case option.Some(cell_index) == model.highlight_index {
-          True ->
-            attribute.style("box-shadow", "0 0 4px 4px var(--march-primary)")
-          False -> attribute.none()
-        },
       ])
 
     _, option.Some(base_cell_player_index) ->

@@ -1,58 +1,67 @@
 import components/button
-import gleam/list
-import gleam/result
 import lustre/attribute
 import lustre/element/html
-import routes/learn/lib/chapter
 import routes/learn/model.{type Model}
-import routes/learn/view/chapter_capturing_cards
-import routes/learn/view/chapter_conclusion
-import routes/learn/view/chapter_gameplay
-import routes/learn/view/chapter_moving_cards
-import routes/learn/view/chapter_not_found
-import routes/learn/view/chapter_setup
-import routes/learn/view/navbar
-import routes/learn/view/table_of_contents
 
-pub fn view(model: Model) {
-  let chapter =
-    chapter.order
-    |> list.drop(model.chapter_index)
-    |> list.first()
-    |> result.unwrap(chapter.NotFound)
-
+pub fn view(_model: Model) {
   html.div(
     [
-      attribute.class("max-w-4xl h-full m-auto p-4"),
+      attribute.class("w-full h-full max-w-4xl m-auto p-4"),
       attribute.class("flex flex-col gap-4"),
       attribute.class("overflow-auto"),
     ],
     [
-      html.a([attribute.href("/learn/classic")], [
-        button.element([], [
-          html.text("Classic"),
-        ]),
-      ]),
-      case model.show_table_of_contents, chapter {
-        True, _ -> table_of_contents.view(model, [attribute.class("grow")])
-
-        _, chapter.Setup -> chapter_setup.view(model, [attribute.class("grow")])
-
-        _, chapter.Gameplay ->
-          chapter_gameplay.view(model, [attribute.class("grow")])
-
-        _, chapter.MovingCards ->
-          chapter_moving_cards.view(model, [attribute.class("grow")])
-
-        _, chapter.CapturingCards ->
-          chapter_capturing_cards.view(model, [attribute.class("grow")])
-
-        _, chapter.Conclusion ->
-          chapter_conclusion.view(model, [attribute.class("grow")])
-
-        _, _ -> chapter_not_found.view(model, [attribute.class("grow")])
-      },
-      navbar.view(model, []),
+      html.a(
+        [
+          attribute.class("w-full p-4"),
+          attribute.class("flex justify-between items-center gap-2"),
+          attribute.class("border"),
+          attribute.href("/learn/classic"),
+        ],
+        [
+          html.div([], [
+            html.h5([], [html.text("Classic")]),
+            html.text("The recommended way to learn March."),
+          ]),
+          button.element([], [
+            html.text("Tutorial"),
+          ]),
+        ],
+      ),
+      html.a(
+        [
+          attribute.class("w-full p-4"),
+          attribute.class("flex justify-between items-center gap-2"),
+          attribute.class("border"),
+          attribute.href("/learn/standard"),
+        ],
+        [
+          html.div([], [
+            html.h5([], [html.text("Standard")]),
+            html.text("The competitive way to learn March."),
+          ]),
+          button.element([], [
+            html.text("Tutorial"),
+          ]),
+        ],
+      ),
+      html.a(
+        [
+          attribute.class("w-full p-4"),
+          attribute.class("flex justify-between items-center gap-2"),
+          attribute.class("border"),
+          attribute.href("/learn/doubles"),
+        ],
+        [
+          html.div([], [
+            html.h5([], [html.text("Doubles")]),
+            html.text("Team-based 2v2 play."),
+          ]),
+          button.element([], [
+            html.text("Tutorial"),
+          ]),
+        ],
+      ),
     ],
   )
 }
